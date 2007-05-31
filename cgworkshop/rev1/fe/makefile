@@ -15,7 +15,7 @@ CPP = g++
 CFLAGS = -O2 -Wall -L./libs/ -I/usr/local/include/opencv
 PROJECT_NAME = fe
 
-SOURCES = Main.cpp FeatureExtraction.cpp
+SOURCES = Main.cpp FeatureExtraction.cpp cvgabor.cpp
 OBJECTS := $(patsubst %.cpp,%.o,$(SOURCES))
 
 .cpp.o:
