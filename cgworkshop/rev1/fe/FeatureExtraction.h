@@ -15,6 +15,7 @@ class CFeatureExtraction
 		
 	private:
 		int GetColorPCA(CvMat * pColorChannels[]);
+		int GetGaborResponse();
 		
 	private:
 		
