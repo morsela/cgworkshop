@@ -27,7 +27,7 @@ void CFeatureExtraction::CalcHistogram(IplImage * pImg, CvMat * pHistogram)
 			//printf("%d,%d\n", x,y);
 	        for (int k=0;k<channels;k++)
 	                for (int l=0;l<nBins;l++)
-	                        pHistogram->data.fl[x*step+y*channels+k*nBins+l] = 0;
+	                        pHistogram->data.fl[y*step+x*channels+k*nBins+l] = 0;
 	
 	        for (int j=y-2;j<=y+2;j++)
 	        {
@@ -42,9 +42,9 @@ void CFeatureExtraction::CalcHistogram(IplImage * pImg, CvMat * pHistogram)
 
                     for (int k=0;k<channels;k++)
                     {
-                            uchar val = data[i*step+j*channels+k];;
+                            uchar val = data[j*step+i*channels+k];;
                             uchar bin = val*nBins/255;
-                            pHistogram->data.fl[x*step+y*channels+k*nBins+bin]+=1;
+                            pHistogram->data.fl[i*step+x*channels+k*nBins+bin]+=1;
                     }
                 }
 			}
