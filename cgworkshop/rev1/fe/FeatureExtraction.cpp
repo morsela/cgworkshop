@@ -1,21 +1,63 @@
 #include "FeatureExtraction.h"
 #include "cvgabor.h"
 
-int CFeatureExtraction::GetGaborResponse()
+static void displayImage(char * title, IplImage * pImg)
 {
-	// TODO one gabor response per filter, 3 color channels?
-	
+	cvNamedWindow(title, 1);
+	cvShowImage(title,pImg);
+	cvWaitKey(0);
+	cvDestroyWindow(title);		
+}
+
+int CFeatureExtraction::GetGaborResponse(IplImage *pGrayImg, IplImage *pResImg, double orientation, int scale)
+{
+	// Create the filter
+	// TODO: Sigma? F? What?
 	double Sigma = 2*PI;
 	double F = sqrt(2.0);
-	CvGabor *gabor1 = new CvGabor;
-	gabor1->Init(PI/4, 3, Sigma, F);
+		
+	CvGabor *pGabor = new CvGabor;
+	pGabor->Init(orientation, scale, Sigma, F);
+	
+	// Convolution
+	pGabor->conv_img(pGrayImg, pResImg, CV_GABOR_MAG);
+	
+	return 0;
+}
 
-	IplImage *reimg = cvCreateImage(cvSize(m_pSrcImg->width,m_pSrcImg->height), IPL_DEPTH_8U, 3);
-	gabor1->conv_img(m_pSrcImg, reimg, CV_GABOR_MAG);
-	cvNamedWindow("Real Response", 1);
-	cvShowImage("Real Response",reimg);
-	cvWaitKey(0);
-	cvDestroyWindow("Real Response");
+// TODO: Apply all filters
+// What are the correct filterS?
+// 6 orientations, 4 scales
+// For orientation, I assume equal spacing around PI, but scale?
+
+// Save results (one matrix per response)
+// Save to bitmaps
+int CFeatureExtraction::GetGaborResponse()
+{
+	// Convert our image to grayscale (Gabor doesn't care about colors! I hope?)	
+	IplImage *pGrayImg = cvCreateImage(cvSize(m_pSrcImg->width,m_pSrcImg->height), IPL_DEPTH_8U, 1);
+	cvCvtColor(m_pSrcImg,pGrayImg,CV_BGR2GRAY);
+
+	// The output image
+	IplImage *reimg = cvCreateImage(cvSize(pGrayImg->width,pGrayImg->height), IPL_DEPTH_8U, 1);
+
+	char title[255];
+	for (double orientation=0;orientation<PI;orientation+=PI/6)
+		for (int scale=1;scale<=4;scale++)
+		{
+			sprintf(title, "Gabor Response: Orientation=%f, Scale=%d\n", orientation*180/PI, scale);
+			// TEST: Apply gabor with orientation PI/4, scale 3
+			GetGaborResponse(pGrayImg, reimg, orientation, scale  );
+			
+			// This being a test and all, display the image
+			displayImage(title, reimg);
+		}
+	
+	// Release
+	cvReleaseImage(&reimg);
+	cvReleaseImage(&pGrayImg);
+	
+	return 0;
 }
 
 // TODO: Would fail if m_nChannels != 3
@@ -70,7 +112,10 @@ int CFeatureExtraction::GetColorPCA(CvMat * pColorChannels[])
 	{
 		sprintf(filename, "output/chan%d.bmp", i+1);
 		pImg->imageData = (char *) pColorChannels[i]->data.ptr;
-
+		
+		// TODO: Remove this, only a test
+		displayImage(filename, pImg);
+		
 		printf("Saving pchannel %d to: %s\n",i+1, filename);
 		if (!cvSaveImage(filename,pImg)) 
 			printf("Could not save: %s\n",filename);
@@ -112,7 +157,7 @@ int CFeatureExtraction::Run()
 		
 	GetColorPCA(pColorChannels);
 
-//	GetGaborResponse();
+	GetGaborResponse();
 
 	for (int i=0;i<3;i++)
 		cvReleaseMat(&pColorChannels[i]);
