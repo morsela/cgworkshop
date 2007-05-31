@@ -1,6 +1,22 @@
 #include "FeatureExtraction.h"
+#include "cvgabor.h"
 
-//int CFeatureExtraction::
+int CFeatureExtraction::GetGaborResponse()
+{
+	// TODO one gabor response per filter, 3 color channels?
+	
+	double Sigma = 2*PI;
+	double F = sqrt(2.0);
+	CvGabor *gabor1 = new CvGabor;
+	gabor1->Init(PI/4, 3, Sigma, F);
+
+	IplImage *reimg = cvCreateImage(cvSize(m_pSrcImg->width,m_pSrcImg->height), IPL_DEPTH_8U, 3);
+	gabor1->conv_img(m_pSrcImg, reimg, CV_GABOR_MAG);
+	cvNamedWindow("Real Response", 1);
+	cvShowImage("Real Response",reimg);
+	cvWaitKey(0);
+	cvDestroyWindow("Real Response");
+}
 
 // TODO: Would fail if m_nChannels != 3
 int CFeatureExtraction::GetColorPCA(CvMat * pColorChannels[])
@@ -25,19 +41,13 @@ int CFeatureExtraction::GetColorPCA(CvMat * pColorChannels[])
 	printf("Eigen Vector 3: %f, %f, %f\n", cvmGet(eigenVectors, 2,0), cvmGet(eigenVectors, 2,1), cvmGet(eigenVectors, 2,2));
 	
 	// Transform to the new basis
-	CvMat * pTransMatTemp = cvCreateMat( m_nWidth*m_nHeight, 3 , CV_32F );
-	cvMatMul(pMat, eigenVectors, pTransMatTemp);
+	CvMat * pTransMat = cvCreateMat( m_nWidth*m_nHeight, 3 , CV_32F );
+	cvMatMul(pMat, eigenVectors, pTransMat);
 
 	// TODO: Normalize each channel by itself?		
 	// Normalize the matrix (0..255)
-	double min, max;
-	cvMinMaxLoc(pTransMatTemp, &min, &max);
+	cvNormalize(pTransMat, pTransMat, 0, 255, CV_MINMAX);
 	
-	CvMat * pTransMat = cvCreateMat( m_nWidth*m_nHeight, 3 , CV_32F );
-	float scale = 255/(max-min);
-	float shift = -1*min*scale;
-	cvConvertScale(	pTransMatTemp, pTransMat, scale, shift);
-
 	// Store each of the 3 p-channels in a matrix
 	float val;
 	for (int k=0;k<m_nChannels;k++)
@@ -74,7 +84,6 @@ int CFeatureExtraction::GetColorPCA(CvMat * pColorChannels[])
 	cvReleaseMat(&eigenVectors);
 	cvReleaseMat(&eigenValues);
 	cvReleaseMat(&pTransMat);
-	cvReleaseMat(&pTransMatTemp);
 	return 0;	
 }
 
@@ -103,8 +112,12 @@ int CFeatureExtraction::Run()
 		
 	GetColorPCA(pColorChannels);
 
+//	GetGaborResponse();
+
 	for (int i=0;i<3;i++)
 		cvReleaseMat(&pColorChannels[i]);
 
+
+	
 	return 0;
 }
