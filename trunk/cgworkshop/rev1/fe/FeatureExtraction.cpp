@@ -61,11 +61,16 @@ int CFeatureExtraction::GetGaborResponse()
 }
 
 // TODO: Would fail if m_nChannels != 3
+// RGB to LAB
 int CFeatureExtraction::GetColorPCA(CvMat * pColorChannels[])
 {
+	// Convert to LAB color space
+	IplImage *pLabImg = cvCreateImage(cvSize(m_pSrcImg->width,m_pSrcImg->height), IPL_DEPTH_32F, 3);
+	cvCvtColor(m_pSrcImgFloat,pLabImg,CV_BGR2Lab);	
+
 	// Get our 32F matrix (From the 32F image created previously)	
 	CvMat * pMat = cvCreateMat( m_nWidth*m_nHeight, 3 , CV_32F );
-	memcpy(pMat->data.fl, (float*)m_pSrcImgFloat->imageData, m_pSrcImgFloat->imageSize);
+	memcpy(pMat->data.fl, (float*)pLabImg->imageData, pLabImgv->imageSize);
 
 	// Create our result matrices
 	CvMat* avg = cvCreateMat( 1, 3, CV_32F );
