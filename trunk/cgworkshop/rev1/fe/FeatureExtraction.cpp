@@ -275,13 +275,13 @@ int CFeatureExtraction::Run()
 		
 	GetColorPCA(pColorChannels);
 
+	GetGaborResponse();
+
 	CvMat * pHistVectors[3];
 	for (int i=0;i<3;i++)
 		pHistVectors[i] = cvCreateMat( m_nWidth , m_nHeight , CV_8U );
 
 	GetHistogram(pHistVectors);
-
-	GetGaborResponse();
 
 	for (int i=0;i<3;i++)
 		cvReleaseMat(&pColorChannels[i]);
