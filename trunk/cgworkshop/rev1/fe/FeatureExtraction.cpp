@@ -44,7 +44,7 @@ void CFeatureExtraction::CalcHistogram(IplImage * pImg, CvMat * pHistogram)
                     {
                             uchar val = data[j*step+i*channels+k];;
                             uchar bin = val*nBins/255;
-                            pHistogram->data.fl[i*step+x*channels+k*nBins+bin]+=1;
+                            pHistogram->data.fl[y*step+x*channels+k*nBins+bin]+=1;
                     }
                 }
 			}
@@ -275,7 +275,7 @@ int CFeatureExtraction::Run()
 		
 	GetColorPCA(pColorChannels);
 
-	GetGaborResponse();
+	//GetGaborResponse();
 
 	CvMat * pHistVectors[3];
 	for (int i=0;i<3;i++)
