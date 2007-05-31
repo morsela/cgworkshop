@@ -79,7 +79,15 @@ void CFeatureExtraction::GetHistogram(CvMat * pHistVectors[])
 	
 	// Transform to the new basis
 	CvMat * pTransMat = cvCreateMat( m_nWidth*m_nHeight, 30 , CV_32F );
-	cvMatMul(pMat, eigenVectors, pTransMat);
+
+	// Transpose or not to transpose?
+	// I assume eigenVectors contains one eigen vector per row, not column
+	CvMat* pm = cvCreateMat( 30, 30, CV_32F );
+	cvTranspose(eigenVectors, pm);
+	
+	cvMatMul(pMat, pm, pTransMat);
+	cvReleaseMat(&pm); 
+
 
 	// TODO: Normalize each channel by itself?		
 	// Normalize the matrix (0..255)
@@ -242,7 +250,14 @@ int CFeatureExtraction::GetColorPCA(CvMat * pColorChannels[])
 	
 	// Transform to the new basis
 	CvMat * pTransMat = cvCreateMat( m_nWidth*m_nHeight, 3 , CV_32F );
-	cvMatMul(pMat, eigenVectors, pTransMat);
+
+	// Transpose or not to transpose?
+	// I assume eigenVectors contains one eigen vector per row, not column	
+	CvMat* pm = cvCreateMat( 3, 3, CV_32F );
+	cvTranspose(eigenVectors, pm);
+	
+	cvMatMul(pMat, pm, pTransMat);
+	cvReleaseMat(&pm); 
 
 	// TODO: Normalize each channel by itself?		
 	// Normalize the matrix (0..255)
