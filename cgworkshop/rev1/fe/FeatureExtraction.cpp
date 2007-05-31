@@ -97,6 +97,8 @@ void CFeatureExtraction::GetHistogram(CvMat * pHistVectors[])
 					pHistVectors[k]->data.ptr[i*m_nWidth+j] = (unsigned char) val;
 			}
 		}
+		// Is this ok?
+		cvNormalize(pHistVectors[k],pHistVectors[k], 0, 255, CV_MINMAX);
 	}
 	
 	// Save each channel to a bitmap, just for fun.
@@ -224,7 +226,10 @@ int CFeatureExtraction::GetColorPCA(CvMat * pColorChannels[])
 					pColorChannels[k]->data.ptr[i*m_nWidth+j] = (unsigned char) val;
 			}
 		}
+		// Is this ok?
+		cvNormalize(pColorChannels[k],pColorChannels[k], 0, 255, CV_MINMAX);
 	}
+
 	
 	// Save each channel to a bitmap, just for fun.
 	char filename[255];
