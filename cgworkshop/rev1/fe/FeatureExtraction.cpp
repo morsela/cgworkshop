@@ -1,6 +1,10 @@
 #include "FeatureExtraction.h"
 #include "cvgabor.h"
 
+// TODO:
+// Combine 30 Histogram values with 24 Gabor values
+// PCA these.
+
 static void displayImage(char * title, IplImage * pImg)
 {
 	cvNamedWindow(title, 1);
@@ -9,7 +13,8 @@ static void displayImage(char * title, IplImage * pImg)
 	cvDestroyWindow(title);		
 }
 
-// TODO: Not really working
+// TODO: Make sure working......
+// Image seems alright, but not perfert
 void CFeatureExtraction::CalcHistogram(IplImage * pImg, CvMat * pHistogram)
 {
 	int nBins = 10;
@@ -24,29 +29,28 @@ void CFeatureExtraction::CalcHistogram(IplImage * pImg, CvMat * pHistogram)
 	{
 		for (int x=0;x<w; x++)
 		{
-			//printf("%d,%d\n", x,y);
-	        for (int k=0;k<channels;k++)
-	                for (int l=0;l<nBins;l++)
-	                        pHistogram->data.fl[y*step+x*channels+k*nBins+l] = 0;
+			for (int k=0;k<channels;k++)
+			{
+				// Get appropriate bin for current pixel
+				uchar val = data[y*step+x*channels+k];;
+				uchar bin = val*nBins/255;
 	
-	        for (int j=y-2;j<=y+2;j++)
-	        {
+				// Go over a 5x5 patch, increase appropriate bin by 1
+				for (int j=y-2;j<=y+2;j++)
+				{
 	
-				if (j<0 || j>=h)
-                	continue;
+					if (j<0 || j>=h)
+	                	continue;
 
-                for (int i=x-2;i<=x+2;i++)
-                {
-                    if (i<0 || i>=w)
-                            continue;
-
-                    for (int k=0;k<channels;k++)
-                    {
-                            uchar val = data[j*step+i*channels+k];;
-                            uchar bin = val*nBins/255;
-                            pHistogram->data.fl[y*step+x*channels+k*nBins+bin]+=1;
-                    }
-                }
+	                for (int i=x-2;i<=x+2;i++)
+	                {
+	                    if (i<0 || i>=w)
+	                            continue;
+						
+						//int row = j*w+x;
+						pHistogram->data.fl[j*step*10+x*channels*10 +k*nBins+bin]+=1;
+	                }
+				}
 			}
 		}
 	}
@@ -80,7 +84,7 @@ void CFeatureExtraction::GetHistogram(CvMat * pHistVectors[])
 	// TODO: Normalize each channel by itself?		
 	// Normalize the matrix (0..255)
 	cvNormalize(pTransMat, pTransMat, 0, 255, CV_MINMAX);
-	
+
 	// Store each of the 3 p-channels in a matrix
 	float val;
 	for (int k=0;k<m_nChannels;k++)
@@ -89,7 +93,7 @@ void CFeatureExtraction::GetHistogram(CvMat * pHistVectors[])
 		{
 			for (int j=0;j<m_nWidth;j++)
 			{
-					val = pTransMat->data.fl[i*m_nWidth*3 + j*10 + k];
+					val = pTransMat->data.fl[i*m_pSrcImg->widthStep*10 + j*30 + k];
 					pHistVectors[k]->data.ptr[i*m_nWidth+j] = (unsigned char) val;
 			}
 		}
