@@ -203,6 +203,7 @@ int CFeatureExtraction::GetGaborResponse()
 	IplImage *reimg = cvCreateImage(cvSize(pGrayImg->width,pGrayImg->height), IPL_DEPTH_8U, 1);
 
 	char title[255];
+	char filename[255];
 	for (double orientation=0;orientation<PI;orientation+=PI/6)
 		for (int scale=1;scale<=4;scale++)
 		{
@@ -211,7 +212,13 @@ int CFeatureExtraction::GetGaborResponse()
 			GetGaborResponse(pGrayImg, reimg, orientation, scale  );
 			
 			// This being a test and all, display the image
-			displayImage(title, reimg);
+			//displayImage(title, reimg);
+			
+			sprintf(filename, "output/gabor%f-%d.bmp", orientation*180/PI, scale);
+
+			printf("Saving gabor to: %s\n", filename);
+			if (!cvSaveImage(filename,reimg)) 
+				printf("Could not save: %s\n",filename);			
 		}
 	
 	// Release
@@ -333,7 +340,7 @@ int CFeatureExtraction::Run()
 		
 	GetColorPCA(pColorChannels);
 
-	//GetGaborResponse();
+	GetGaborResponse();
 
 	CvMat * pHistVectors[3];
 	for (int i=0;i<3;i++)
