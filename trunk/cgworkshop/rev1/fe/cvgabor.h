@@ -26,6 +26,8 @@
 #include <cv.h>
 #include <highgui.h>
 
+#include <math.h>
+
 #define PI 3.14159265
 #define FALSE 0
 #define TRUE 1

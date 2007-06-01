@@ -13,8 +13,10 @@ static void displayImage(char * title, IplImage * pImg)
 	cvDestroyWindow(title);		
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
+
 // TODO: Make sure working......
-// Image seems alright, but not perfert
+// Image seems alright, but not perfect
 void CFeatureExtraction::CalcHistogram(IplImage * pImg, CvMat * pHistogram)
 {
 	int nBins = 10;
@@ -23,7 +25,7 @@ void CFeatureExtraction::CalcHistogram(IplImage * pImg, CvMat * pHistogram)
 	int channels = m_nChannels;
 	int w = m_nWidth;
 	int h = m_nHeight;
-	uchar * data  = (uchar *)pImg->imageData;
+	uchar * pData  = (uchar *)pImg->imageData;
 	
 	for (int y=0; y<h; y++)
 	{
@@ -32,7 +34,7 @@ void CFeatureExtraction::CalcHistogram(IplImage * pImg, CvMat * pHistogram)
 			for (int k=0;k<channels;k++)
 			{
 				// Get appropriate bin for current pixel
-				uchar val = data[y*step+x*channels+k];;
+				uchar val = pData[y*step+x*channels+k];;
 				uchar bin = val*nBins/255;
 	
 				// Go over a 5x5 patch, increase appropriate bin by 1
@@ -55,6 +57,8 @@ void CFeatureExtraction::CalcHistogram(IplImage * pImg, CvMat * pHistogram)
 		}
 	}
 }
+
+//////////////////////////////////////////////////////////////////////////////////////
 
 void CFeatureExtraction::GetHistogram(CvMat * pHistVectors[])
 {
@@ -115,7 +119,7 @@ void CFeatureExtraction::GetHistogram(CvMat * pHistVectors[])
 	char * tempData = pImg->imageData;
 	for (int i=0;i<m_nChannels;i++)
 	{
-		sprintf(filename, "output/hist%d.bmp", i+1);
+		sprintf(filename, "hist%d.bmp", i+1);
 		pImg->imageData = (char *) pHistVectors[i]->data.ptr;
 		
 		// TODO: Remove this, only a test
@@ -135,6 +139,8 @@ void CFeatureExtraction::GetHistogram(CvMat * pHistVectors[])
 	cvReleaseMat(&eigenValues);
 	cvReleaseMat(&pTransMat);
 }
+
+//////////////////////////////////////////////////////////////////////////////////////
 
 int CFeatureExtraction::GetGaborResponse(IplImage *pGrayImg, IplImage *pResImg, double orientation, int scale)
 {
@@ -191,10 +197,13 @@ end
 
 // Anyone care to translate this monster to our 24 filters?
 
+//////////////////////////////////////////////////////////////////////////////////////
 // Save results (one matrix per response)
 // Save to bitmaps
-int CFeatureExtraction::GetGaborResponse()
+int CFeatureExtraction::GetGaborResponse(CvMat * pGaborMat)
 {
+	float* pMat;
+	
 	// Convert our image to grayscale (Gabor doesn't care about colors! I hope?)	
 	IplImage *pGrayImg = cvCreateImage(cvSize(m_pSrcImg->width,m_pSrcImg->height), IPL_DEPTH_8U, 1);
 	cvCvtColor(m_pSrcImg,pGrayImg,CV_BGR2GRAY);
@@ -202,10 +211,12 @@ int CFeatureExtraction::GetGaborResponse()
 	// The output image
 	IplImage *reimg = cvCreateImage(cvSize(pGrayImg->width,pGrayImg->height), IPL_DEPTH_8U, 1);
 
+	pMat = (float *) pGaborMat->data.fl;
+
 	char title[255];
 	char filename[255];
 	for (double orientation=0;orientation<PI;orientation+=PI/6)
-		for (int scale=1;scale<=4;scale++)
+		for (int scale=-4;scale<=2;scale+=2)
 		{
 			sprintf(title, "Gabor Response: Orientation=%f, Scale=%d\n", orientation*180/PI, scale);
 			// TEST: Apply gabor with orientation PI/4, scale 3
@@ -213,20 +224,27 @@ int CFeatureExtraction::GetGaborResponse()
 			
 			// This being a test and all, display the image
 			//displayImage(title, reimg);
-			
-			sprintf(filename, "output/gabor%f-%d.bmp", orientation*180/PI, scale);
+
+			//save the filter response in the gabor matrix
+			memcpy(pMat, (float*)reimg->imageData, reimg->imageSize);
+			//update the slot for the next response vector
+			pMat += reimg->imageSize;
+
+			sprintf(filename, "gabor%f-%d.bmp", orientation*180/PI, scale);
 
 			printf("Saving gabor to: %s\n", filename);
 			if (!cvSaveImage(filename,reimg)) 
 				printf("Could not save: %s\n",filename);			
 		}
-	
+
 	// Release
 	cvReleaseImage(&reimg);
 	cvReleaseImage(&pGrayImg);
 	
 	return 0;
 }
+
+//////////////////////////////////////////////////////////////////////////////////////
 
 // TODO: Would fail if m_nChannels != 3
 // RGB to LAB
@@ -293,7 +311,7 @@ int CFeatureExtraction::GetColorPCA(CvMat * pColorChannels[])
 	char * tempData = pImg->imageData;
 	for (int i=0;i<m_nChannels;i++)
 	{
-		sprintf(filename, "output/chan%d.bmp", i+1);
+		sprintf(filename, "chan%d.bmp", i+1);
 		pImg->imageData = (char *) pColorChannels[i]->data.ptr;
 		
 		// TODO: Remove this, only a test
@@ -315,12 +333,118 @@ int CFeatureExtraction::GetColorPCA(CvMat * pColorChannels[])
 	return 0;	
 }
 
-CFeatureExtraction::CFeatureExtraction(char * file)
+//////////////////////////////////////////////////////////////////////////////////////
+
+bool CFeatureExtraction::GetTextureChannels(CvMat * pTextureChannels[])
 {
-	m_pFile = file;
+	int i;
+	float* pMat;
 	
+	
+	// Calc the full histogram vectors
+	CvMat * pHistMat = cvCreateMat( m_nWidth*m_nHeight, 30 , CV_32F );
+	CalcHistogram(m_pSrcImg, pHistMat);
+
+	CvMat * pGaborMat = cvCreateMat (m_nWidth * m_nHeight, 24, CV_32F);
+	GetGaborResponse(pGaborMat);
+
+	CvMat * pTextureMat = cvCreateMat( m_nWidth*m_nHeight, 54 , CV_32F );
+
+	pMat = (float *) pTextureMat->data.fl;
+	memcpy(pMat, (float*)pHistMat->data.fl, pHistMat->height * pHistMat->width);
+	pMat += (pHistMat->height * pHistMat->width);
+	memcpy(pMat, (float*)pGaborMat->data.fl, pGaborMat->height * pGaborMat->width);
+
+
+
+	// Create our result matrices
+	CvMat* avg = cvCreateMat( 1, 54, CV_32F );
+	CvMat* eigenVectors = cvCreateMat( 54, 54, CV_32F );
+	CvMat* eigenValues = cvCreateMat( 54, 1, CV_32F );	
+	
+	// Actual PCA calculation
+	cvCalcPCA(pTextureMat, avg, eigenValues, eigenVectors, CV_PCA_DATA_AS_ROW ); 
+
+	// Useful debugging
+	printf("Mean Vector: %f,%f,%f\n", cvmGet(avg, 0,0), cvmGet(avg, 0,1), cvmGet(avg, 0,2));
+	printf("Eigen Values: %f,%f,%f\n", cvmGet(eigenValues, 0,0), cvmGet(eigenValues, 1,0), cvmGet(eigenValues, 2,0));
+	printf("Eigen Vector 1: %f, %f, %f\n", cvmGet(eigenVectors, 0,0), cvmGet(eigenVectors, 0,1), cvmGet(eigenVectors, 0,2));
+	printf("Eigen Vector 2: %f, %f, %f\n", cvmGet(eigenVectors, 1,0), cvmGet(eigenVectors, 1,1), cvmGet(eigenVectors, 1,2));
+	printf("Eigen Vector 3: %f, %f, %f\n", cvmGet(eigenVectors, 2,0), cvmGet(eigenVectors, 2,1), cvmGet(eigenVectors, 2,2));
+	
+	// Transform to the new basis
+	CvMat * pTransMat = cvCreateMat( m_nWidth*m_nHeight, 54 , CV_32F );
+
+	// Transpose or not to transpose?
+	// I assume eigenVectors contains one eigen vector per row, not column	
+	CvMat* pm = cvCreateMat( 54, 54, CV_32F );
+	cvTranspose(eigenVectors, pm);
+	
+	cvMatMul(pTextureMat, pm, pTransMat);
+	cvReleaseMat(&pm); 
+
+	// TODO: Normalize each channel by itself?		
+	// Normalize the matrix (0..255)
+	cvNormalize(pTransMat, pTransMat, 0, 255, CV_MINMAX);
+	
+	// Store each of the 3 p-channels in a matrix
+	float val;
+	for (int k=0;k<m_nChannels;k++)
+	{
+		for (int i=0;i<m_nHeight;i++)
+		{
+			for (int j=0;j<m_nWidth;j++)
+			{
+					val = pTransMat->data.fl[i*m_nWidth*3 + j*m_nChannels + k];
+					pTextureChannels[k]->data.ptr[i*m_nWidth+j] = (unsigned char) val;
+			}
+		}
+		// Is this ok?
+		cvNormalize(pTextureChannels[k],pTextureChannels[k], 0, 255, CV_MINMAX);
+	}
+
+	
+	// Save each channel to a bitmap, just for fun.
+	char filename[255];
+	IplImage * pImg = cvCreateImage(cvSize(m_nWidth,m_nHeight),IPL_DEPTH_8U,1);
+	char * tempData = pImg->imageData;
+	for (i = 0;i<m_nChannels;i++)
+	{
+		sprintf(filename, "chan%d.bmp", i+1);
+		pImg->imageData = (char *) pTextureChannels[i]->data.ptr;
+		
+		// TODO: Remove this, only a test
+		displayImage(filename, pImg);
+		
+		printf("Saving pchannel %d to: %s\n",i+1, filename);
+		if (!cvSaveImage(filename,pImg)) 
+			printf("Could not save: %s\n",filename);
+	}
+	pImg->imageData = tempData;
+	cvReleaseImage(&pImg);
+	
+	// Useful releasing
+	cvReleaseMat(&pHistMat);
+	cvReleaseMat(&pGaborMat);
+	cvReleaseMat(&pTextureMat);
+	cvReleaseMat(&avg);
+	cvReleaseMat(&eigenVectors);
+	cvReleaseMat(&eigenValues);
+	cvReleaseMat(&pTransMat);
+
+	return true;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+
+CFeatureExtraction::CFeatureExtraction(char * file)
+{	
 	// Load the input image
 	m_pSrcImg = cvLoadImage(file,1);
+	if (m_pSrcImg == NULL)
+		return;
+
+	m_pFile = file;
 	
 	// Extract parameters
 	m_nChannels = m_pSrcImg->nChannels;
@@ -332,27 +456,41 @@ CFeatureExtraction::CFeatureExtraction(char * file)
 	cvConvertScale(m_pSrcImg,m_pSrcImgFloat,1.0,0);
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
+
 int CFeatureExtraction::Run()
 {
-	CvMat * pColorChannels[3];
-	for (int i=0;i<3;i++)
+	int i;
+
+/*	CvMat * pColorChannels[3];
+	for (i=0;i<3;i++)
 		pColorChannels[i] = cvCreateMat( m_nWidth , m_nHeight , CV_8U );
 		
 	GetColorPCA(pColorChannels);
+*/
+	CvMat * pTextureChannels[3];
+	for (i = 0; i < 3; i++)
+		pTextureChannels[i] = cvCreateMat(m_nWidth, m_nHeight, CV_8U);
 
-	GetGaborResponse();
+	GetTextureChannels(pTextureChannels);
+
+/*	GetGaborResponse();
 
 	CvMat * pHistVectors[3];
-	for (int i=0;i<3;i++)
+	for (i=0;i<3;i++)
 		pHistVectors[i] = cvCreateMat( m_nWidth , m_nHeight , CV_8U );
 
 	GetHistogram(pHistVectors);
-
-	for (int i=0;i<3;i++)
-		cvReleaseMat(&pColorChannels[i]);
-	for (int i=0;i<3;i++)
+*/
+/*	for (i=0;i<3;i++)
+		cvReleaseMat(&pColorChannels[i]);*/
+	for (i=0;i<3;i++)
+		cvReleaseMat(&pTextureChannels[i]);
+/*	for (i=0;i<3;i++)
 		cvReleaseMat(&pHistVectors[i]);
-
+*/
 	
 	return 0;
 }
+
+//////////////////////////////////////////////////////////////////////////////////////

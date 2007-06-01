@@ -15,12 +15,14 @@ class CFeatureExtraction
 		
 	private:
 		int GetColorPCA(CvMat * pColorChannels[]);
-		int GetGaborResponse();
+		int GetGaborResponse(CvMat * pGaborMat);
 		int GetGaborResponse(IplImage *pGrayImg, IplImage *pResImg, double orientation, int scale);
 		void GetHistogram(CvMat * pHistVectors[]);
 		void CalcHistogram(IplImage * pImg, CvMat * pHistogram);
 		
-	private:
+		bool	GetTextureChannels(CvMat * pTextureChannels[]);
+
+	protected:
 		
 		IplImage * 	m_pSrcImg;
 		IplImage * 	m_pSrcImgFloat;
