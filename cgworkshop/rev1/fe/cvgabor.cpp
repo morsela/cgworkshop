@@ -193,6 +193,7 @@ Returns:
 
 Return the width of mask (should be NxN) by the value of Sigma and iNu.
  */
+
 long CvGabor::mask_width()
 {
 
@@ -204,7 +205,7 @@ long CvGabor::mask_width()
     else {
        //determine the width of Mask
       float dModSigma = Sigma/K;
-      float dWidth = round(dModSigma*6 + 1);
+      float dWidth = floor(dModSigma*6 + 1);
       //test whether dWidth is an odd.
       if (fmod(dWidth, 2.0)==0.0) dWidth++;
       lWidth = (long)dWidth;
@@ -284,7 +285,7 @@ Return an Image (gandalf image class) with a specific Type   "REAL"	"IMAG" "MAG"
  */
 IplImage* CvGabor::get_image(int Type)
 {
-
+	int i, j;
     if(IsKernelCreate() == FALSE)
     { 
       perror("Error: the Gabor kernel has not been created in get_image()!\n");
@@ -313,9 +314,9 @@ IplImage* CvGabor::get_image(int Type)
 
            cvCopy( (CvMat*)Real, (CvMat*)kernel, NULL );
             //pImage = cvGetImage( (CvMat*)kernel, pImageGL );
-           for (int i = 0; i < kernel->rows; i++)
+           for (i = 0; i < kernel->rows; i++)
     	   {
-              for (int j = 0; j < kernel->cols; j++)
+              for (j = 0; j < kernel->cols; j++)
               {
                    ve = cvGetReal2D((CvMat*)kernel, i, j);
                    cvSetReal2D( (IplImage*)pImage, j, i, ve );
@@ -325,9 +326,9 @@ IplImage* CvGabor::get_image(int Type)
         case 2:  //Imag
            cvCopy( (CvMat*)Imag, (CvMat*)kernel, NULL );
            //pImage = cvGetImage( (CvMat*)kernel, pImageGL );
-           for (int i = 0; i < kernel->rows; i++)
+           for (i = 0; i < kernel->rows; i++)
     	   {
-              for (int j = 0; j < kernel->cols; j++)
+              for (j = 0; j < kernel->cols; j++)
               {
                    ve = cvGetReal2D((CvMat*)kernel, i, j);
                    cvSetReal2D( (IplImage*)pImage, j, i, ve );
@@ -564,12 +565,13 @@ void CvGabor::show(int Type)
  */
 void CvGabor::conv_img(IplImage *src, IplImage *dst, int Type)
 {
+	int i,j;
     double ve, re,im;
 
     CvMat *mat = cvCreateMat(src->width, src->height, CV_32FC1);
-    for (int i = 0; i < src->width; i++)
+    for (i = 0; i < src->width; i++)
     {
-       for (int j = 0; j < src->height; j++)
+       for (j = 0; j < src->height; j++)
        {
               ve = cvGetReal2D((IplImage*)src, j, i);
               cvSetReal2D( (CvMat*)mat, i, j, ve );
@@ -599,9 +601,9 @@ void CvGabor::conv_img(IplImage *src, IplImage *dst, int Type)
         cvCopy( (CvMat*)Imag, (CvMat*)kernel, NULL );
         cvFilter2D( (CvMat*)mat, (CvMat*)imat, (CvMat*)kernel, cvPoint( (Width-1)/2, (Width-1)/2));
         /* Magnitude response is the square root of the sum of the square of real response and imaginary response */
-        for (int i = 0; i < mat->rows; i++)
+        for (i = 0; i < mat->rows; i++)
         {
-           for (int j = 0; j < mat->cols; j++)
+           for (j = 0; j < mat->cols; j++)
            {
                re = cvGetReal2D((CvMat*)rmat, i, j);
                im = cvGetReal2D((CvMat*)imat, i, j);
