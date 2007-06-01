@@ -350,10 +350,12 @@ bool CFeatureExtraction::GetTextureChannels(CvMat * pTextureChannels[])
 	// Calc the full histogram vectors
 	CvMat * pHistMat = cvCreateMat( m_nWidth*m_nHeight, histSize , CV_32F );
 	CalcHistogram(m_pSrcImg, pHistMat);
+	// Do we need to normalize?
 	cvNormalize(pHistMat, pHistMat, 0, 255, CV_MINMAX);
 
 	CvMat * pGaborMat = cvCreateMat (m_nWidth * m_nHeight, gaborSize, CV_32F);
 	GetGaborResponse(pGaborMat);
+	// Do we need to normalize?
 	cvNormalize(pGaborMat, pGaborMat, 0, 255, CV_MINMAX);
 
 	CvMat * pTextureMat = cvCreateMat( m_nWidth*m_nHeight, vectorSize , CV_32F );
@@ -362,17 +364,21 @@ bool CFeatureExtraction::GetTextureChannels(CvMat * pTextureChannels[])
 	float * pMatData = (float *) pTextureMat->data.fl;
 	float * pHistData = (float *)  pHistMat->data.fl;
 	float * pGaborData = (float *)  pGaborMat->data.fl;
+	
+	int gaborStep = pGaborMat->step;
+	int histStep = pHistMat->step;
+	
 	for (i=0;i<m_nWidth * m_nHeight;i++)
 	{
-		memcpy(pMatData, pHistMat, histSize);
+		memcpy(pMatData, pHistData, histStep);
 		pMatData+=histSize;
 		pHistData+=histSize;
 		
-		memcpy(pMatData, pGaborData, gaborSize);
+		memcpy(pMatData, pGaborData, gaborStep);
 		pMatData+=gaborSize;
 		pGaborData+=gaborSize;
 	}
-
+	
 	// Create our result matrices
 	CvMat* avg = cvCreateMat( 1, vectorSize, CV_32F );
 	CvMat* eigenVectors = cvCreateMat( vectorSize, vectorSize, CV_32F );
