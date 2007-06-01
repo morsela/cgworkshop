@@ -210,7 +210,7 @@ int CFeatureExtraction::GetGaborResponse(CvMat * pGaborMat)
 
 	// The output image
 	IplImage *reimg = cvCreateImage(cvSize(pGrayImg->width,pGrayImg->height), IPL_DEPTH_8U, 1);
-
+	IplImage *reimg32 = cvCreateImage(cvSize(pGrayImg->width,pGrayImg->height), IPL_DEPTH_32F, 1);
 	pMat = (float *) pGaborMat->data.fl;
 
 	char title[255];
@@ -218,23 +218,26 @@ int CFeatureExtraction::GetGaborResponse(CvMat * pGaborMat)
 	for (double orientation=0;orientation<PI;orientation+=PI/6)
 		for (int scale=-4;scale<=2;scale+=2)
 		{
-			sprintf(title, "Gabor Response: Orientation=%f, Scale=%d\n", orientation*180/PI, scale);
+			//sprintf(title, "Gabor Response: Orientation=%f, Scale=%d\n", orientation*180/PI, scale);
 			// TEST: Apply gabor with orientation PI/4, scale 3
 			GetGaborResponse(pGrayImg, reimg, orientation, scale  );
 			
 			// This being a test and all, display the image
-			//displayImage(title, reimg);
+			// displayImage(title, reimg);
+
+			cvConvertScale(reimg,reimg32,1.0,0);
 
 			//save the filter response in the gabor matrix
-			memcpy(pMat, (float*)reimg->imageData, reimg->imageSize);
+			memcpy(pMat, (float*)reimg32->imageData, reimg32->width*reimg32->height);
 			//update the slot for the next response vector
-			pMat += reimg->imageSize;
-
+			pMat += reimg32->width*reimg32->height;
+/*
 			sprintf(filename, "gabor%f-%d.bmp", orientation*180/PI, scale);
 
 			printf("Saving gabor to: %s\n", filename);
 			if (!cvSaveImage(filename,reimg)) 
 				printf("Could not save: %s\n",filename);			
+				*/
 		}
 
 	// Release
@@ -339,14 +342,16 @@ bool CFeatureExtraction::GetTextureChannels(CvMat * pTextureChannels[])
 {
 	int i;
 	float* pMat;
-	
+	int vectorSize = 54;
 	
 	// Calc the full histogram vectors
 	CvMat * pHistMat = cvCreateMat( m_nWidth*m_nHeight, 30 , CV_32F );
 	CalcHistogram(m_pSrcImg, pHistMat);
+	cvNormalize(pHistMat, pHistMat, 0, 255, CV_MINMAX);
 
 	CvMat * pGaborMat = cvCreateMat (m_nWidth * m_nHeight, 24, CV_32F);
 	GetGaborResponse(pGaborMat);
+	cvNormalize(pGaborMat, pGaborMat, 0, 255, CV_MINMAX);
 
 	CvMat * pTextureMat = cvCreateMat( m_nWidth*m_nHeight, 54 , CV_32F );
 
@@ -358,9 +363,9 @@ bool CFeatureExtraction::GetTextureChannels(CvMat * pTextureChannels[])
 
 
 	// Create our result matrices
-	CvMat* avg = cvCreateMat( 1, 54, CV_32F );
-	CvMat* eigenVectors = cvCreateMat( 54, 54, CV_32F );
-	CvMat* eigenValues = cvCreateMat( 54, 1, CV_32F );	
+	CvMat* avg = cvCreateMat( 1, vectorSize, CV_32F );
+	CvMat* eigenVectors = cvCreateMat( vectorSize, vectorSize, CV_32F );
+	CvMat* eigenValues = cvCreateMat( vectorSize, 1, CV_32F );	
 	
 	// Actual PCA calculation
 	cvCalcPCA(pTextureMat, avg, eigenValues, eigenVectors, CV_PCA_DATA_AS_ROW ); 
@@ -373,11 +378,11 @@ bool CFeatureExtraction::GetTextureChannels(CvMat * pTextureChannels[])
 	printf("Eigen Vector 3: %f, %f, %f\n", cvmGet(eigenVectors, 2,0), cvmGet(eigenVectors, 2,1), cvmGet(eigenVectors, 2,2));
 	
 	// Transform to the new basis
-	CvMat * pTransMat = cvCreateMat( m_nWidth*m_nHeight, 54 , CV_32F );
+	CvMat * pTransMat = cvCreateMat( m_nWidth*m_nHeight, vectorSize , CV_32F );
 
 	// Transpose or not to transpose?
 	// I assume eigenVectors contains one eigen vector per row, not column	
-	CvMat* pm = cvCreateMat( 54, 54, CV_32F );
+	CvMat* pm = cvCreateMat( vectorSize, vectorSize, CV_32F );
 	cvTranspose(eigenVectors, pm);
 	
 	cvMatMul(pTextureMat, pm, pTransMat);
@@ -395,8 +400,8 @@ bool CFeatureExtraction::GetTextureChannels(CvMat * pTextureChannels[])
 		{
 			for (int j=0;j<m_nWidth;j++)
 			{
-					val = pTransMat->data.fl[i*m_nWidth*3 + j*m_nChannels + k];
-					pTextureChannels[k]->data.ptr[i*m_nWidth+j] = (unsigned char) val;
+				val = pTransMat->data.fl[(i*m_nWidth+j)*vectorSize + k];
+				pTextureChannels[k]->data.ptr[i*m_nWidth+j] = (unsigned char) val;
 			}
 		}
 		// Is this ok?
