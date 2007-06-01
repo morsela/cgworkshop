@@ -205,31 +205,36 @@ int CFeatureExtraction::GetGaborResponse(CvMat * pGaborMat)
 	char title[255];
 	char filename[255];
 	
-	pMatPos = (float *) pGaborMat->data.fl;
-
+	int idx = 0;
+		
 	// Convert our image to grayscale (Gabor doesn't care about colors! I hope?)	
 	IplImage *pGrayImg = cvCreateImage(cvSize(m_pSrcImg->width,m_pSrcImg->height), IPL_DEPTH_8U, 1);
 	cvCvtColor(m_pSrcImg,pGrayImg,CV_BGR2GRAY);
 
 	// The output image
-	IplImage *reimg		= cvCreateImage(cvSize(pGrayImg->width,pGrayImg->height), IPL_DEPTH_8U, 1);
-	IplImage *reimg32	= cvCreateImage(cvSize(pGrayImg->width,pGrayImg->height), IPL_DEPTH_32F, 1);
+	IplImage *reimg = cvCreateImage(cvSize(pGrayImg->width,pGrayImg->height), IPL_DEPTH_8U, 1);
 
 	for (double orientation = 0; orientation < PI; orientation += PI/6)	
 		for (int scale=-4;scale<=2;scale+=2)
 		{
+			
 			//sprintf(title, "Gabor Response: Orientation=%f, Scale=%d\n", orientation*180/PI, scale);
 			GetGaborResponse(pGrayImg, reimg, orientation, scale);
 			
 			// This being a test and all, display the image
 			// displayImage(title, reimg);
-
-			cvConvertScale(reimg,reimg32,1.0,0);
-
-			//save the filter response in the gabor matrix
-			memcpy(pMatPos, (float*)reimg32->imageData, reimg32->width*reimg32->height);
-			//update the slot for the next response vector
-			pMatPos += reimg32->width*reimg32->height;
+			
+			// Concat the new vector to the result matrix
+			int i;
+			pMatPos = (float *) pGaborMat->data.fl;
+			char * pResData = (char *) reimg->imageData;
+			for (i=0;i<reimg->width*reimg->height;i++)
+			{
+				pMatPos[idx] = (float) pResData[0];
+				pMatPos += 24;
+				pResData++;
+							
+			}
 /*
 			sprintf(filename, "gabor%f-%d.bmp", orientation*180/PI, scale);
 
@@ -237,11 +242,11 @@ int CFeatureExtraction::GetGaborResponse(CvMat * pGaborMat)
 			if (!cvSaveImage(filename,reimg)) 
 				printf("Could not save: %s\n",filename);			
 				*/
+			idx++;
 		}
 
-	// Release Images
+	// Release
 	cvReleaseImage(&reimg);
-	cvReleaseImage(&reimg32);
 	cvReleaseImage(&pGrayImg);
 	
 	return 0;
@@ -370,13 +375,14 @@ bool CFeatureExtraction::GetTextureChannels(CvMat * pTextureChannels[])
 	
 	for (i=0;i<m_nWidth * m_nHeight;i++)
 	{
-		memcpy(pMatData, pHistData, histStep);
-		pMatData+=histSize;
-		pHistData+=histSize;
 		
 		memcpy(pMatData, pGaborData, gaborStep);
 		pMatData+=gaborSize;
-		pGaborData+=gaborSize;
+		pGaborData+=gaborSize;		
+		
+		memcpy(pMatData, pHistData, histStep);
+		pMatData+=histSize;
+		pHistData+=histSize;
 	}
 	
 	// Create our result matrices
