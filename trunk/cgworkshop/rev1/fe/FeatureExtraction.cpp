@@ -198,29 +198,28 @@ end
 // Anyone care to translate this monster to our 24 filters?
 
 //////////////////////////////////////////////////////////////////////////////////////
-// Save results (one matrix per response)
-// Save to bitmaps
+
 int CFeatureExtraction::GetGaborResponse(CvMat * pGaborMat)
 {
-	float* pMat;
+	float* pMatPos;
+	char title[255];
+	char filename[255];
 	
+	pMatPos = (float *) pGaborMat->data.fl;
+
 	// Convert our image to grayscale (Gabor doesn't care about colors! I hope?)	
 	IplImage *pGrayImg = cvCreateImage(cvSize(m_pSrcImg->width,m_pSrcImg->height), IPL_DEPTH_8U, 1);
 	cvCvtColor(m_pSrcImg,pGrayImg,CV_BGR2GRAY);
 
 	// The output image
-	IplImage *reimg = cvCreateImage(cvSize(pGrayImg->width,pGrayImg->height), IPL_DEPTH_8U, 1);
-	IplImage *reimg32 = cvCreateImage(cvSize(pGrayImg->width,pGrayImg->height), IPL_DEPTH_32F, 1);
-	pMat = (float *) pGaborMat->data.fl;
+	IplImage *reimg		= cvCreateImage(cvSize(pGrayImg->width,pGrayImg->height), IPL_DEPTH_8U, 1);
+	IplImage *reimg32	= cvCreateImage(cvSize(pGrayImg->width,pGrayImg->height), IPL_DEPTH_32F, 1);
 
-	char title[255];
-	char filename[255];
-	for (double orientation=0;orientation<PI;orientation+=PI/6)
+	for (double orientation = 0; orientation < PI; orientation += PI/6)	
 		for (int scale=-4;scale<=2;scale+=2)
 		{
 			//sprintf(title, "Gabor Response: Orientation=%f, Scale=%d\n", orientation*180/PI, scale);
-			// TEST: Apply gabor with orientation PI/4, scale 3
-			GetGaborResponse(pGrayImg, reimg, orientation, scale  );
+			GetGaborResponse(pGrayImg, reimg, orientation, scale);
 			
 			// This being a test and all, display the image
 			// displayImage(title, reimg);
@@ -228,9 +227,9 @@ int CFeatureExtraction::GetGaborResponse(CvMat * pGaborMat)
 			cvConvertScale(reimg,reimg32,1.0,0);
 
 			//save the filter response in the gabor matrix
-			memcpy(pMat, (float*)reimg32->imageData, reimg32->width*reimg32->height);
+			memcpy(pMatPos, (float*)reimg32->imageData, reimg32->width*reimg32->height);
 			//update the slot for the next response vector
-			pMat += reimg32->width*reimg32->height;
+			pMatPos += reimg32->width*reimg32->height;
 /*
 			sprintf(filename, "gabor%f-%d.bmp", orientation*180/PI, scale);
 
@@ -240,8 +239,9 @@ int CFeatureExtraction::GetGaborResponse(CvMat * pGaborMat)
 				*/
 		}
 
-	// Release
+	// Release Images
 	cvReleaseImage(&reimg);
+	cvReleaseImage(&reimg32);
 	cvReleaseImage(&pGrayImg);
 	
 	return 0;
