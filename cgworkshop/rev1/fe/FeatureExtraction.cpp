@@ -438,13 +438,13 @@ bool CFeatureExtraction::GetTextureChannels(CvMat * pTextureChannels[])
 	char * tempData = pImg->imageData;
 	for (i = 0;i<m_nChannels;i++)
 	{
-		sprintf(filename, "chan%d.bmp", i+1);
+		sprintf(filename, "chan%d.bmp", i+4);
 		pImg->imageData = (char *) pTextureChannels[i]->data.ptr;
 		
 		// TODO: Remove this, only a test
 		displayImage(filename, pImg);
 		
-		printf("Saving pchannel %d to: %s\n",i+1, filename);
+		printf("Saving pchannel %d to: %s\n",i+4, filename);
 		if (!cvSaveImage(filename,pImg)) 
 			printf("Could not save: %s\n",filename);
 	}
@@ -490,12 +490,12 @@ int CFeatureExtraction::Run()
 {
 	int i;
 
-/*	CvMat * pColorChannels[3];
+	CvMat * pColorChannels[3];
 	for (i=0;i<3;i++)
 		pColorChannels[i] = cvCreateMat( m_nWidth , m_nHeight , CV_8U );
 		
 	GetColorPCA(pColorChannels);
-*/
+
 	CvMat * pTextureChannels[3];
 	for (i = 0; i < 3; i++)
 		pTextureChannels[i] = cvCreateMat(m_nWidth, m_nHeight, CV_8U);
@@ -510,8 +510,8 @@ int CFeatureExtraction::Run()
 
 	GetHistogram(pHistVectors);
 */
-/*	for (i=0;i<3;i++)
-		cvReleaseMat(&pColorChannels[i]);*/
+	for (i=0;i<3;i++)
+		cvReleaseMat(&pColorChannels[i]);
 	for (i=0;i<3;i++)
 		cvReleaseMat(&pTextureChannels[i]);
 /*	for (i=0;i<3;i++)
