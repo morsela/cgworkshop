@@ -342,25 +342,36 @@ bool CFeatureExtraction::GetTextureChannels(CvMat * pTextureChannels[])
 {
 	int i;
 	float* pMat;
-	int vectorSize = 54;
+
+	int gaborSize = 24;
+	int histSize = 30;
+	int vectorSize = gaborSize+histSize;
 	
 	// Calc the full histogram vectors
-	CvMat * pHistMat = cvCreateMat( m_nWidth*m_nHeight, 30 , CV_32F );
+	CvMat * pHistMat = cvCreateMat( m_nWidth*m_nHeight, histSize , CV_32F );
 	CalcHistogram(m_pSrcImg, pHistMat);
 	cvNormalize(pHistMat, pHistMat, 0, 255, CV_MINMAX);
 
-	CvMat * pGaborMat = cvCreateMat (m_nWidth * m_nHeight, 24, CV_32F);
+	CvMat * pGaborMat = cvCreateMat (m_nWidth * m_nHeight, gaborSize, CV_32F);
 	GetGaborResponse(pGaborMat);
 	cvNormalize(pGaborMat, pGaborMat, 0, 255, CV_MINMAX);
 
-	CvMat * pTextureMat = cvCreateMat( m_nWidth*m_nHeight, 54 , CV_32F );
+	CvMat * pTextureMat = cvCreateMat( m_nWidth*m_nHeight, vectorSize , CV_32F );
 
-	pMat = (float *) pTextureMat->data.fl;
-	memcpy(pMat, (float*)pHistMat->data.fl, pHistMat->height * pHistMat->width);
-	pMat += (pHistMat->height * pHistMat->width);
-	memcpy(pMat, (float*)pGaborMat->data.fl, pGaborMat->height * pGaborMat->width);
-
-
+	// Go over row by row, concat the gabor and histogram matrices
+	float * pMatData = (float *) pTextureMat->data.fl;
+	float * pHistData = (float *)  pHistMat->data.fl;
+	float * pGaborData = (float *)  pGaborMat->data.fl;
+	for (i=0;i<m_nWidth * m_nHeight;i++)
+	{
+		memcpy(pMatData, pHistMat, histSize);
+		pMatData+=histSize;
+		pHistData+=histSize;
+		
+		memcpy(pMatData, pGaborData, gaborSize);
+		pMatData+=gaborSize;
+		pGaborData+=gaborSize;
+	}
 
 	// Create our result matrices
 	CvMat* avg = cvCreateMat( 1, vectorSize, CV_32F );
