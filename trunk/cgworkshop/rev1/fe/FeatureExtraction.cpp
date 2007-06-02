@@ -228,7 +228,7 @@ int CFeatureExtraction::GetGaborResponse(CvMat * pGaborMat)
 	{
     	double bw = (2 * freq) / 3;
     	double sx = round2(0.5 / PI / pow(bw,2));
-    	double sy = round2(0.5 * log(2) / pow(PI,2) / pow(freq,2) / (pow(tan(ori_space / 2),2)));	
+    	double sy = round2(0.5 * log(2.0) / pow(PI,2.0) / pow(freq,2.0) / (pow(tan(ori_space / 2),2.0)));	
     		
 		for (j=0;j<ori_count;j++)
 		{	
@@ -378,7 +378,7 @@ bool CFeatureExtraction::GetTextureChannels(CvMat * pTextureChannels[])
 	CvMat * pGaborMat = cvCreateMat (m_nWidth * m_nHeight, gaborSize, CV_32F);
 	GetGaborResponse(pGaborMat);
 	// Do we need to normalize?
-	cvNormalize(pGaborMat, pGaborMat, 0, 255, CV_MINMAX);
+	//cvNormalize(pGaborMat, pGaborMat, 0, 255, CV_MINMAX);
 
 	CvMat * pTextureMat = cvCreateMat( m_nWidth*m_nHeight, vectorSize , CV_32F );
 
