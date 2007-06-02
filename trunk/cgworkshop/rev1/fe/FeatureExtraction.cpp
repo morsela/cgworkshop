@@ -148,13 +148,13 @@ int CFeatureExtraction::GetGaborResponse(IplImage *pGrayImg, IplImage *pResImg, 
 	// TODO: Sigma? F? What?
 	double Sigma = 2*PI;
 	double F = sqrt(2.0);
-		
+		/*
 	CvGabor *pGabor = new CvGabor;
 	pGabor->Init(orientation, scale, Sigma, F);
 	
 	// Convolution
 	pGabor->conv_img(pGrayImg, pResImg, CV_GABOR_MAG);
-	
+	*/
 	return 0;
 }
 
@@ -489,6 +489,11 @@ CFeatureExtraction::CFeatureExtraction(char * file)
 int CFeatureExtraction::Run()
 {
 	int i;
+	
+	
+	CvGabor * pGabor = new CvGabor(0, 0.05, 143, 196);
+	
+	return 0;
 
 	CvMat * pColorChannels[3];
 	for (i=0;i<3;i++)

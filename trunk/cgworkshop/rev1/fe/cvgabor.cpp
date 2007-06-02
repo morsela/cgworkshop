@@ -19,10 +19,12 @@
  ***************************************************************************/
 #include "cvgabor.h"
 
-CvGabor::CvGabor()
-{
-}
-
+// TODO:
+// Killing most things here
+// Implementing Lior's matlab code
+// Only functions that should change are init, mask_width, creat_kernel
+// init and mask_width are done
+// change all the function, parameters names to something normal
 
 CvGabor::~CvGabor()
 {
@@ -30,140 +32,13 @@ cvReleaseMat( &Real );
 cvReleaseMat( &Imag );
 }
 
-
-/*!
-    \fn CvGabor::CvGabor(int iMu, int iNu)
-Construct a gabor
-
-Parameters:
-    	iMu		The orientation iMu*PI/8,
-    	iNu 		The scale,
-
-Returns:
-	None,
-
-Create a gabor with a orientation iMu*PI/8, and with a scale iNu. The sigma (Sigma) and the spatial frequence (F) are set to 2*PI and sqrt(2) defaultly. It calls Init() to generate parameters and kernels.
- */
- CvGabor::CvGabor(int iMu, int iNu)
+ CvGabor::CvGabor(float orientation, float freq, float sx, float sy)
 {
-    //Initilise the parameters 
-    
-    Sigma = 2*PI;
-    F = sqrt(2.0);
-    Init(iMu, iNu, Sigma, F);
+
+    Init(orientation, freq, sx, sy);
     
 }
-
-/*!
-    \fn CvGabor::CvGabor(int iMu, int iNu, double dSigma)
-Construct a gabor
-
-Parameters:
-    	iMu		The orientation iMu*PI/8,
-    	iNu 		The scale,
-	dSigma 		The sigma value of Gabor,
-
-Returns:
-	None
-
-Create a gabor with a orientation iMu*PI/8, a scale iNu, and a sigma value dSigma. The spatial frequence (F) is set to sqrt(2) defaultly. It calls Init() to generate parameters and kernels.
- */
-CvGabor::CvGabor(int iMu, int iNu, float dSigma)
-{ 
-    F = sqrt(2.0);
-    Init(iMu, iNu, dSigma, F);
-}
-
-
-/*!
-    \fn CvGabor::CvGabor(int iMu, int iNu, double dSigma, double dF)
-Construct a gabor
-
-Parameters:
-    	iMu		The orientation iMu*PI/8
-    	iNu 		The scale
-	dSigma 		The sigma value of Gabor
-	dF		The spatial frequency 
-
-Returns:
-	None
-
-Create a gabor with a orientation iMu*PI/8, a scale iNu, a sigma value dSigma, and a spatial frequence dF. It calls Init() to generate parameters and kernels.
- */
- CvGabor::CvGabor(int iMu, int iNu, float dSigma, float dF)
-{
-
-    Init(iMu, iNu, dSigma, dF);
-    
-}
-
-
-/*!
-    \fn CvGabor::CvGabor(double dPhi, int iNu)
-Construct a gabor
-
-Parameters:
-    	dPhi		The orientation in arc
-    	iNu 		The scale
-
-Returns:
-	None
-
-Create a gabor with a orientation dPhi, and with a scale iNu. The sigma (Sigma) and the spatial frequence (F) are set to 2*PI and sqrt(2) defaultly. It calls Init() to generate parameters and kernels.
- */
- CvGabor::CvGabor(float dPhi, int iNu)
-{
-
-    Sigma = 2*PI;
-    F = sqrt(2.0);
-    Init(dPhi, iNu, Sigma, F);
-}
-
-
-/*!
-    \fn CvGabor::CvGabor(double dPhi, int iNu, double dSigma)
-Construct a gabor
-
-Parameters:
-    	dPhi		The orientation in arc
-    	iNu 		The scale
-	dSigma		The sigma value of Gabor
-
-Returns:
-	None
-    
-Create a gabor with a orientation dPhi, a scale iNu, and a sigma value dSigma. The spatial frequence (F) is set to sqrt(2) defaultly. It calls Init() to generate parameters and kernels.
- */
- CvGabor::CvGabor(float dPhi, int iNu, float dSigma)
-{
-
-    F = sqrt(2);
-    Init(dPhi, iNu, dSigma, F);
-}
-
-
-/*!
-    \fn CvGabor::CvGabor(double dPhi, int iNu, double dSigma, double dF)
-Construct a gabor
-
-Parameters:
-    	dPhi		The orientation in arc
-    	iNu 		The scale
-	dSigma 		The sigma value of Gabor
-	dF		The spatial frequency 
-
-Returns:
-	None
-
-Create a gabor with a orientation dPhi, a scale iNu, a sigma value dSigma, and a spatial frequence dF. It calls Init() to generate parameters and kernels.
- */
- CvGabor::CvGabor(float dPhi, int iNu, float dSigma, float dF)
-{
-
-   Init(dPhi, iNu, dSigma,dF);
-}
-
-/*!
+/*
     \fn CvGabor::IsInit()
 Determine the gabor is initilised or not
 
@@ -203,14 +78,75 @@ long CvGabor::mask_width()
        return 0;
     }
     else {
-       //determine the width of Mask
-      float dModSigma = Sigma/K;
-      float dWidth = floor(dModSigma*6 + 1);
-      //test whether dWidth is an odd.
-      if (fmod(dWidth, 2.0)==0.0) dWidth++;
-      lWidth = (long)dWidth;
+    	/* Ripped from Lior's matlab code:
+	   	 * 
 
-      return lWidth;
+		rotation_matrix = [cos(orientation), sin(orientation); - sin(orientation), cos(orientation)];
+		
+		unrotated_half_filter_size_x = ceil(filter_cutoff_in_stds * sqrt(sx));
+		unrotated_half_filter_size_y = ceil(filter_cutoff_in_stds * sqrt(sy));
+		
+		bounding_box = [unrotated_half_filter_size_x, unrotated_half_filter_size_y; - unrotated_half_filter_size_x, unrotated_half_filter_size_y; unrotated_half_filter_size_x, - unrotated_half_filter_size_y; - unrotated_half_filter_size_x, - unrotated_half_filter_size_y];
+		bounding_box = (rotation_matrix * bounding_box')';
+		half_filter_size_x = max(abs(bounding_box(:, 1)))
+		half_filter_size_y = max(abs(bounding_box(:, 2)))
+
+		* 
+`		*/
+		// rotation_matrix = [cos(orientation), sin(orientation); - sin(orientation), cos(orientation)];
+		CvMat* pRotationMat = cvCreateMat(2,2,CV_32F);
+		pRotationMat->data.fl[0] = cos(m_orientation);
+		pRotationMat->data.fl[1] = sin(m_orientation);
+		pRotationMat->data.fl[2] = -sin(m_orientation);
+		pRotationMat->data.fl[3] = cos(m_orientation);
+		
+		// unrotated_half_filter_size_x = ceil(filter_cutoff_in_stds * sqrt(sx));
+		float unrotatedHalfSizeX = ceil(m_cutOff * sqrt(m_sx));
+		// unrotated_half_filter_size_y = ceil(filter_cutoff_in_stds * sqrt(sy));
+		float unrotatedHalfSizeY = ceil(m_cutOff * sqrt(m_sy));
+		
+		// bounding_box = [unrotated_half_filter_size_x, unrotated_half_filter_size_y; - unrotated_half_filter_size_x, unrotated_half_filter_size_y; unrotated_half_filter_size_x, - unrotated_half_filter_size_y; - unrotated_half_filter_size_x, - unrotated_half_filter_size_y];
+		CvMat* pBoundingBox = cvCreateMat(4,2,CV_32F);
+		pBoundingBox->data.fl[0] = unrotatedHalfSizeX;
+		pBoundingBox->data.fl[1] = unrotatedHalfSizeY;
+		pBoundingBox->data.fl[2] = -unrotatedHalfSizeX;
+		pBoundingBox->data.fl[3] = unrotatedHalfSizeY;
+		pBoundingBox->data.fl[4] = unrotatedHalfSizeX;
+		pBoundingBox->data.fl[5] = -unrotatedHalfSizeY;
+		pBoundingBox->data.fl[6] = -unrotatedHalfSizeX;
+		pBoundingBox->data.fl[7] = -unrotatedHalfSizeY;
+		
+		// bounding_box = (rotation_matrix * bounding_box')';
+		// OR: bounding_box = bounding_box * rotation_matrix';
+		CvMat* pRotatedBoundingBox = cvCreateMat(4,2,CV_32F);
+		CvMat* pRotationMatTP = cvCreateMat(2,2,CV_32F);
+		cvTranspose(pRotationMat, pRotationMatTP);
+		cvMatMul(pBoundingBox, pRotationMatTP, pRotatedBoundingBox);
+		
+		//half_filter_size_x = max(abs(bounding_box(:, 1)))
+		int i=0, j=0;
+		float halfSizeX = pRotatedBoundingBox->data.fl[i*2+j];
+		for (i=1;i<4;i++)
+		{
+			float val = pRotatedBoundingBox->data.fl[i*2+j];
+			if (val > halfSizeX)
+				halfSizeX = val;
+		}
+		
+		//half_filter_size_y = max(abs(bounding_box(:, 2)))		
+		i = 0; j = 1;
+		float halfSizeY = pRotatedBoundingBox->data.fl[i*2+j];
+		for (i=1;i<4;i++)
+		{
+			float val = pRotatedBoundingBox->data.fl[i*2+j];
+			if (val > halfSizeY)
+				halfSizeY = val;
+		}		
+		
+		m_halfSizeX = halfSizeX;
+		m_halfSizeY = halfSizeY;
+		
+		printf("half_filter_size_x = %f\nhalf_filter_size_y = %f\n", m_halfSizeX, m_halfSizeY);
     }
 }
 
@@ -227,6 +163,25 @@ Returns:
 
 Create 2 gabor kernels - REAL and IMAG, with an orientation and a scale 
  */
+ 
+ // TODO: Once again, implement Lior's matlab code
+ /*
+  * 
+x = (-half_filter_size_x):half_filter_size_x;
+y = (-half_filter_size_y):half_filter_size_y;
+
+[x y] = meshgrid(x, y);
+
+rotated_x = x * cos(orientation) + y * sin(orientation);
+rotated_y = - x * sin(orientation) + y * cos(orientation);
+
+gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* exp(i * 2 * pi * frequency * rotated_x);
+
+  *
+  */
+ 
+// Figure out how to seperate this into the real and imaginary parts  
+  
 void CvGabor::creat_kernel()
 {
     
@@ -237,6 +192,7 @@ void CvGabor::creat_kernel()
       mImag = cvCreateMat( Width, Width, CV_32FC1);
       
       /**************************** Gabor Function ****************************/ 
+      /*
       int x, y;
       float dReal;
       float dImag;
@@ -259,14 +215,16 @@ void CvGabor::creat_kernel()
               cvmSet( (CvMat*)mImag, i, j, dImag );
 
           } 
-       }
+       }*/
        /**************************** Gabor Function ****************************/
+       /*
        bKernel = TRUE;
        cvCopy(mReal, Real, NULL);
        cvCopy(mImag, Imag, NULL);
        printf("A %d x %d Gabor kernel with %f PI in arc is created.\n", Width, Width, Phi/PI);
        cvReleaseMat( &mReal );
        cvReleaseMat( &mImag );
+       */
      }
 }
 
@@ -406,67 +364,25 @@ Returns:
 
 Initilize the.gabor with the orientation iMu, the scale iNu, the sigma dSigma, the frequency dF, it will call the function creat_kernel(); So a gabor is created.
  */
-void CvGabor::Init(int iMu, int iNu, double dSigma, double dF)
+void CvGabor::Init(float orientation, float freq, float sx, float sy)
 {
   //Initilise the parameters 
     bInitialised = FALSE;
     bKernel = FALSE;
 
-    Sigma = dSigma;
-    F = dF;
-    
-    Kmax = PI/2;
-    
-    // Absolute value of K
-    K = Kmax / pow(F, (float)iNu);
-    Phi = PI*iMu/8;
-    bInitialised = TRUE;
-    Width = mask_width();
+	m_orientation = orientation;
+	m_frequency = freq;
+	m_sx = sx;
+	m_sy = sy;
+
+	m_cutOff = 2.0;
+	
+	bInitialised = TRUE;
+    mask_width();
     Real = cvCreateMat( Width, Width, CV_32FC1);
     Imag = cvCreateMat( Width, Width, CV_32FC1);
-    creat_kernel();
+  //  creat_kernel();
 }
-
-
-/*!
-    \fn CvGabor::Init(double dPhi, int iNu, double dSigma, double dF)
-Initilize the.gabor
-
-Parameters:
-    	dPhi 	The orientations 
-    	iNu 	The scale can be from -5 to infinit
-    	dSigma 	The Sigma value of gabor, Normally set to 2*PI
-    	dF 	The spatial frequence , normally is sqrt(2)
-
-Returns:
-	None
-
-Initilize the.gabor with the orientation dPhi, the scale iNu, the sigma dSigma, the frequency dF, it will call the function creat_kernel(); So a gabor is created.filename 	The name of the image file
-    	file_format 	The format of the file, e.g. GAN_PNG_FORMAT
-    	image 	The image structure to be written to the file
-    	octrlstr 	Format-dependent control structure
-
- */
-void CvGabor::Init(double dPhi, int iNu, double dSigma, double dF)
-{
-
-    bInitialised = FALSE;
-    bKernel = FALSE;
-    Sigma = dSigma;
-    F = dF;
-    
-    Kmax = PI/2;
-    
-    // Absolute value of K
-    K = Kmax / pow(F, (float)iNu);
-    Phi = dPhi;
-    bInitialised = TRUE;
-    Width = mask_width();
-    Real = cvCreateMat( Width, Width, CV_32FC1);
-    Imag = cvCreateMat( Width, Width, CV_32FC1);
-    creat_kernel();
-}
-
 
 
 /*!
