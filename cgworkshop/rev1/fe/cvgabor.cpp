@@ -195,6 +195,8 @@ void CvGabor::creat_kernel()
 		// [MATLAB] x = (-half_filter_size_x):half_filter_size_x;
 		int i,j;
 		int sizeX = (int) floor(m_halfSizeX*2+1);
+		m_sizeX = sizeX;
+		
 		CvMat* pMatX = cvCreateMat(1,sizeX,CV_32F);
 		
 		float val = -m_halfSizeX;
@@ -206,6 +208,8 @@ void CvGabor::creat_kernel()
 		
 		// [MATLAB] y = (-half_filter_size_y):half_filter_size_y;
 		int sizeY = (int) floor(m_halfSizeY*2+1);
+		m_sizeY = sizeY;
+	
 		CvMat* pMatY = cvCreateMat(1,sizeY,CV_32F);
 		
 		val = -m_halfSizeY;
