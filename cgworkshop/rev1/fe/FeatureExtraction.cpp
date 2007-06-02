@@ -491,7 +491,7 @@ int CFeatureExtraction::Run()
 	int i;
 	
 	
-	CvGabor * pGabor = new CvGabor(0, 0.05, 143, 196);
+	CvGabor * pGabor = new CvGabor(0, 0.4, 2,3);
 	
 	return 0;
 
