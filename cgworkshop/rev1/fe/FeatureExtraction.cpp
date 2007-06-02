@@ -1,5 +1,12 @@
 #include "FeatureExtraction.h"
 #include "cvgabor.h"
+#include <math.h>
+
+inline double round2( double d )
+{
+	return floor( d + 0.5 );
+}
+
 
 // TODO:
 // Combine 30 Histogram values with 24 Gabor values
@@ -220,8 +227,8 @@ int CFeatureExtraction::GetGaborResponse(CvMat * pGaborMat)
 	for (i=0;i<freq_steps;i++)	
 	{
     	double bw = (2 * freq) / 3;
-    	double sx = round(0.5 / PI / pow(bw,2));
-    	double sy = round(0.5 * log(2) / pow(PI,2) / pow(freq,2) / (pow(tan(ori_space / 2),2)));	
+    	double sx = round2(0.5 / PI / pow(bw,2));
+    	double sy = round2(0.5 * log(2) / pow(PI,2) / pow(freq,2) / (pow(tan(ori_space / 2),2)));	
     		
 		for (j=0;j<ori_count;j++)
 		{	
@@ -499,13 +506,6 @@ CFeatureExtraction::CFeatureExtraction(char * file)
 int CFeatureExtraction::Run()
 {
 	int i;
-	
-	
-	//CvGabor * pGabor = new CvGabor(PI/6, 0.4, 143,196);
-	//IplImage * img = pGabor->get_image(CV_GABOR_REAL);
-	//displayImage("Gabor", img);
-	
-	//return 0;
 
 	CvMat * pColorChannels[3];
 	for (i=0;i<3;i++)
@@ -519,21 +519,11 @@ int CFeatureExtraction::Run()
 
 	GetTextureChannels(pTextureChannels);
 
-/*	GetGaborResponse();
-
-	CvMat * pHistVectors[3];
-	for (i=0;i<3;i++)
-		pHistVectors[i] = cvCreateMat( m_nWidth , m_nHeight , CV_8U );
-
-	GetHistogram(pHistVectors);
-*/
 	for (i=0;i<3;i++)
 		cvReleaseMat(&pColorChannels[i]);
 	for (i=0;i<3;i++)
 		cvReleaseMat(&pTextureChannels[i]);
-/*	for (i=0;i<3;i++)
-		cvReleaseMat(&pHistVectors[i]);
-*/
+
 	
 	return 0;
 }
