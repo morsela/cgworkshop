@@ -147,6 +147,12 @@ long CvGabor::mask_width()
 		m_halfSizeY = halfSizeY;
 		
 		printf("half_filter_size_x = %f\nhalf_filter_size_y = %f\n", m_halfSizeX, m_halfSizeY);
+		
+		cvReleaseMat(&pRotatedBoundingBox);
+		cvReleaseMat(&pRotationMatTP);
+		cvReleaseMat(&pBoundingBox);
+		cvReleaseMat(&pBoundingBox);
+		cvReleaseMat(&pRotationMat);
     }
 }
 
@@ -184,48 +190,37 @@ gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + r
   
 void CvGabor::creat_kernel()
 {
-    
-    if (IsInit() == FALSE) {perror("Error: The Object has not been initilised in creat_kernel()!\n");}
-    else {
-      CvMat *mReal, *mImag;
-      mReal = cvCreateMat( Width, Width, CV_32FC1);
-      mImag = cvCreateMat( Width, Width, CV_32FC1);
-      
-      /**************************** Gabor Function ****************************/ 
-      /*
-      int x, y;
-      float dReal;
-      float dImag;
-      float dTemp1, dTemp2, dTemp3;
-
-      for (int i = 0; i < Width; i++)
-      {
-          for (int j = 0; j < Width; j++)
-          {
-              x = i-(Width-1)/2;
-              y = j-(Width-1)/2;
-              dTemp1 = (pow(K,2)/pow(Sigma,2))*exp(-(pow((float)x,2)+pow((float)y,2))*pow(K,2)/(2*pow(Sigma,2)));
-              dTemp2 = cos(K*cos(Phi)*x + K*sin(Phi)*y) - exp(-(pow(Sigma,2)/2));
-              dTemp3 = sin(K*cos(Phi)*x + K*sin(Phi)*y);
-              dReal = dTemp1*dTemp2;
-              dImag = dTemp1*dTemp3; 
-              //gan_mat_set_el(pmReal, i, j, dReal);
-	      cvmSet( (CvMat*)mReal, i, j, dReal );
-              //gan_mat_set_el(pmImag, i, j, dImag);
-              cvmSet( (CvMat*)mImag, i, j, dImag );
-
-          } 
-       }*/
-       /**************************** Gabor Function ****************************/
-       /*
-       bKernel = TRUE;
-       cvCopy(mReal, Real, NULL);
-       cvCopy(mImag, Imag, NULL);
-       printf("A %d x %d Gabor kernel with %f PI in arc is created.\n", Width, Width, Phi/PI);
-       cvReleaseMat( &mReal );
-       cvReleaseMat( &mImag );
-       */
-     }
+	if (IsInit() == FALSE) {perror("Error: The Object has not been initilised in creat_kernel()!\n");}
+	else {
+		// x = (-half_filter_size_x):half_filter_size_x;
+		int i;
+		int sizeX = (int) floor(m_halfSizeX*2);
+		CvMat* pMatX = cvCreateMat(1,sizeX,CV_32F);
+		
+		float val = -m_halfSizeX;
+		for (i=0;i<sizeX;i++);
+		{
+			pMatX->data.fl[i] = val;
+			val += 1;
+		}
+		
+		// y = (-half_filter_size_y):half_filter_size_y;
+		int sizeY = (int) floor(m_halfSizeY*2);
+		CvMat* pMatY = cvCreateMat(1,sizeY,CV_32F);
+		
+		val = -m_halfSizeY;
+		for (i=0;i<sizeY;i++);
+		{
+			pMatY->data.fl[i] = val;
+			val += 1;
+		}
+		
+		// [x y] = meshgrid(x, y);
+		// ??????????????????????
+		
+		cvReleaseMat(&pMatX);
+		cvReleaseMat(&pMatY);
+	}
 }
 
 
