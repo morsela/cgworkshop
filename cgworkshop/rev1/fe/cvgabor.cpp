@@ -324,6 +324,14 @@ void CvGabor::creat_kernel()
 		
 		// Seperate this into real and imaginary parts
 		
+		// OK
+		
+		// REAL PART:
+		// gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* cos(2 * pi * frequency * rotated_x);
+		
+		// IMAGINARY PART:
+		// gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* sin(2 * pi * frequency * rotated_x);
+				
 		// Release
 		cvReleaseMat(&pMatX);
 		cvReleaseMat(&pMatY);
