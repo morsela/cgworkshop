@@ -45,30 +45,28 @@ public:
 
     ~CvGabor();
 
-     CvGabor(int iMu, int iNu);
-     CvGabor(int iMu, int iNu, float dSigma);
-     CvGabor(int iMu, int iNu, float dSigma, float dF);
-     CvGabor(float dPhi, int iNu);
-     CvGabor(float dPhi, int iNu, float dSigma);
-     CvGabor(float dPhi, int iNu, float dSigma, float dF);
+     CvGabor(float orientation, float freq, float sx, float sy);
     bool IsInit();
     long mask_width();
     IplImage* get_image(int Type);
     bool IsKernelCreate();
     long get_mask_width();
-    void Init(int iMu, int iNu, double dSigma, double dF);
-    void Init(double dPhi, int iNu, double dSigma, double dF);
+    void Init(float orientation, float freq, float sx, float sy);
     void output_file(const char *filename, int Type);
     CvMat* get_matrix(int Type);
     void show(int Type);
     void conv_img(IplImage *src, IplImage *dst, int Type);
 
 protected:
-    float Sigma;
-    float F;
-    float Kmax;
-    float K;
-    float Phi;
+	float m_orientation;
+	float m_frequency;
+	float m_sx;
+	float m_sy;
+	float m_cutOff;
+	float m_halfSizeX;
+	float m_halfSizeY;
+
+
     bool bInitialised;
     bool bKernel;
     long Width;
