@@ -93,19 +93,19 @@ long CvGabor::mask_width()
 
 		* 
 `		*/
-		// rotation_matrix = [cos(orientation), sin(orientation); - sin(orientation), cos(orientation)];
+		// [MATLAB] rotation_matrix = [cos(orientation), sin(orientation); - sin(orientation), cos(orientation)];
 		CvMat* pRotationMat = cvCreateMat(2,2,CV_32F);
 		pRotationMat->data.fl[0] = cos(m_orientation);
 		pRotationMat->data.fl[1] = sin(m_orientation);
 		pRotationMat->data.fl[2] = -sin(m_orientation);
 		pRotationMat->data.fl[3] = cos(m_orientation);
 		
-		// unrotated_half_filter_size_x = ceil(filter_cutoff_in_stds * sqrt(sx));
+		// [MATLAB] unrotated_half_filter_size_x = ceil(filter_cutoff_in_stds * sqrt(sx));
 		float unrotatedHalfSizeX = ceil(m_cutOff * sqrt(m_sx));
 		// unrotated_half_filter_size_y = ceil(filter_cutoff_in_stds * sqrt(sy));
 		float unrotatedHalfSizeY = ceil(m_cutOff * sqrt(m_sy));
 		
-		// bounding_box = [unrotated_half_filter_size_x, unrotated_half_filter_size_y; - unrotated_half_filter_size_x, unrotated_half_filter_size_y; unrotated_half_filter_size_x, - unrotated_half_filter_size_y; - unrotated_half_filter_size_x, - unrotated_half_filter_size_y];
+		// [MATLAB] bounding_box = [unrotated_half_filter_size_x, unrotated_half_filter_size_y; - unrotated_half_filter_size_x, unrotated_half_filter_size_y; unrotated_half_filter_size_x, - unrotated_half_filter_size_y; - unrotated_half_filter_size_x, - unrotated_half_filter_size_y];
 		CvMat* pBoundingBox = cvCreateMat(4,2,CV_32F);
 		pBoundingBox->data.fl[0] = unrotatedHalfSizeX;
 		pBoundingBox->data.fl[1] = unrotatedHalfSizeY;
@@ -116,14 +116,14 @@ long CvGabor::mask_width()
 		pBoundingBox->data.fl[6] = -unrotatedHalfSizeX;
 		pBoundingBox->data.fl[7] = -unrotatedHalfSizeY;
 		
-		// bounding_box = (rotation_matrix * bounding_box')';
+		// [MATLAB] bounding_box = (rotation_matrix * bounding_box')';
 		// OR: bounding_box = bounding_box * rotation_matrix';
 		CvMat* pRotatedBoundingBox = cvCreateMat(4,2,CV_32F);
 		CvMat* pRotationMatTP = cvCreateMat(2,2,CV_32F);
 		cvTranspose(pRotationMat, pRotationMatTP);
 		cvMatMul(pBoundingBox, pRotationMatTP, pRotatedBoundingBox);
 		
-		//half_filter_size_x = max(abs(bounding_box(:, 1)))
+		//[MATLAB] half_filter_size_x = max(abs(bounding_box(:, 1)))
 		int i=0, j=0;
 		float halfSizeX = pRotatedBoundingBox->data.fl[i*2+j];
 		for (i=1;i<4;i++)
@@ -133,7 +133,7 @@ long CvGabor::mask_width()
 				halfSizeX = val;
 		}
 		
-		//half_filter_size_y = max(abs(bounding_box(:, 2)))		
+		//[MATLAB] half_filter_size_y = max(abs(bounding_box(:, 2)))		
 		i = 0; j = 1;
 		float halfSizeY = pRotatedBoundingBox->data.fl[i*2+j];
 		for (i=1;i<4;i++)
@@ -192,7 +192,7 @@ void CvGabor::creat_kernel()
 {
 	if (IsInit() == FALSE) {perror("Error: The Object has not been initilised in creat_kernel()!\n");}
 	else {
-		// x = (-half_filter_size_x):half_filter_size_x;
+		// [MATLAB] x = (-half_filter_size_x):half_filter_size_x;
 		int i,j;
 		int sizeX = (int) floor(m_halfSizeX*2+1);
 		CvMat* pMatX = cvCreateMat(1,sizeX,CV_32F);
@@ -205,7 +205,7 @@ void CvGabor::creat_kernel()
 			val += 1;
 		}
 		
-		// y = (-half_filter_size_y):half_filter_size_y;
+		// [MATLAB] y = (-half_filter_size_y):half_filter_size_y;
 		int sizeY = (int) floor(m_halfSizeY*2+1);
 		CvMat* pMatY = cvCreateMat(1,sizeY,CV_32F);
 		
@@ -237,7 +237,7 @@ void CvGabor::creat_kernel()
 			printf("\n");
 		}		
 		
-		// [x y] = meshgrid(x, y);
+		// [MATLAB] [x y] = meshgrid(x, y);
 		// x would be of size sizeY*sizeX
 		// y would be of size sizeX*sizeY
 		
@@ -284,6 +284,18 @@ void CvGabor::creat_kernel()
 			printf("\n");
 		}
 			
+		// [MATLAB] rotated_x = x * cos(orientation) + y * sin(orientation);
+		
+		// Any normal way to do this without a lot of creating and destroying matrices
+		
+		// [MATLAB] rotated_y = - x * sin(orientation) + y * cos(orientation);	
+		
+		// Any normal way to do this without a lot of creating and destroying matrices
+		
+		// [MATLAB] gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* exp(i * 2 * pi * frequency * rotated_x);
+		
+		// Seperate this into real and imaginary parts
+		
 		// Release
 		cvReleaseMat(&pMatX);
 		cvReleaseMat(&pMatY);
