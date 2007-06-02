@@ -331,7 +331,25 @@ void CvGabor::creat_kernel()
 		
 		// IMAGINARY PART:
 		// gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* sin(2 * pi * frequency * rotated_x);
-				
+		
+		// (1 / sqrt(2 * pi * sx * sy))		
+		float val1 = (1 / sqrt(2 * PI * m_sx * m_sy));
+		// 2 * pi * frequency * rotated_x
+		float val2 = 2 * pi * frequency * rotated_x;
+		// exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy))
+		// ... This is the hard stuff .. 
+		// eventually, store in pTemp4
+		
+		// gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* cos(2 * pi * frequency * rotated_x);
+		CvMat* pRealMat = cvCreateMat(sizeY,sizeX,CV_32F);
+		cvScale(pTemp4, pRealMat, val1*cos(val2));
+		Real = pRealMat;
+		
+		// gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* sin(2 * pi * frequency * rotated_x);
+		CvMat* pImgMat = cvCreateMat(sizeY,sizeX,CV_32F);
+		cvScale(pTemp4, pImgMat, val1*sin(val2));
+		Imag = pImgMat;
+						
 		// Release
 		cvReleaseMat(&pMatX);
 		cvReleaseMat(&pMatY);
