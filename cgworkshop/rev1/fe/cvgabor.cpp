@@ -295,9 +295,9 @@ void CvGabor::creat_kernel()
 		cvScale(pMatX2, pTemp3, -sin(m_orientation));
 		cvScale(pMatY2, pTemp4, cos(m_orientation));					
 		// [MATLAB] rotated_x = x * cos(orientation) + y * sin(orientation);
-		cvAdd(pTemp1, pTemp2, pMatX2);
+		cvAdd(pTemp1, pTemp2, pMatX);
 		// [MATLAB] rotated_y = - x * sin(orientation) + y * cos(orientation);	
-		cvAdd(pTemp3, pTemp4, pMatY2);
+		cvAdd(pTemp3, pTemp4, pMatY);
 		
 		
 		printf("Printing matrix X:\n\n");
@@ -305,7 +305,7 @@ void CvGabor::creat_kernel()
 		{
 			for (j=0;j<sizeX;j++)
 			{
-				printf("%f, ", 	pMatX2->data.fl[i*sizeX+j]);
+				printf("%f, ", 	pMatX->data.fl[i*sizeX+j]);
 			}
 			printf("\n");
 		}
@@ -315,7 +315,7 @@ void CvGabor::creat_kernel()
 		{
 			for (j=0;j<sizeX;j++)
 			{
-				printf("%f, ", 	pMatY2->data.fl[i*sizeX+j]);
+				printf("%f, ", 	pMatY->data.fl[i*sizeX+j]);
 			}
 			printf("\n");
 		}		
@@ -335,19 +335,40 @@ void CvGabor::creat_kernel()
 		// (1 / sqrt(2 * pi * sx * sy))		
 		float val1 = (1 / sqrt(2 * PI * m_sx * m_sy));
 		// 2 * pi * frequency * rotated_x
-		float val2 = 2 * pi * frequency * rotated_x;
+		float val2 = 2 * PI * m_frequency ;
+		cvScale(pMatX, pTemp4, val2);
+
 		// exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy))
 		// ... This is the hard stuff .. 
-		// eventually, store in pTemp4
+		// eventually, store in pTemp3
+		cvPow(pMatX, pTemp1, 2);
+		cvPow(pMatY, pTemp2, 2);
+		
+		cvScale(pTemp1, pTemp3, 1 / m_sx);
+		cvScale(pTemp2, pTemp1, 1 / m_sy);
+		cvAdd(pTemp1, pTemp3, pTemp2);
+		
+		cvScale(pTemp2, pTemp1, -0.5);
+		cvExp(pTemp1, pTemp3);
 		
 		// gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* cos(2 * pi * frequency * rotated_x);
 		CvMat* pRealMat = cvCreateMat(sizeY,sizeX,CV_32F);
-		cvScale(pTemp4, pRealMat, val1*cos(val2));
+		cvScale(pTemp3, pTemp1, val1);
+		
+		// Apply cos on pTemp3
+		// How?
+		cvMul(pTemp1, pTemp3, pRealMat);
+		
 		Real = pRealMat;
 		
 		// gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* sin(2 * pi * frequency * rotated_x);
 		CvMat* pImgMat = cvCreateMat(sizeY,sizeX,CV_32F);
-		cvScale(pTemp4, pImgMat, val1*sin(val2));
+		cvScale(pTemp3, pTemp1, val1);
+
+		// Apply sin on pTemp3
+		// How?		
+		cvMul(pTemp1, pTemp3, pImgMat);
+		
 		Imag = pImgMat;
 						
 		// Release
