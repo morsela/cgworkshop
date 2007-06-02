@@ -142,19 +142,16 @@ void CFeatureExtraction::GetHistogram(CvMat * pHistVectors[])
 
 //////////////////////////////////////////////////////////////////////////////////////
 
-int CFeatureExtraction::GetGaborResponse(IplImage *pGrayImg, IplImage *pResImg, double orientation, int scale)
+int CFeatureExtraction::GetGaborResponse(IplImage *pGrayImg, IplImage *pResImg, float orientation, float freq, float sx, float sy)
 {
 	// Create the filter
-	// TODO: Sigma? F? What?
-	double Sigma = 2*PI;
-	double F = sqrt(2.0);
-		/*
-	CvGabor *pGabor = new CvGabor;
-	pGabor->Init(orientation, scale, Sigma, F);
+	CvGabor *pGabor = new CvGabor(orientation, freq, sx, sy);
+	
+	pGabor->show(CV_GABOR_REAL);
 	
 	// Convolution
 	pGabor->conv_img(pGrayImg, pResImg, CV_GABOR_MAG);
-	*/
+	
 	return 0;
 }
 
@@ -214,21 +211,32 @@ int CFeatureExtraction::GetGaborResponse(CvMat * pGaborMat)
 	// The output image
 	IplImage *reimg = cvCreateImage(cvSize(pGrayImg->width,pGrayImg->height), IPL_DEPTH_8U, 1);
 
-	for (double orientation = 0; orientation < PI; orientation += PI/6)	
-		for (int scale=-4;scale<=2;scale+=2)
-		{
-			
+	double freq = 0.4;
+	int freq_steps = 4;
+	int ori_count = 6;
+	double ori_space = PI/ori_count;
+	
+	int i,j;
+	for (i=0;i<freq_steps;i++)	
+	{
+    	double bw = (2 * freq) / 3;
+    	double sx = round(0.5 / PI / pow(bw,2));
+    	double sy = round(0.5 * log(2) / pow(PI,2) / pow(freq,2) / (pow(tan(ori_space / 2),2)));	
+    		
+		for (j=0;j<ori_count;j++)
+		{	
+			double ori = j*ori_space;
 			//sprintf(title, "Gabor Response: Orientation=%f, Scale=%d\n", orientation*180/PI, scale);
-			GetGaborResponse(pGrayImg, reimg, orientation, scale);
+			GetGaborResponse(pGrayImg, reimg, ori, freq, sx, sy);
 			
 			// This being a test and all, display the image
 			// displayImage(title, reimg);
 			
 			// Concat the new vector to the result matrix
-			int i;
+			int k;
 			pMatPos = (float *) pGaborMat->data.fl;
 			char * pResData = (char *) reimg->imageData;
-			for (i=0;i<reimg->width*reimg->height;i++)
+			for (k=0;k<reimg->width*reimg->height;k++)
 			{
 				pMatPos[idx] = (float) pResData[0];
 				pMatPos += 24;
@@ -244,7 +252,9 @@ int CFeatureExtraction::GetGaborResponse(CvMat * pGaborMat)
 				*/
 			idx++;
 		}
-
+		
+		freq /= 2;	
+	}
 	// Release
 	cvReleaseImage(&reimg);
 	cvReleaseImage(&pGrayImg);
@@ -491,15 +501,17 @@ int CFeatureExtraction::Run()
 	int i;
 	
 	
-	CvGabor * pGabor = new CvGabor(0, 0.4, 2,3);
+	//CvGabor * pGabor = new CvGabor(PI/6, 0.4, 143,196);
+	//IplImage * img = pGabor->get_image(CV_GABOR_REAL);
+	//displayImage("Gabor", img);
 	
-	return 0;
+	//return 0;
 
 	CvMat * pColorChannels[3];
 	for (i=0;i<3;i++)
 		pColorChannels[i] = cvCreateMat( m_nWidth , m_nHeight , CV_8U );
 		
-	GetColorPCA(pColorChannels);
+//	GetColorPCA(pColorChannels);
 
 	CvMat * pTextureChannels[3];
 	for (i = 0; i < 3; i++)
