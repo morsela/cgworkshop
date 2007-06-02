@@ -193,27 +193,49 @@ void CvGabor::creat_kernel()
 	if (IsInit() == FALSE) {perror("Error: The Object has not been initilised in creat_kernel()!\n");}
 	else {
 		// x = (-half_filter_size_x):half_filter_size_x;
-		int i;
-		int sizeX = (int) floor(m_halfSizeX*2);
+		int i,j;
+		int sizeX = (int) floor(m_halfSizeX*2+1);
 		CvMat* pMatX = cvCreateMat(1,sizeX,CV_32F);
 		
+		printf("sizeX=%d\n", sizeX);
 		float val = -m_halfSizeX;
-		for (i=0;i<sizeX;i++);
+		for (i=0;i<sizeX;i++)
 		{
 			pMatX->data.fl[i] = val;
 			val += 1;
 		}
 		
 		// y = (-half_filter_size_y):half_filter_size_y;
-		int sizeY = (int) floor(m_halfSizeY*2);
+		int sizeY = (int) floor(m_halfSizeY*2+1);
 		CvMat* pMatY = cvCreateMat(1,sizeY,CV_32F);
 		
 		val = -m_halfSizeY;
-		for (i=0;i<sizeY;i++);
+		for (i=0;i<sizeY;i++)
 		{
 			pMatY->data.fl[i] = val;
 			val += 1;
 		}
+		
+		
+		printf("Printing matrix X:\n\n");
+		for (i=0;i<1;i++)
+		{
+			for (j=0;j<sizeX;j++)
+			{
+				printf("%f, ", 	pMatX->data.fl[j]);
+			}
+			printf("\n");
+		}
+		
+		printf("Printing matrix Y:\n\n");
+		for (i=0;i<sizeY;i++)
+		{
+			for (j=0;j<1;j++)
+			{
+				printf("%f, ", 	pMatY->data.fl[i]);
+			}
+			printf("\n");
+		}		
 		
 		// [x y] = meshgrid(x, y);
 		// x would be of size sizeY*sizeX
@@ -224,18 +246,44 @@ void CvGabor::creat_kernel()
 		
 		// Copy row by row
 		CvMat* pMatX2 = cvCreateMat(sizeY,sizeX,CV_32F);
-		for (i=0;i<sizeY;i++)
-			memcpy(&pMatX2->data.fl[i*sizeX], pMatX->data.fl, pMatX->step);
 
+		for (i=0;i<sizeY;i++)
+		{
+			printf("Row: %d\n", i);
+			memcpy(&pMatX2->data.fl[i*sizeX], pMatX->data.fl, sizeX*4);
+		}
+		
 		// Copy row by row
 		CvMat* pMatYTemp = cvCreateMat(sizeX,sizeY,CV_32F);
-		for (i=0;i<sizeY;i++)
-			memcpy(&pMatYTemp->data.fl[i*sizeY], pMatY->data.fl, pMatY->step);
-		
+		for (i=0;i<sizeX;i++)
+		{
+			printf("Row: %d\n", i);
+			memcpy(&pMatYTemp->data.fl[i*sizeY], pMatY->data.fl, sizeY*4);
+		}
 		// Now transpose	
 		CvMat* pMatY2 = cvCreateMat(sizeY,sizeX,CV_32F);	
 		cvTranspose(pMatYTemp, pMatY2);
 		
+		printf("Printing matrix X:\n\n");
+		for (i=0;i<sizeY;i++)
+		{
+			for (j=0;j<sizeX;j++)
+			{
+				printf("%f, ", 	pMatX2->data.fl[i*sizeX+j]);
+			}
+			printf("\n");
+		}
+		
+		printf("Printing matrix Y:\n\n");
+		for (i=0;i<sizeY;i++)
+		{
+			for (j=0;j<sizeX;j++)
+			{
+				printf("%f, ", 	pMatY2->data.fl[i*sizeX+j]);
+			}
+			printf("\n");
+		}
+			
 		// Release
 		cvReleaseMat(&pMatX);
 		cvReleaseMat(&pMatY);
@@ -396,9 +444,9 @@ void CvGabor::Init(float orientation, float freq, float sx, float sy)
 	
 	bInitialised = TRUE;
     mask_width();
-    Real = cvCreateMat( Width, Width, CV_32FC1);
-    Imag = cvCreateMat( Width, Width, CV_32FC1);
-  //  creat_kernel();
+    //Real = cvCreateMat( Width, Width, CV_32FC1);
+    //Imag = cvCreateMat( Width, Width, CV_32FC1);
+    creat_kernel();
 }
 
 
