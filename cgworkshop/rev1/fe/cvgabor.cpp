@@ -71,8 +71,6 @@ Return the width of mask (should be NxN) by the value of Sigma and iNu.
 
 long CvGabor::mask_width()
 {
-
-    long lWidth;
     if (IsInit() == FALSE)  {
        perror ("Error: The Object has not been initilised in mask_width()!\n");
        return 0;
@@ -154,6 +152,7 @@ long CvGabor::mask_width()
 		cvReleaseMat(&pBoundingBox);
 		cvReleaseMat(&pRotationMat);
     }
+    return 0;
 }
 
 
@@ -193,7 +192,7 @@ void CvGabor::creat_kernel()
 	if (IsInit() == FALSE) {perror("Error: The Object has not been initilised in creat_kernel()!\n");}
 	else {
 		// [MATLAB] x = (-half_filter_size_x):half_filter_size_x;
-		int i,j;
+		int i;
 		int sizeX = (int) floor(m_halfSizeX*2+1);
 		m_sizeX = sizeX;
 		
@@ -623,19 +622,19 @@ void CvGabor::conv_img(IplImage *src, IplImage *dst, int Type)
     {
       case CV_GABOR_REAL:
         cvCopy( (CvMat*)Real, (CvMat*)kernel, NULL );
-        cvFilter2D( (CvMat*)mat, (CvMat*)mat, (CvMat*)kernel, cvPoint( (Width-1)/2, (Width-1)/2));
+        cvFilter2D( (CvMat*)mat, (CvMat*)mat, (CvMat*)kernel);
         break;
       case CV_GABOR_IMAG:
         cvCopy( (CvMat*)Imag, (CvMat*)kernel, NULL );
-        cvFilter2D( (CvMat*)mat, (CvMat*)mat, (CvMat*)kernel, cvPoint( (Width-1)/2, (Width-1)/2));
+        cvFilter2D( (CvMat*)mat, (CvMat*)mat, (CvMat*)kernel);
         break;
       case CV_GABOR_MAG:
         /* Real Response */
         cvCopy( (CvMat*)Real, (CvMat*)kernel, NULL );
-        cvFilter2D( (CvMat*)mat, (CvMat*)rmat, (CvMat*)kernel, cvPoint( (Width-1)/2, (Width-1)/2));
+        cvFilter2D( (CvMat*)mat, (CvMat*)rmat, (CvMat*)kernel);
         /* Imag Response */
         cvCopy( (CvMat*)Imag, (CvMat*)kernel, NULL );
-        cvFilter2D( (CvMat*)mat, (CvMat*)imat, (CvMat*)kernel, cvPoint( (Width-1)/2, (Width-1)/2));
+        cvFilter2D( (CvMat*)mat, (CvMat*)imat, (CvMat*)kernel);
         /* Magnitude response is the square root of the sum of the square of real response and imaginary response */
         for (i = 0; i < mat->rows; i++)
         {

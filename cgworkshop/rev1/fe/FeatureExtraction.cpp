@@ -147,7 +147,7 @@ int CFeatureExtraction::GetGaborResponse(IplImage *pGrayImg, IplImage *pResImg, 
 	// Create the filter
 	CvGabor *pGabor = new CvGabor(orientation, freq, sx, sy);
 	
-	pGabor->show(CV_GABOR_REAL);
+	//pGabor->show(CV_GABOR_REAL);
 	
 	// Convolution
 	pGabor->conv_img(pGrayImg, pResImg, CV_GABOR_MAG);
@@ -511,7 +511,7 @@ int CFeatureExtraction::Run()
 	for (i=0;i<3;i++)
 		pColorChannels[i] = cvCreateMat( m_nWidth , m_nHeight , CV_8U );
 		
-//	GetColorPCA(pColorChannels);
+	GetColorPCA(pColorChannels);
 
 	CvMat * pTextureChannels[3];
 	for (i = 0; i < 3; i++)
