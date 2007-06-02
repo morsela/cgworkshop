@@ -283,14 +283,42 @@ void CvGabor::creat_kernel()
 			}
 			printf("\n");
 		}
-			
+		
+		CvMat* pTemp1 = cvCreateMat(sizeY,sizeX,CV_32F);
+		CvMat* pTemp2 = cvCreateMat(sizeY,sizeX,CV_32F);
+		CvMat* pTemp3 = cvCreateMat(sizeY,sizeX,CV_32F);
+		CvMat* pTemp4 = cvCreateMat(sizeY,sizeX,CV_32F);
+
+		cvScale(pMatX2, pTemp1, cos(m_orientation));
+		cvScale(pMatY2, pTemp2, sin(m_orientation));
+
+		cvScale(pMatX2, pTemp3, -sin(m_orientation));
+		cvScale(pMatY2, pTemp4, cos(m_orientation));					
 		// [MATLAB] rotated_x = x * cos(orientation) + y * sin(orientation);
-		
-		// Any normal way to do this without a lot of creating and destroying matrices
-		
+		cvAdd(pTemp1, pTemp2, pMatX2);
 		// [MATLAB] rotated_y = - x * sin(orientation) + y * cos(orientation);	
+		cvAdd(pTemp3, pTemp4, pMatY2);
 		
-		// Any normal way to do this without a lot of creating and destroying matrices
+		
+		printf("Printing matrix X:\n\n");
+		for (i=0;i<sizeY;i++)
+		{
+			for (j=0;j<sizeX;j++)
+			{
+				printf("%f, ", 	pMatX2->data.fl[i*sizeX+j]);
+			}
+			printf("\n");
+		}
+		
+		printf("Printing matrix Y:\n\n");
+		for (i=0;i<sizeY;i++)
+		{
+			for (j=0;j<sizeX;j++)
+			{
+				printf("%f, ", 	pMatY2->data.fl[i*sizeX+j]);
+			}
+			printf("\n");
+		}		
 		
 		// [MATLAB] gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* exp(i * 2 * pi * frequency * rotated_x);
 		
@@ -301,6 +329,10 @@ void CvGabor::creat_kernel()
 		cvReleaseMat(&pMatY);
 		cvReleaseMat(&pMatX2);
 		cvReleaseMat(&pMatY2);
+		cvReleaseMat(&pTemp1);
+		cvReleaseMat(&pTemp2);	
+		cvReleaseMat(&pTemp3);
+		cvReleaseMat(&pTemp4);				
 		cvReleaseMat(&pMatYTemp);
 	}
 }
