@@ -22,8 +22,8 @@
 // TODO:
 // Killing most things here
 // Implementing Lior's matlab code
-// Only functions that should change are init, mask_width, creat_kernel
-// init and mask_width are done
+// Only functions that should change are init, mask_width, creat_kernel, conv_img
+// init and mask_width, creat_kernel are done
 // change all the function, parameters names to something normal
 
 CvGabor::~CvGabor()
@@ -197,7 +197,6 @@ void CvGabor::creat_kernel()
 		int sizeX = (int) floor(m_halfSizeX*2+1);
 		CvMat* pMatX = cvCreateMat(1,sizeX,CV_32F);
 		
-		//printf("sizeX=%d\n", sizeX);
 		float val = -m_halfSizeX;
 		for (i=0;i<sizeX;i++)
 		{
@@ -215,28 +214,7 @@ void CvGabor::creat_kernel()
 			pMatY->data.fl[i] = val;
 			val += 1;
 		}
-		
-		/*
-		printf("Printing matrix X:\n\n");
-		for (i=0;i<1;i++)
-		{
-			for (j=0;j<sizeX;j++)
-			{
-				printf("%f, ", 	pMatX->data.fl[j]);
-			}
-			printf("\n");
-		}
-		
-		printf("Printing matrix Y:\n\n");
-		for (i=0;i<sizeY;i++)
-		{
-			for (j=0;j<1;j++)
-			{
-				printf("%f, ", 	pMatY->data.fl[i]);
-			}
-			printf("\n");
-		}		
-		*/
+
 		// [MATLAB] [x y] = meshgrid(x, y);
 		// x would be of size sizeY*sizeX
 		// y would be of size sizeX*sizeY
@@ -249,7 +227,6 @@ void CvGabor::creat_kernel()
 
 		for (i=0;i<sizeY;i++)
 		{
-			//printf("Row: %d\n", i);
 			memcpy(&pMatX2->data.fl[i*sizeX], pMatX->data.fl, sizeX*4);
 		}
 		
@@ -257,33 +234,11 @@ void CvGabor::creat_kernel()
 		CvMat* pMatYTemp = cvCreateMat(sizeX,sizeY,CV_32F);
 		for (i=0;i<sizeX;i++)
 		{
-			//printf("Row: %d\n", i);
 			memcpy(&pMatYTemp->data.fl[i*sizeY], pMatY->data.fl, sizeY*4);
 		}
 		// Now transpose	
 		CvMat* pMatY2 = cvCreateMat(sizeY,sizeX,CV_32F);	
 		cvTranspose(pMatYTemp, pMatY2);
-		/*
-		printf("Printing matrix X:\n\n");
-		for (i=0;i<sizeY;i++)
-		{
-			for (j=0;j<sizeX;j++)
-			{
-				printf("%f, ", 	pMatX2->data.fl[i*sizeX+j]);
-			}
-			printf("\n");
-		}
-		
-		printf("Printing matrix Y:\n\n");
-		for (i=0;i<sizeY;i++)
-		{
-			for (j=0;j<sizeX;j++)
-			{
-				printf("%f, ", 	pMatY2->data.fl[i*sizeX+j]);
-			}
-			printf("\n");
-		}
-		*/
 		
 		CvMat* pTemp1 = cvCreateMat(sizeY,sizeX,CV_32F);
 		CvMat* pTemp2 = cvCreateMat(sizeY,sizeX,CV_32F);
@@ -299,28 +254,6 @@ void CvGabor::creat_kernel()
 		cvAdd(pTemp1, pTemp2, pMatX2);
 		// [MATLAB] rotated_y = - x * sin(orientation) + y * cos(orientation);	
 		cvAdd(pTemp3, pTemp4, pMatY2);
-		
-		/*
-		printf("Printing matrix X:\n\n");
-		for (i=0;i<sizeY;i++)
-		{
-			for (j=0;j<sizeX;j++)
-			{
-				printf("%f, ", 	pMatX->data.fl[i*sizeX+j]);
-			}
-			printf("\n");
-		}
-		
-		printf("Printing matrix Y:\n\n");
-		for (i=0;i<sizeY;i++)
-		{
-			for (j=0;j<sizeX;j++)
-			{
-				printf("%f, ", 	pMatY->data.fl[i*sizeX+j]);
-			}
-			printf("\n");
-		}		
-		*/
 		
 		// [MATLAB] gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* exp(i * 2 * pi * frequency * rotated_x);
 		
@@ -354,26 +287,46 @@ void CvGabor::creat_kernel()
 		cvScale(pTemp2, pTemp1, -0.5);
 		cvExp(pTemp1, pTemp3);
 		
-		// gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* cos(2 * pi * frequency * rotated_x);
+		// [MATLAB] gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* cos(2 * pi * frequency * rotated_x);
 		CvMat* pRealMat = cvCreateMat(sizeY,sizeX,CV_32F);
 		cvScale(pTemp3, pTemp1, val1);
 
 		// Apply cos on pTemp4
-		// How?
-		cvMul(pTemp1, pTemp4, pRealMat);
+		// Ugly workaround, return cos(pTemp4) in pTemp2, sin(pTemp4) in pTemp3
+		cvPolarToCart(NULL, pTemp4, pTemp2, pTemp3);
+		cvMul(pTemp1, pTemp2, pRealMat);
 		
 		Real = pRealMat;
 		
-		// gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* sin(2 * pi * frequency * rotated_x);
+		// [MATLAB] gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* sin(2 * pi * frequency * rotated_x);
 		CvMat* pImgMat = cvCreateMat(sizeY,sizeX,CV_32F);
-		cvScale(pTemp3, pTemp1, val1);
-
-		// Apply sin on pTemp4
-		// How?		
-		cvMul(pTemp1, pTemp4, pImgMat);
+		cvMul(pTemp1, pTemp3, pImgMat);
 		
 		Imag = pImgMat;
-						
+		
+		
+		printf("Printing matrix pRealMat:\n\n");
+		for (i=0;i<sizeY;i++)
+		{
+			for (j=0;j<sizeX;j++)
+			{
+				printf("%f, ", 	pRealMat->data.fl[i*sizeX+j]);
+			}
+			printf("\n");
+		}	
+
+		printf("Printing matrix pImgMat:\n\n");
+		for (i=0;i<sizeY;i++)
+		{
+			for (j=0;j<sizeX;j++)
+			{
+				printf("%f, ", 	pImgMat->data.fl[i*sizeX+j]);
+			}
+			printf("\n");
+		}	
+			
+		
+		
 		// Release
 		cvReleaseMat(&pMatX);
 		cvReleaseMat(&pMatY);
