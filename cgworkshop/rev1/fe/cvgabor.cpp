@@ -358,9 +358,9 @@ void CvGabor::creat_kernel()
 		CvMat* pRealMat = cvCreateMat(sizeY,sizeX,CV_32F);
 		cvScale(pTemp3, pTemp1, val1);
 
-		// Apply cos on pTemp3
+		// Apply cos on pTemp4
 		// How?
-		cvMul(pTemp1, pTemp3, pRealMat);
+		cvMul(pTemp1, pTemp4, pRealMat);
 		
 		Real = pRealMat;
 		
@@ -368,9 +368,9 @@ void CvGabor::creat_kernel()
 		CvMat* pImgMat = cvCreateMat(sizeY,sizeX,CV_32F);
 		cvScale(pTemp3, pTemp1, val1);
 
-		// Apply sin on pTemp3
+		// Apply sin on pTemp4
 		// How?		
-		cvMul(pTemp1, pTemp3, pImgMat);
+		cvMul(pTemp1, pTemp4, pImgMat);
 		
 		Imag = pImgMat;
 						
