@@ -308,7 +308,7 @@ void CvGabor::creat_kernel()
 		
 		Imag = pImgMat;
 		
-		
+		/*
 		printf("Printing matrix pRealMat:\n\n");
 		for (i=0;i<sizeY;i++)
 		{
@@ -328,7 +328,8 @@ void CvGabor::creat_kernel()
 			}
 			printf("\n");
 		}	
-			
+		*/
+		
 		bKernel = TRUE;
 		
 		// Release
@@ -596,6 +597,8 @@ void CvGabor::show(int Type)
 /*!
     \fn CvGabor::conv_img(IplImage *src, IplImage *dst, int Type)
  */
+ 
+// TODO : Make this work with the new changes 
 void CvGabor::conv_img(IplImage *src, IplImage *dst, int Type)
 {
 	int i,j;
@@ -614,7 +617,7 @@ void CvGabor::conv_img(IplImage *src, IplImage *dst, int Type)
     CvMat *rmat = cvCreateMat(src->width, src->height, CV_32FC1);
     CvMat *imat = cvCreateMat(src->width, src->height, CV_32FC1);
 
-    CvMat *kernel = cvCreateMat( Width, Width, CV_32FC1 );
+    CvMat *kernel = cvCreateMat( m_sizeY, m_sizeX, CV_32FC1 );
 
     switch (Type)
     {

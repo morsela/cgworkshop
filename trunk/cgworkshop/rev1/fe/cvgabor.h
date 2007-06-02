@@ -65,6 +65,9 @@ protected:
 	float m_cutOff;
 	float m_halfSizeX;
 	float m_halfSizeY;
+	
+	long m_sizeX;
+	long m_sizeY;
 
 
     bool bInitialised;

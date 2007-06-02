@@ -16,7 +16,7 @@ class CFeatureExtraction
 	private:
 		int GetColorPCA(CvMat * pColorChannels[]);
 		int GetGaborResponse(CvMat * pGaborMat);
-		int GetGaborResponse(IplImage *pGrayImg, IplImage *pResImg, double orientation, int scale);
+		int GetGaborResponse(IplImage *pGrayImg, IplImage *pResImg, float orientation, float freq, float sx, float sy);
 		void GetHistogram(CvMat * pHistVectors[]);
 		void CalcHistogram(IplImage * pImg, CvMat * pHistogram);
 		
