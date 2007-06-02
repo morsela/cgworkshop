@@ -216,10 +216,32 @@ void CvGabor::creat_kernel()
 		}
 		
 		// [x y] = meshgrid(x, y);
-		// ??????????????????????
+		// x would be of size sizeY*sizeX
+		// y would be of size sizeX*sizeY
 		
+		// x would have sizeY identical rows, each row would be x'
+		// y would have sizeX identical columns, each column would be y
+		
+		// Copy row by row
+		CvMat* pMatX2 = cvCreateMat(sizeY,sizeX,CV_32F);
+		for (i=0;i<sizeY;i++)
+			memcpy(&pMatX2->data.fl[i*sizeX], pMatX->data.fl, pMatX->step);
+
+		// Copy row by row
+		CvMat* pMatYTemp = cvCreateMat(sizeX,sizeY,CV_32F);
+		for (i=0;i<sizeY;i++)
+			memcpy(&pMatYTemp->data.fl[i*sizeY], pMatY->data.fl, pMatY->step);
+		
+		// Now transpose	
+		CvMat* pMatY2 = cvCreateMat(sizeY,sizeX,CV_32F);	
+		cvTranspose(pMatYTemp, pMatY2);
+		
+		// Release
 		cvReleaseMat(&pMatX);
 		cvReleaseMat(&pMatY);
+		cvReleaseMat(&pMatX2);
+		cvReleaseMat(&pMatY2);
+		cvReleaseMat(&pMatYTemp);
 	}
 }
 
