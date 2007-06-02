@@ -329,7 +329,7 @@ void CvGabor::creat_kernel()
 			printf("\n");
 		}	
 			
-		
+		bKernel = TRUE;
 		
 		// Release
 		cvReleaseMat(&pMatX);
@@ -369,17 +369,17 @@ IplImage* CvGabor::get_image(int Type)
     {  
     IplImage* pImage;
     IplImage *newimage;
-    newimage = cvCreateImage(cvSize(Width,Width), IPL_DEPTH_8U, 1 );
+    newimage = cvCreateImage(cvSize(m_sizeY,m_sizeX), IPL_DEPTH_8U, 1 );
     //printf("Width is %d.\n",(int)Width);
     //printf("Sigma is %f.\n", Sigma);
     //printf("F is %f.\n", F);
     //printf("Phi is %f.\n", Phi);
     
     //pImage = gan_image_alloc_gl_d(Width, Width);
-    pImage = cvCreateImage( cvSize(Width,Width), IPL_DEPTH_32F, 1 );
+    pImage = cvCreateImage( cvSize(m_sizeY,m_sizeX), IPL_DEPTH_32F, 1 );
     
     
-    CvMat* kernel = cvCreateMat(Width, Width, CV_32FC1);
+    CvMat* kernel = cvCreateMat(m_sizeY,m_sizeX, CV_32FC1);
     double ve;
     CvScalar S;
     switch(Type)
@@ -498,6 +498,7 @@ void CvGabor::Init(float orientation, float freq, float sx, float sy)
     //Real = cvCreateMat( Width, Width, CV_32FC1);
     //Imag = cvCreateMat( Width, Width, CV_32FC1);
     creat_kernel();
+    bInitialised = TRUE;
 }
 
 
