@@ -197,7 +197,7 @@ void CvGabor::creat_kernel()
 		int sizeX = (int) floor(m_halfSizeX*2+1);
 		CvMat* pMatX = cvCreateMat(1,sizeX,CV_32F);
 		
-		printf("sizeX=%d\n", sizeX);
+		//printf("sizeX=%d\n", sizeX);
 		float val = -m_halfSizeX;
 		for (i=0;i<sizeX;i++)
 		{
@@ -216,7 +216,7 @@ void CvGabor::creat_kernel()
 			val += 1;
 		}
 		
-		
+		/*
 		printf("Printing matrix X:\n\n");
 		for (i=0;i<1;i++)
 		{
@@ -236,7 +236,7 @@ void CvGabor::creat_kernel()
 			}
 			printf("\n");
 		}		
-		
+		*/
 		// [MATLAB] [x y] = meshgrid(x, y);
 		// x would be of size sizeY*sizeX
 		// y would be of size sizeX*sizeY
@@ -249,7 +249,7 @@ void CvGabor::creat_kernel()
 
 		for (i=0;i<sizeY;i++)
 		{
-			printf("Row: %d\n", i);
+			//printf("Row: %d\n", i);
 			memcpy(&pMatX2->data.fl[i*sizeX], pMatX->data.fl, sizeX*4);
 		}
 		
@@ -257,13 +257,13 @@ void CvGabor::creat_kernel()
 		CvMat* pMatYTemp = cvCreateMat(sizeX,sizeY,CV_32F);
 		for (i=0;i<sizeX;i++)
 		{
-			printf("Row: %d\n", i);
+			//printf("Row: %d\n", i);
 			memcpy(&pMatYTemp->data.fl[i*sizeY], pMatY->data.fl, sizeY*4);
 		}
 		// Now transpose	
 		CvMat* pMatY2 = cvCreateMat(sizeY,sizeX,CV_32F);	
 		cvTranspose(pMatYTemp, pMatY2);
-		
+		/*
 		printf("Printing matrix X:\n\n");
 		for (i=0;i<sizeY;i++)
 		{
@@ -283,6 +283,7 @@ void CvGabor::creat_kernel()
 			}
 			printf("\n");
 		}
+		*/
 		
 		CvMat* pTemp1 = cvCreateMat(sizeY,sizeX,CV_32F);
 		CvMat* pTemp2 = cvCreateMat(sizeY,sizeX,CV_32F);
@@ -295,11 +296,11 @@ void CvGabor::creat_kernel()
 		cvScale(pMatX2, pTemp3, -sin(m_orientation));
 		cvScale(pMatY2, pTemp4, cos(m_orientation));					
 		// [MATLAB] rotated_x = x * cos(orientation) + y * sin(orientation);
-		cvAdd(pTemp1, pTemp2, pMatX);
+		cvAdd(pTemp1, pTemp2, pMatX2);
 		// [MATLAB] rotated_y = - x * sin(orientation) + y * cos(orientation);	
-		cvAdd(pTemp3, pTemp4, pMatY);
+		cvAdd(pTemp3, pTemp4, pMatY2);
 		
-		
+		/*
 		printf("Printing matrix X:\n\n");
 		for (i=0;i<sizeY;i++)
 		{
@@ -319,6 +320,7 @@ void CvGabor::creat_kernel()
 			}
 			printf("\n");
 		}		
+		*/
 		
 		// [MATLAB] gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* exp(i * 2 * pi * frequency * rotated_x);
 		
@@ -333,17 +335,18 @@ void CvGabor::creat_kernel()
 		// gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* sin(2 * pi * frequency * rotated_x);
 		
 		// (1 / sqrt(2 * pi * sx * sy))		
+
 		float val1 = (1 / sqrt(2 * PI * m_sx * m_sy));
 		// 2 * pi * frequency * rotated_x
 		float val2 = 2 * PI * m_frequency ;
-		cvScale(pMatX, pTemp4, val2);
-
+		
+		cvScale(pMatX2, pTemp4, val2);
 		// exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy))
 		// ... This is the hard stuff .. 
 		// eventually, store in pTemp3
-		cvPow(pMatX, pTemp1, 2);
-		cvPow(pMatY, pTemp2, 2);
-		
+		cvPow(pMatX2, pTemp1, 2);
+		cvPow(pMatY2, pTemp2, 2);
+
 		cvScale(pTemp1, pTemp3, 1 / m_sx);
 		cvScale(pTemp2, pTemp1, 1 / m_sy);
 		cvAdd(pTemp1, pTemp3, pTemp2);
@@ -354,7 +357,7 @@ void CvGabor::creat_kernel()
 		// gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* cos(2 * pi * frequency * rotated_x);
 		CvMat* pRealMat = cvCreateMat(sizeY,sizeX,CV_32F);
 		cvScale(pTemp3, pTemp1, val1);
-		
+
 		// Apply cos on pTemp3
 		// How?
 		cvMul(pTemp1, pTemp3, pRealMat);
