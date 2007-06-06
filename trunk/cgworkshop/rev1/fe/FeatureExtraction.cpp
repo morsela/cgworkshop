@@ -67,89 +67,7 @@ void CFeatureExtraction::CalcHistogram(IplImage * pImg, CvMat * pHistogram)
 
 //////////////////////////////////////////////////////////////////////////////////////
 
-void CFeatureExtraction::GetHistogram(CvMat * pHistVectors[])
-{
-	// Calc the full histogram vectors
-	CvMat * pMat = cvCreateMat( m_nWidth*m_nHeight, 30 , CV_32F );
-	CalcHistogram(m_pSrcImg, pMat);
-	
-		// Create our result matrices
-	CvMat* avg = cvCreateMat( 1, 30, CV_32F );
-	CvMat* eigenVectors = cvCreateMat( 30, 30, CV_32F );
-	CvMat* eigenValues = cvCreateMat( 30, 1, CV_32F );	
-	
-	// Actual PCA calculation
-	cvCalcPCA(pMat, avg, eigenValues, eigenVectors, CV_PCA_DATA_AS_ROW ); 
-	
-	// Useful debugging
-	printf("Mean Vector: %f,%f,%f\n", cvmGet(avg, 0,0), cvmGet(avg, 0,1), cvmGet(avg, 0,2));
-	printf("Eigen Values: %f,%f,%f\n", cvmGet(eigenValues, 0,0), cvmGet(eigenValues, 1,0), cvmGet(eigenValues, 2,0));
-	printf("Eigen Vector 1: %f, %f, %f\n", cvmGet(eigenVectors, 0,0), cvmGet(eigenVectors, 0,1), cvmGet(eigenVectors, 0,2));
-	printf("Eigen Vector 2: %f, %f, %f\n", cvmGet(eigenVectors, 1,0), cvmGet(eigenVectors, 1,1), cvmGet(eigenVectors, 1,2));
-	printf("Eigen Vector 3: %f, %f, %f\n", cvmGet(eigenVectors, 2,0), cvmGet(eigenVectors, 2,1), cvmGet(eigenVectors, 2,2));
-	
-	// Transform to the new basis
-	CvMat * pTransMat = cvCreateMat( m_nWidth*m_nHeight, 30 , CV_32F );
-
-	// Transpose or not to transpose?
-	// I assume eigenVectors contains one eigen vector per row, not column
-	CvMat* pm = cvCreateMat( 30, 30, CV_32F );
-	cvTranspose(eigenVectors, pm);
-	
-	cvMatMul(pMat, pm, pTransMat);
-	cvReleaseMat(&pm); 
-
-
-	// TODO: Normalize each channel by itself?		
-	// Normalize the matrix (0..255)
-	cvNormalize(pTransMat, pTransMat, 0, 255, CV_MINMAX);
-
-	// Store each of the 3 p-channels in a matrix
-	float val;
-	for (int k=0;k<m_nChannels;k++)
-	{
-		for (int i=0;i<m_nHeight;i++)
-		{
-			for (int j=0;j<m_nWidth;j++)
-			{
-					val = pTransMat->data.fl[i*m_pSrcImg->widthStep*10 + j*30 + k];
-					pHistVectors[k]->data.ptr[i*m_nWidth+j] = (unsigned char) val;
-			}
-		}
-		// Is this ok?
-		cvNormalize(pHistVectors[k],pHistVectors[k], 0, 255, CV_MINMAX);
-	}
-	
-	// Save each channel to a bitmap, just for fun.
-	char filename[255];
-	IplImage * pImg = cvCreateImage(cvSize(m_nWidth,m_nHeight),IPL_DEPTH_8U,1);
-	char * tempData = pImg->imageData;
-	for (int i=0;i<m_nChannels;i++)
-	{
-		sprintf(filename, "hist%d.bmp", i+1);
-		pImg->imageData = (char *) pHistVectors[i]->data.ptr;
-		
-		// TODO: Remove this, only a test
-		displayImage(filename, pImg);
-		
-		printf("Saving pchannel %d to: %s\n",i+1, filename);
-		if (!cvSaveImage(filename,pImg)) 
-			printf("Could not save: %s\n",filename);
-	}
-	pImg->imageData = tempData;
-	cvReleaseImage(&pImg);
-	
-	// Useful releasing
-	cvReleaseMat(&pMat);
-	cvReleaseMat(&avg);
-	cvReleaseMat(&eigenVectors);
-	cvReleaseMat(&eigenValues);
-	cvReleaseMat(&pTransMat);
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-
-int CFeatureExtraction::GetGaborResponse(IplImage *pGrayImg, IplImage *pResImg, float orientation, float freq, float sx, float sy)
+bool CFeatureExtraction::GetGaborResponse(IplImage *pGrayImg, IplImage *pResImg, float orientation, float freq, float sx, float sy)
 {
 	// Create the filter
 	CvGabor *pGabor = new CvGabor(orientation, freq, sx, sy);
@@ -159,56 +77,14 @@ int CFeatureExtraction::GetGaborResponse(IplImage *pGrayImg, IplImage *pResImg, 
 	// Convolution
 	pGabor->conv_img(pGrayImg, pResImg, CV_GABOR_MAG);
 	
-	return 0;
+	return true;
 }
-
-// TODO: Apply all filters
-// What are the correct filterS?
-// 6 orientations, 4 scales
-// For orientation, I assume equal spacing around PI, but scale?
-
-/*
-orientation_spacing = PI/6
-num_of_frequency_steps = 4
-
-function [filter_parameters] = design_filter_bank(orientation_spacing, num_of_frequency_steps, sampling_rate)
-
-filter_parameters.sx = [];
-filter_parameters.sy = [];
-filter_parameters.frequency = [];
-filter_parameters.orientation = [];
-
-start_frequency = 0.4;
-current_frequency = start_frequency;
-
-num_of_orientations = round(pi / orientation_spacing);
-for k = 1:num_of_frequency_steps
-    filter_bandwidth = 2 / 3 * current_frequency;
-    sx = round(0.5 / pi / (filter_bandwidth^2));
-    sy = round(0.5 * log(2) / (pi^2) / (current_frequency^2) / (tan(orientation_spacing / 2)^2));
-
-    for m = 0:(num_of_orientations - 1)
-        orientation = m * orientation_spacing;
-        filter_parameters.sx = [filter_parameters.sx, sx];
-        filter_parameters.sy = [filter_parameters.sy, sy];
-        filter_parameters.frequency = [filter_parameters.frequency, current_frequency];
-        filter_parameters.orientation = [filter_parameters.orientation, orientation];
-    end
-
-    current_frequency = current_frequency / 2;
-end
-*/
-
-// Anyone care to translate this monster to our 24 filters?
 
 //////////////////////////////////////////////////////////////////////////////////////
 
-int CFeatureExtraction::GetGaborResponse(CvMat * pGaborMat)
+bool CFeatureExtraction::GetGaborResponse(CvMat * pGaborMat)
 {
 	float* pMatPos;
-	char title[255];
-	char filename[255];
-	
 	int idx = 0;
 		
 	// Convert our image to grayscale (Gabor doesn't care about colors! I hope?)	
@@ -233,7 +109,6 @@ int CFeatureExtraction::GetGaborResponse(CvMat * pGaborMat)
 		for (j=0;j<ori_count;j++)
 		{	
 			double ori = j*ori_space;
-			//sprintf(title, "Gabor Response: Orientation=%f, Scale=%d\n", orientation*180/PI, scale);
 			GetGaborResponse(pGrayImg, reimg, ori, freq, sx, sy);
 			
 			// This being a test and all, display the image
@@ -250,112 +125,46 @@ int CFeatureExtraction::GetGaborResponse(CvMat * pGaborMat)
 				pResData++;
 							
 			}
-/*
-			sprintf(filename, "gabor%f-%d.bmp", orientation*180/PI, scale);
 
-			printf("Saving gabor to: %s\n", filename);
-			if (!cvSaveImage(filename,reimg)) 
-				printf("Could not save: %s\n",filename);			
-				*/
 			idx++;
 		}
-		
 		freq /= 2;	
 	}
 	// Release
 	cvReleaseImage(&reimg);
 	cvReleaseImage(&pGrayImg);
 	
-	return 0;
+	return true;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
 
 // TODO: Would fail if m_nChannels != 3
 // RGB to LAB
-int CFeatureExtraction::GetColorPCA(CvMat * pColorChannels[])
+bool CFeatureExtraction::GetColorChannels(CvMat * pColorChannels[])
 {
+	int nSize = 3;
+	
 	// Convert to LAB color space
-	IplImage *pLabImg = cvCreateImage(cvSize(m_pSrcImg->width,m_pSrcImg->height), IPL_DEPTH_32F, 3);
+	IplImage *pLabImg = cvCreateImage(cvSize(m_pSrcImg->width,m_pSrcImg->height), IPL_DEPTH_32F, nSize);
 	cvCvtColor(m_pSrcImgFloat,pLabImg,CV_BGR2Lab);	
 
 	// Get our 32F matrix (From the 32F image created previously)	
-	CvMat * pMat = cvCreateMat( m_nWidth*m_nHeight, 3 , CV_32F );
+	CvMat * pMat = cvCreateMat( m_nWidth*m_nHeight, nSize , CV_32F );
 	memcpy(pMat->data.fl, (float*)pLabImg->imageData, pLabImg->imageSize);
 
-	// Create our result matrices
-	CvMat* avg = cvCreateMat( 1, 3, CV_32F );
-	CvMat* eigenVectors = cvCreateMat( 3, 3, CV_32F );
-	CvMat* eigenValues = cvCreateMat( 3, 1, CV_32F );	
-	
-	// Actual PCA calculation
-	cvCalcPCA(pMat, avg, eigenValues, eigenVectors, CV_PCA_DATA_AS_ROW ); 
-	
-	// Useful debugging
-	printf("Mean Vector: %f,%f,%f\n", cvmGet(avg, 0,0), cvmGet(avg, 0,1), cvmGet(avg, 0,2));
-	printf("Eigen Values: %f,%f,%f\n", cvmGet(eigenValues, 0,0), cvmGet(eigenValues, 1,0), cvmGet(eigenValues, 2,0));
-	printf("Eigen Vector 1: %f, %f, %f\n", cvmGet(eigenVectors, 0,0), cvmGet(eigenVectors, 0,1), cvmGet(eigenVectors, 0,2));
-	printf("Eigen Vector 2: %f, %f, %f\n", cvmGet(eigenVectors, 1,0), cvmGet(eigenVectors, 1,1), cvmGet(eigenVectors, 1,2));
-	printf("Eigen Vector 3: %f, %f, %f\n", cvmGet(eigenVectors, 2,0), cvmGet(eigenVectors, 2,1), cvmGet(eigenVectors, 2,2));
-	
-	// Transform to the new basis
-	CvMat * pTransMat = cvCreateMat( m_nWidth*m_nHeight, 3 , CV_32F );
-
-	// Transpose or not to transpose?
-	// I assume eigenVectors contains one eigen vector per row, not column	
-	CvMat* pm = cvCreateMat( 3, 3, CV_32F );
-	cvTranspose(eigenVectors, pm);
-	
-	cvMatMul(pMat, pm, pTransMat);
-	cvReleaseMat(&pm); 
-
-	// TODO: Normalize each channel by itself?		
-	// Normalize the matrix (0..255)
-	cvNormalize(pTransMat, pTransMat, 0, 255, CV_MINMAX);
-	
-	// Store each of the 3 p-channels in a matrix
-	float val;
-	for (int k=0;k<m_nChannels;k++)
-	{
-		for (int i=0;i<m_nHeight;i++)
-		{
-			for (int j=0;j<m_nWidth;j++)
-			{
-					val = pTransMat->data.fl[i*m_nWidth*3 + j*m_nChannels + k];
-					pColorChannels[k]->data.ptr[i*m_nWidth+j] = (unsigned char) val;
-			}
-		}
-		// Is this ok?
-		cvNormalize(pColorChannels[k],pColorChannels[k], 0, 255, CV_MINMAX);
-	}
-
-	
-	// Save each channel to a bitmap, just for fun.
-	char filename[255];
-	IplImage * pImg = cvCreateImage(cvSize(m_nWidth,m_nHeight),IPL_DEPTH_8U,1);
-	char * tempData = pImg->imageData;
-	for (int i=0;i<m_nChannels;i++)
-	{
-		sprintf(filename, "chan%d.bmp", i+1);
-		pImg->imageData = (char *) pColorChannels[i]->data.ptr;
-		
-		// TODO: Remove this, only a test
-		displayImage(filename, pImg);
-		
-		printf("Saving pchannel %d to: %s\n",i+1, filename);
-		if (!cvSaveImage(filename,pImg)) 
-			printf("Could not save: %s\n",filename);
-	}
-	pImg->imageData = tempData;
-	cvReleaseImage(&pImg);
+	// This matrix would hold the values represented in the new basis we've found
+	CvMat * pResultMat = cvCreateMat( m_nWidth*m_nHeight, nSize , CV_32F );
+	// Actual calculation
+	DoPCA(pMat, pResultMat, nSize);
+	// Extracting the 3 primary channels
+	GetChannels(pResultMat, pColorChannels, nSize, 3);
 	
 	// Useful releasing
 	cvReleaseMat(&pMat);
-	cvReleaseMat(&avg);
-	cvReleaseMat(&eigenVectors);
-	cvReleaseMat(&eigenValues);
-	cvReleaseMat(&pTransMat);
-	return 0;	
+	cvReleaseMat(&pResultMat);
+	
+	return true;	
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -363,7 +172,6 @@ int CFeatureExtraction::GetColorPCA(CvMat * pColorChannels[])
 bool CFeatureExtraction::GetTextureChannels(CvMat * pTextureChannels[])
 {
 	int i;
-	float* pMat;
 
 	int gaborSize = 24;
 	int histSize = 30;
@@ -378,8 +186,9 @@ bool CFeatureExtraction::GetTextureChannels(CvMat * pTextureChannels[])
 	CvMat * pGaborMat = cvCreateMat (m_nWidth * m_nHeight, gaborSize, CV_32F);
 	GetGaborResponse(pGaborMat);
 	// Do we need to normalize?
-	//cvNormalize(pGaborMat, pGaborMat, 0, 255, CV_MINMAX);
+	cvNormalize(pGaborMat, pGaborMat, 0, 255, CV_MINMAX);
 
+	// Our merged matrix
 	CvMat * pTextureMat = cvCreateMat( m_nWidth*m_nHeight, vectorSize , CV_32F );
 
 	// Go over row by row, concat the gabor and histogram matrices
@@ -402,80 +211,112 @@ bool CFeatureExtraction::GetTextureChannels(CvMat * pTextureChannels[])
 		pHistData+=histSize;
 	}
 	
+
+	// This matrix would hold the values represented in the new basis we've found
+	CvMat * pResultMat = cvCreateMat( m_nWidth*m_nHeight, vectorSize , CV_32F );
+	// Actual calculation
+	DoPCA(pTextureMat, pResultMat, vectorSize);
+	// Extracting the 3 primary channels
+	GetChannels(pResultMat, pTextureChannels, vectorSize, 3);
+
+	cvReleaseMat(&pHistMat);
+	cvReleaseMat(&pGaborMat);
+	cvReleaseMat(&pTextureMat);
+	cvReleaseMat(&pResultMat);
+
+	return true;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////
+
+bool CFeatureExtraction::DoPCA(CvMat * pMat, CvMat * pResultMat, int nSize)
+{
+	printf("CFeatureExtraction::DoPCA\n");
+	
 	// Create our result matrices
-	CvMat* avg = cvCreateMat( 1, vectorSize, CV_32F );
-	CvMat* eigenVectors = cvCreateMat( vectorSize, vectorSize, CV_32F );
-	CvMat* eigenValues = cvCreateMat( vectorSize, 1, CV_32F );	
+	CvMat* pMeanVec = cvCreateMat( 1, nSize, CV_32F );
+	CvMat* pEigenVecs = cvCreateMat( nSize, nSize, CV_32F );
+	CvMat* pEigenVals = cvCreateMat( nSize, 1, CV_32F );	
 	
 	// Actual PCA calculation
-	cvCalcPCA(pTextureMat, avg, eigenValues, eigenVectors, CV_PCA_DATA_AS_ROW ); 
-
+	cvCalcPCA(pMat, pMeanVec, pEigenVals, pEigenVecs, CV_PCA_DATA_AS_ROW ); 
+	/*
 	// Useful debugging
-	printf("Mean Vector: %f,%f,%f\n", cvmGet(avg, 0,0), cvmGet(avg, 0,1), cvmGet(avg, 0,2));
-	printf("Eigen Values: %f,%f,%f\n", cvmGet(eigenValues, 0,0), cvmGet(eigenValues, 1,0), cvmGet(eigenValues, 2,0));
-	printf("Eigen Vector 1: %f, %f, %f\n", cvmGet(eigenVectors, 0,0), cvmGet(eigenVectors, 0,1), cvmGet(eigenVectors, 0,2));
-	printf("Eigen Vector 2: %f, %f, %f\n", cvmGet(eigenVectors, 1,0), cvmGet(eigenVectors, 1,1), cvmGet(eigenVectors, 1,2));
-	printf("Eigen Vector 3: %f, %f, %f\n", cvmGet(eigenVectors, 2,0), cvmGet(eigenVectors, 2,1), cvmGet(eigenVectors, 2,2));
-	
-	// Transform to the new basis
-	CvMat * pTransMat = cvCreateMat( m_nWidth*m_nHeight, vectorSize , CV_32F );
+	printf("Mean Vector: %f,%f,%f\n", cvmGet(pMeanVec, 0,0), cvmGet(pMeanVec, 0,1), cvmGet(pMeanVec, 0,2));
+	printf("Eigen Values: %f,%f,%f\n", cvmGet(pEigenVals, 0,0), cvmGet(pEigenVals, 1,0), cvmGet(pEigenVals, 2,0));
+	printf("Eigen Vector 1: %f, %f, %f\n", cvmGet(pEigenVecs, 0,0), cvmGet(pEigenVecs, 0,1), cvmGet(pEigenVecs, 0,2));
+	printf("Eigen Vector 2: %f, %f, %f\n", cvmGet(pEigenVecs, 1,0), cvmGet(pEigenVecs, 1,1), cvmGet(pEigenVecs, 1,2));
+	printf("Eigen Vector 3: %f, %f, %f\n", cvmGet(pEigenVecs, 2,0), cvmGet(pEigenVecs, 2,1), cvmGet(pEigenVecs, 2,2));
+	*/
 
 	// Transpose or not to transpose?
 	// I assume eigenVectors contains one eigen vector per row, not column	
-	CvMat* pm = cvCreateMat( vectorSize, vectorSize, CV_32F );
-	cvTranspose(eigenVectors, pm);
+	CvMat* pTransposedVecs = cvCreateMat( nSize, nSize, CV_32F );
+	cvTranspose(pEigenVecs, pTransposedVecs);
 	
-	cvMatMul(pTextureMat, pm, pTransMat);
-	cvReleaseMat(&pm); 
+	cvMatMul(pMat, pTransposedVecs, pResultMat);
+	
+	// Release
+	cvReleaseMat(&pTransposedVecs); 
+	cvReleaseMat(&pMeanVec); 
+	cvReleaseMat(&pEigenVecs); 
+	cvReleaseMat(&pEigenVals); 
+	
+	return true;
+}
 
-	// TODO: Normalize each channel by itself?		
-	// Normalize the matrix (0..255)
-	cvNormalize(pTransMat, pTransMat, 0, 255, CV_MINMAX);
+//////////////////////////////////////////////////////////////////////////////////////
+
+// Only nExtractChans=3 is supported!!!
+bool CFeatureExtraction::GetChannels(CvMat * pMergedMat, CvMat * pChannels[], int nTotalChans, int nExtractChans)
+{
+	static int s_nChannel = 1;
+
+	printf("CFeatureExtraction::GetChannels\n");
 	
 	// Store each of the 3 p-channels in a matrix
 	float val;
-	for (int k=0;k<m_nChannels;k++)
+	for (int k=0;k<nExtractChans;k++)
 	{
 		for (int i=0;i<m_nHeight;i++)
 		{
 			for (int j=0;j<m_nWidth;j++)
 			{
-				val = pTransMat->data.fl[(i*m_nWidth+j)*vectorSize + k];
-				pTextureChannels[k]->data.ptr[i*m_nWidth+j] = (unsigned char) val;
+				val = pMergedMat->data.fl[(i*m_nWidth+j)*nTotalChans + k];
+				((float*)pChannels[k]->data.ptr)[i*m_nWidth+j] = val;
 			}
 		}
-		// Is this ok?
-		cvNormalize(pTextureChannels[k],pTextureChannels[k], 0, 255, CV_MINMAX);
+		// Normalize to 0..1
+		cvNormalize(pChannels[k],pChannels[k], 0, 1, CV_MINMAX);
 	}
 
 	
 	// Save each channel to a bitmap, just for fun.
 	char filename[255];
 	IplImage * pImg = cvCreateImage(cvSize(m_nWidth,m_nHeight),IPL_DEPTH_8U,1);
+	CvMat * pTempMat = cvCreateMat( m_nWidth, m_nHeight, CV_8U );
 	char * tempData = pImg->imageData;
-	for (i = 0;i<m_nChannels;i++)
+	for (int i=0;i<m_nChannels;i++)
 	{
-		sprintf(filename, "chan%d.bmp", i+4);
-		pImg->imageData = (char *) pTextureChannels[i]->data.ptr;
+		sprintf(filename, "chan%d.bmp", s_nChannel);
+		// Convert to unsigned char, 0..255
+		cvConvertScale(pChannels[i],pTempMat,255,0);
+		// Use the image header on our data
+		pImg->imageData = (char *) pTempMat->data.ptr;
 		
 		// TODO: Remove this, only a test
 		displayImage(filename, pImg);
 		
-		printf("Saving pchannel %d to: %s\n",i+4, filename);
+		printf("Saving pchannel %d to: %s\n",s_nChannel, filename);
 		if (!cvSaveImage(filename,pImg)) 
 			printf("Could not save: %s\n",filename);
+			
+		s_nChannel++;	
 	}
 	pImg->imageData = tempData;
+	cvReleaseMat(&pTempMat);
 	cvReleaseImage(&pImg);
-	
-	// Useful releasing
-	cvReleaseMat(&pHistMat);
-	cvReleaseMat(&pGaborMat);
-	cvReleaseMat(&pTextureMat);
-	cvReleaseMat(&avg);
-	cvReleaseMat(&eigenVectors);
-	cvReleaseMat(&eigenValues);
-	cvReleaseMat(&pTransMat);
 
 	return true;
 }
@@ -503,19 +344,19 @@ CFeatureExtraction::CFeatureExtraction(char * file)
 
 //////////////////////////////////////////////////////////////////////////////////////
 
-int CFeatureExtraction::Run()
+bool CFeatureExtraction::Run()
 {
 	int i;
 
 	CvMat * pColorChannels[3];
 	for (i=0;i<3;i++)
-		pColorChannels[i] = cvCreateMat( m_nWidth , m_nHeight , CV_8U );
-		
-	GetColorPCA(pColorChannels);
+		pColorChannels[i] = cvCreateMat( m_nWidth , m_nHeight , CV_32F );
+
+	GetColorChannels(pColorChannels);
 
 	CvMat * pTextureChannels[3];
 	for (i = 0; i < 3; i++)
-		pTextureChannels[i] = cvCreateMat(m_nWidth, m_nHeight, CV_8U);
+		pTextureChannels[i] = cvCreateMat(m_nWidth, m_nHeight, CV_32F);
 
 	GetTextureChannels(pTextureChannels);
 
@@ -525,7 +366,7 @@ int CFeatureExtraction::Run()
 		cvReleaseMat(&pTextureChannels[i]);
 
 	
-	return 0;
+	return true;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

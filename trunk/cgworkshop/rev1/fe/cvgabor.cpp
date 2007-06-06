@@ -381,7 +381,7 @@ IplImage* CvGabor::get_image(int Type)
     
     CvMat* kernel = cvCreateMat(m_sizeY,m_sizeX, CV_32FC1);
     double ve;
-    CvScalar S;
+
     switch(Type)
     {
         case 1:  //Real
@@ -531,6 +531,8 @@ CvMat* CvGabor::get_matrix(int Type)
       case CV_GABOR_PHASE:
         return NULL;
         break;
+     default:
+     	return NULL;
     }
 }
 
@@ -631,10 +633,10 @@ void CvGabor::conv_img(IplImage *src, IplImage *dst, int Type)
       case CV_GABOR_MAG:
         /* Real Response */
         cvCopy( (CvMat*)Real, (CvMat*)kernel, NULL );
-        cvFilter2D( (CvMat*)mat, (CvMat*)rmat, (CvMat*)kernel);
+        cvFilter2D( (CvMat*)mat, (CvMat*)rmat, (CvMat*)kernel, cvPoint(0,0));
         /* Imag Response */
         cvCopy( (CvMat*)Imag, (CvMat*)kernel, NULL );
-        cvFilter2D( (CvMat*)mat, (CvMat*)imat, (CvMat*)kernel);
+        cvFilter2D( (CvMat*)mat, (CvMat*)imat, (CvMat*)kernel, cvPoint(0,0));
         /* Magnitude response is the square root of the sum of the square of real response and imaginary response */
         for (i = 0; i < mat->rows; i++)
         {
