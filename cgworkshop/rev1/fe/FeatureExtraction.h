@@ -11,16 +11,19 @@ class CFeatureExtraction
 {
 	public:
 		CFeatureExtraction(char * file);
-		int Run();
+		bool Run();
 		
 	private:
-		int GetColorPCA(CvMat * pColorChannels[]);
-		int GetGaborResponse(CvMat * pGaborMat);
-		int GetGaborResponse(IplImage *pGrayImg, IplImage *pResImg, float orientation, float freq, float sx, float sy);
-		void GetHistogram(CvMat * pHistVectors[]);
+		bool GetColorChannels(CvMat * pColorChannels[]);
+		bool GetTextureChannels(CvMat * pTextureChannels[]);
+		
+		bool GetGaborResponse(CvMat * pGaborMat);
+		bool GetGaborResponse(IplImage *pGrayImg, IplImage *pResImg, float orientation, float freq, float sx, float sy);
+		
 		void CalcHistogram(IplImage * pImg, CvMat * pHistogram);
 		
-		bool	GetTextureChannels(CvMat * pTextureChannels[]);
+		bool GetChannels(CvMat * pMergedMat, CvMat * pChannels[], int nTotalChans, int nExtractChans);
+		bool DoPCA(CvMat * pMat, CvMat * pResultMat, int nSize); 
 
 	protected:
 		
