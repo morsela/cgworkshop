@@ -233,36 +233,42 @@ bool CFeatureExtraction::GetTextureChannels(CvMat * pTextureChannels[])
 bool CFeatureExtraction::DoPCA(CvMat * pMat, CvMat * pResultMat, int nSize)
 {
 	printf("CFeatureExtraction::DoPCA\n");
+	int i;	
 	
-	// Create our result matrices
-	CvMat* pMeanVec = cvCreateMat( 1, nSize, CV_32F );
-	CvMat* pEigenVecs = cvCreateMat( nSize, nSize, CV_32F );
-	CvMat* pEigenVals = cvCreateMat( nSize, 1, CV_32F );	
-	
-	// Actual PCA calculation
-	cvCalcPCA(pMat, pMeanVec, pEigenVals, pEigenVecs, CV_PCA_DATA_AS_ROW ); 
-	/*
-	// Useful debugging
-	printf("Mean Vector: %f,%f,%f\n", cvmGet(pMeanVec, 0,0), cvmGet(pMeanVec, 0,1), cvmGet(pMeanVec, 0,2));
-	printf("Eigen Values: %f,%f,%f\n", cvmGet(pEigenVals, 0,0), cvmGet(pEigenVals, 1,0), cvmGet(pEigenVals, 2,0));
-	printf("Eigen Vector 1: %f, %f, %f\n", cvmGet(pEigenVecs, 0,0), cvmGet(pEigenVecs, 0,1), cvmGet(pEigenVecs, 0,2));
-	printf("Eigen Vector 2: %f, %f, %f\n", cvmGet(pEigenVecs, 1,0), cvmGet(pEigenVecs, 1,1), cvmGet(pEigenVecs, 1,2));
-	printf("Eigen Vector 3: %f, %f, %f\n", cvmGet(pEigenVecs, 2,0), cvmGet(pEigenVecs, 2,1), cvmGet(pEigenVecs, 2,2));
-	*/
+	// Arrange our data sets in a vector each
+	CvMat pDataVec[m_nWidth*m_nHeight];
+	float * pData = pMat->data.fl;
+	for (i=0;i<m_nWidth*m_nHeight;i++)
+		pDataVec[i] = cvMat( 1, nSize, CV_32FC1, &pData[i*nSize]);
+		
+	// Combine all data set vectors into one pointer array
+	CvMat * pDataSet[m_nWidth*m_nHeight];
+	for (i=0;i<m_nWidth*m_nHeight;i++)
+		pDataSet[i] = &pDataVec[i];
 
-	// Transpose or not to transpose?
-	// I assume eigenVectors contains one eigen vector per row, not column	
-	CvMat* pTransposedVecs = cvCreateMat( nSize, nSize, CV_32F );
-	cvTranspose(pEigenVecs, pTransposedVecs);
+	// Calc covariance matrix
+	CvMat* pCovMat = cvCreateMat( nSize, nSize, CV_32F );
+	CvMat* pMeanVec = cvCreateMat( 1, nSize, CV_32F );
 	
-	cvMatMul(pMat, pTransposedVecs, pResultMat);
+	cvCalcCovarMatrix( (const void **)pDataSet, m_nWidth*m_nHeight, pCovMat, pMeanVec, CV_COVAR_SCALE | CV_COVAR_NORMAL );
 	
-	// Release
-	cvReleaseMat(&pTransposedVecs); 
-	cvReleaseMat(&pMeanVec); 
-	cvReleaseMat(&pEigenVecs); 
-	cvReleaseMat(&pEigenVals); 
+	cvReleaseMat(&pMeanVec);
 	
+	// Do the SVD decomposition
+	CvMat* pMatW = cvCreateMat( nSize, 1, CV_32F );
+	CvMat* pMatV = cvCreateMat( nSize, nSize, CV_32F );
+	CvMat* pMatU = cvCreateMat( nSize, nSize, CV_32F );
+	
+	cvSVD(pCovMat, pMatW, pMatU, pMatV, CV_SVD_MODIFY_A);
+	
+	cvReleaseMat(&pCovMat);
+	cvReleaseMat(&pMatW);
+	cvReleaseMat(&pMatV);
+	
+	// Transform to the new basis
+	cvMatMul(pMat, pMatU, pResultMat);
+	cvReleaseMat(&pMatU);
+
 	return true;
 }
 
