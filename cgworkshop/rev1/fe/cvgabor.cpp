@@ -625,19 +625,23 @@ void CvGabor::Apply(IplImage *src, IplImage *dst, int Type)
     {
       case CV_GABOR_REAL:
         cvCopy( (CvMat*)Real, (CvMat*)kernel, NULL );
-        cvFilter2D( (CvMat*)mat, (CvMat*)mat, (CvMat*)kernel);
+        // TODO: Change the anchor (0,0) to another point (maybe center of matrix?))
+        cvFilter2D( (CvMat*)mat, (CvMat*)mat, (CvMat*)kernel, cvPoint(0,0));
         break;
       case CV_GABOR_IMAG:
         cvCopy( (CvMat*)Imag, (CvMat*)kernel, NULL );
-        cvFilter2D( (CvMat*)mat, (CvMat*)mat, (CvMat*)kernel);
+        // TODO: Change the anchor (0,0) to another point (maybe center of matrix?))
+        cvFilter2D( (CvMat*)mat, (CvMat*)mat, (CvMat*)kernel, cvPoint(0,0));
         break;
       case CV_GABOR_MAG:
         /* Real Response */
         cvCopy( (CvMat*)Real, (CvMat*)kernel, NULL );
-        cvFilter2D( (CvMat*)mat, (CvMat*)rmat, (CvMat*)kernel);
+        // TODO: Change the anchor (0,0) to another point (maybe center of matrix?))
+        cvFilter2D( (CvMat*)mat, (CvMat*)rmat, (CvMat*)kernel, cvPoint(0,0));
         /* Imag Response */
         cvCopy( (CvMat*)Imag, (CvMat*)kernel, NULL );
-        cvFilter2D( (CvMat*)mat, (CvMat*)imat, (CvMat*)kernel);
+        // TODO: Change the anchor (0,0) to another point (maybe center of matrix?))
+        cvFilter2D( (CvMat*)mat, (CvMat*)imat, (CvMat*)kernel, cvPoint(0,0));
         /* Magnitude response is the square root of the sum of the square of real response and imaginary response */
         for (i = 0; i < mat->rows; i++)
         {
