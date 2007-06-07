@@ -43,7 +43,7 @@ void CFeatureExtraction::CalcHistogram(IplImage * pImg, CvMat * pHistogram)
 			{
 				// Get appropriate bin for current pixel
 				uchar val = pData[y*step+x*channels+k];;
-				uchar bin = val*nBins/255;
+				uchar bin = val*nBins/256;
 	
 				// Go over a 5x5 patch, increase appropriate bin by 1
 				for (int j=y-2;j<=y+2;j++)
@@ -244,7 +244,11 @@ bool CFeatureExtraction::DoPCA(CvMat * pMat, CvMat * pResultMat, int nSize, int 
 
 	printf("DoPCA: Sort our data sets in a vector each\n");	
 	// Sort our data sets in a vector each
+<<<<<<< .mine
+	CvMat ** pDataSet = new CvMat*[m_nWidth*m_nHeight];
+=======
 	CvMat ** pDataSet = (CvMat **) malloc(m_nWidth*m_nHeight*sizeof(CvMat *));
+>>>>>>> .r54
 	float * pData = pMat->data.fl;
 	for (i=0;i<m_nWidth*m_nHeight;i++)
 	{
@@ -285,6 +289,10 @@ bool CFeatureExtraction::DoPCA(CvMat * pMat, CvMat * pResultMat, int nSize, int 
 	cvReleaseMat(&pMatU);
 	cvReleaseMat(&pEigenVecs);
 	
+	for (i = 0; i < m_nHeight * m_nWidth; i++)
+		delete [] pDataSet[i];
+	delete [] pDataSet;
+
 	printf("CFeatureExtraction::DoPCA out\n");
 	return true;
 }
