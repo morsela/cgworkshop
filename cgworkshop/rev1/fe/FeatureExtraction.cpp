@@ -244,7 +244,7 @@ bool CFeatureExtraction::DoPCA(CvMat * pMat, CvMat * pResultMat, int nSize, int 
 
 	printf("DoPCA: Sort our data sets in a vector each\n");	
 	// Sort our data sets in a vector each
-	CvMat * pDataSet[m_nWidth*m_nHeight];
+	CvMat ** pDataSet = (CvMat **) malloc(m_nWidth*m_nHeight*sizeof(CvMat *));
 	float * pData = pMat->data.fl;
 	for (i=0;i<m_nWidth*m_nHeight;i++)
 	{
