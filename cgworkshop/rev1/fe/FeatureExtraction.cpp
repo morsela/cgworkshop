@@ -2,15 +2,15 @@
 #include "cvgabor.h"
 #include <math.h>
 
+// TODO:
+// Add the destructor.
+// Make sure everything everywhere is cleaned up nicely.
+
 inline double round2( double d )
 {
 	return floor( d + 0.5 );
 }
 
-
-// TODO:
-// Combine 30 Histogram values with 24 Gabor values
-// PCA these.
 
 static void displayImage(char * title, IplImage * pImg)
 {
@@ -340,7 +340,9 @@ bool CFeatureExtraction::GetChannels(CvMat * pMergedMat, CvMat * pChannels[], in
 
 CFeatureExtraction::CFeatureExtraction(char * file)
 {	
+	printf("CFeatureExtraction::CFeatureExtraction\n");
 	// Load the input image
+	printf("CFeatureExtraction: Loading image %s\n", file);
 	m_pSrcImg = cvLoadImage(file,1);
 	if (m_pSrcImg == NULL)
 		return;
@@ -352,6 +354,7 @@ CFeatureExtraction::CFeatureExtraction(char * file)
 	m_nWidth = m_pSrcImg->width;
 	m_nHeight = m_pSrcImg->height; 	
 	
+	printf("CFeatureExtraction: m_nChannels=%d, m_nWidth=%d, m_nHeight=%d\n", m_nChannels, m_nWidth, m_nHeight);
 	// Scale to a 32bit float image (needed for later stages)
 	m_pSrcImgFloat = cvCreateImage(cvSize(m_nWidth,m_nHeight),IPL_DEPTH_32F,3);
 	cvConvertScale(m_pSrcImg,m_pSrcImgFloat,1.0,0);
