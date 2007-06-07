@@ -47,15 +47,15 @@ public:
 
      CvGabor(float orientation, float freq, float sx, float sy);
     bool IsInit();
-    long mask_width();
+    long CalcKernelSize();
     IplImage* get_image(int Type);
     bool IsKernelCreate();
-    long get_mask_width();
+    long GetKernelSize();
     void Init(float orientation, float freq, float sx, float sy);
     void output_file(const char *filename, int Type);
     CvMat* get_matrix(int Type);
     void show(int Type);
-    void conv_img(IplImage *src, IplImage *dst, int Type);
+    void Apply(IplImage *src, IplImage *dst, int Type);
 
 protected:
 	float m_orientation;
@@ -76,7 +76,7 @@ protected:
     CvMat *Imag;
     CvMat *Real;
 private:
-    void creat_kernel();
+    void CreateKernel();
 
 };
 
