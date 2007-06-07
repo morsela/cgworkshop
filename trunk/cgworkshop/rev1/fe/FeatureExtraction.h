@@ -23,7 +23,7 @@ class CFeatureExtraction
 		void CalcHistogram(IplImage * pImg, CvMat * pHistogram);
 		
 		bool GetChannels(CvMat * pMergedMat, CvMat * pChannels[], int nTotalChans, int nExtractChans);
-		bool DoPCA(CvMat * pMat, CvMat * pResultMat, int nSize); 
+		bool DoPCA(CvMat * pMat, CvMat * pResultMat, int nSize, int nExpectedSize); 
 
 	protected:
 		

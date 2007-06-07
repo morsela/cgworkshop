@@ -22,8 +22,8 @@
 // TODO:
 // Killing most things here
 // Implementing Lior's matlab code
-// Only functions that should change are init, mask_width, creat_kernel, conv_img
-// init and mask_width, creat_kernel are done
+// Only functions that should change are init, CalcKernelSize, CreateKernel, Apply
+// init and CalcKernelSize, CreateKernel are done
 // change all the function, parameters names to something normal
 
 CvGabor::~CvGabor()
@@ -57,7 +57,7 @@ bool CvGabor::IsInit()
 }
 
 /*!
-    \fn CvGabor::mask_width()
+    \fn CvGabor::CalcKernelSize()
 Give out the width of the mask
 
 Parameters:
@@ -69,10 +69,11 @@ Returns:
 Return the width of mask (should be NxN) by the value of Sigma and iNu.
  */
 
-long CvGabor::mask_width()
+long CvGabor::CalcKernelSize()
 {
+	printf("CvGabor::CalcKernelSize\n");
     if (IsInit() == FALSE)  {
-       perror ("Error: The Object has not been initilised in mask_width()!\n");
+       perror ("Error: The Object has not been initilised in CalcKernelSize()!\n");
        return 0;
     }
     else {
@@ -143,9 +144,7 @@ long CvGabor::mask_width()
 		
 		m_halfSizeX = halfSizeX;
 		m_halfSizeY = halfSizeY;
-		
-		printf("half_filter_size_x = %f\nhalf_filter_size_y = %f\n", m_halfSizeX, m_halfSizeY);
-		
+
 		cvReleaseMat(&pRotatedBoundingBox);
 		cvReleaseMat(&pRotationMatTP);
 		cvReleaseMat(&pBoundingBox);
@@ -157,7 +156,7 @@ long CvGabor::mask_width()
 
 
 /*!
-    \fn CvGabor::creat_kernel()
+    \fn CvGabor::CreateKernel()
 Create gabor kernel
 
 Parameters:
@@ -187,9 +186,10 @@ gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + r
  
 // Figure out how to seperate this into the real and imaginary parts  
   
-void CvGabor::creat_kernel()
+void CvGabor::CreateKernel()
 {
-	if (IsInit() == FALSE) {perror("Error: The Object has not been initilised in creat_kernel()!\n");}
+	printf("CvGabor::CreateKernel\n");
+	if (IsInit() == FALSE) {perror("Error: The Object has not been initilised in CreateKernel()!\n");}
 	else {
 		// [MATLAB] x = (-half_filter_size_x):half_filter_size_x;
 		int i;
@@ -451,7 +451,7 @@ bool CvGabor::IsKernelCreate()
 
 
 /*!
-    \fn CvGabor::get_mask_width()
+    \fn CvGabor::GetKernelSize()
 Reads the width of Mask
 
 Parameters:
@@ -460,7 +460,7 @@ Parameters:
 Returns:
     Pointer to long type width of mask.
  */
-long CvGabor::get_mask_width()
+long CvGabor::GetKernelSize()
 {
   return Width;
 }
@@ -478,7 +478,7 @@ Parameters:
 
 Returns:
 
-Initilize the.gabor with the orientation iMu, the scale iNu, the sigma dSigma, the frequency dF, it will call the function creat_kernel(); So a gabor is created.
+Initilize the.gabor with the orientation iMu, the scale iNu, the sigma dSigma, the frequency dF, it will call the function CreateKernel(); So a gabor is created.
  */
 void CvGabor::Init(float orientation, float freq, float sx, float sy)
 {
@@ -494,10 +494,10 @@ void CvGabor::Init(float orientation, float freq, float sx, float sy)
 	m_cutOff = 2.0;
 	
 	bInitialised = TRUE;
-    mask_width();
+    CalcKernelSize();
     //Real = cvCreateMat( Width, Width, CV_32FC1);
     //Imag = cvCreateMat( Width, Width, CV_32FC1);
-    creat_kernel();
+    CreateKernel();
     bInitialised = TRUE;
 }
 
@@ -596,12 +596,13 @@ void CvGabor::show(int Type)
 
 
 /*!
-    \fn CvGabor::conv_img(IplImage *src, IplImage *dst, int Type)
+    \fn CvGabor::Apply(IplImage *src, IplImage *dst, int Type)
  */
  
 // TODO : Make this work with the new changes 
-void CvGabor::conv_img(IplImage *src, IplImage *dst, int Type)
+void CvGabor::Apply(IplImage *src, IplImage *dst, int Type)
 {
+	printf("CvGabor::Apply\n");
 	int i,j;
     double ve, re,im;
 
@@ -633,10 +634,10 @@ void CvGabor::conv_img(IplImage *src, IplImage *dst, int Type)
       case CV_GABOR_MAG:
         /* Real Response */
         cvCopy( (CvMat*)Real, (CvMat*)kernel, NULL );
-        cvFilter2D( (CvMat*)mat, (CvMat*)rmat, (CvMat*)kernel, cvPoint(0,0));
+        cvFilter2D( (CvMat*)mat, (CvMat*)rmat, (CvMat*)kernel);
         /* Imag Response */
         cvCopy( (CvMat*)Imag, (CvMat*)kernel, NULL );
-        cvFilter2D( (CvMat*)mat, (CvMat*)imat, (CvMat*)kernel, cvPoint(0,0));
+        cvFilter2D( (CvMat*)mat, (CvMat*)imat, (CvMat*)kernel);
         /* Magnitude response is the square root of the sum of the square of real response and imaginary response */
         for (i = 0; i < mat->rows; i++)
         {

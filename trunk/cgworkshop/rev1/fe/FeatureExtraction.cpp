@@ -75,7 +75,7 @@ bool CFeatureExtraction::GetGaborResponse(IplImage *pGrayImg, IplImage *pResImg,
 	//pGabor->show(CV_GABOR_REAL);
 	
 	// Convolution
-	pGabor->conv_img(pGrayImg, pResImg, CV_GABOR_MAG);
+	pGabor->Apply(pGrayImg, pResImg, CV_GABOR_MAG);
 	
 	return true;
 }
@@ -156,7 +156,7 @@ bool CFeatureExtraction::GetColorChannels(CvMat * pColorChannels[])
 	// This matrix would hold the values represented in the new basis we've found
 	CvMat * pResultMat = cvCreateMat( m_nWidth*m_nHeight, nSize , CV_32F );
 	// Actual calculation
-	DoPCA(pMat, pResultMat, nSize);
+	DoPCA(pMat, pResultMat, nSize, 3);
 	// Extracting the 3 primary channels
 	GetChannels(pResultMat, pColorChannels, nSize, 3);
 	
@@ -181,12 +181,12 @@ bool CFeatureExtraction::GetTextureChannels(CvMat * pTextureChannels[])
 	CvMat * pHistMat = cvCreateMat( m_nWidth*m_nHeight, histSize , CV_32F );
 	CalcHistogram(m_pSrcImg, pHistMat);
 	// Do we need to normalize?
-	cvNormalize(pHistMat, pHistMat, 0, 255, CV_MINMAX);
+	cvNormalize(pHistMat, pHistMat, 0, 1, CV_MINMAX);
 
 	CvMat * pGaborMat = cvCreateMat (m_nWidth * m_nHeight, gaborSize, CV_32F);
 	GetGaborResponse(pGaborMat);
 	// Do we need to normalize?
-	cvNormalize(pGaborMat, pGaborMat, 0, 255, CV_MINMAX);
+	cvNormalize(pGaborMat, pGaborMat, 0, 1, CV_MINMAX);
 
 	// Our merged matrix
 	CvMat * pTextureMat = cvCreateMat( m_nWidth*m_nHeight, vectorSize , CV_32F );
@@ -213,11 +213,11 @@ bool CFeatureExtraction::GetTextureChannels(CvMat * pTextureChannels[])
 	
 
 	// This matrix would hold the values represented in the new basis we've found
-	CvMat * pResultMat = cvCreateMat( m_nWidth*m_nHeight, vectorSize , CV_32F );
+	CvMat * pResultMat = cvCreateMat( m_nWidth*m_nHeight, 3 , CV_32F );
 	// Actual calculation
-	DoPCA(pTextureMat, pResultMat, vectorSize);
+	DoPCA(pTextureMat, pResultMat, vectorSize, 3);
 	// Extracting the 3 primary channels
-	GetChannels(pResultMat, pTextureChannels, vectorSize, 3);
+	GetChannels(pResultMat, pTextureChannels, 3, 3);
 
 	cvReleaseMat(&pHistMat);
 	cvReleaseMat(&pGaborMat);
@@ -230,22 +230,22 @@ bool CFeatureExtraction::GetTextureChannels(CvMat * pTextureChannels[])
 
 //////////////////////////////////////////////////////////////////////////////////////
 
-bool CFeatureExtraction::DoPCA(CvMat * pMat, CvMat * pResultMat, int nSize)
+bool CFeatureExtraction::DoPCA(CvMat * pMat, CvMat * pResultMat, int nSize, int nExpectedSize)
 {
 	printf("CFeatureExtraction::DoPCA\n");
 	int i;	
-	
-	// Arrange our data sets in a vector each
-	CvMat pDataVec[m_nWidth*m_nHeight];
+
+	printf("DoPCA: Sort our data sets in a vector each\n");	
+	// Sort our data sets in a vector each
+	CvMat * pDataSet[m_nWidth*m_nHeight];
 	float * pData = pMat->data.fl;
 	for (i=0;i<m_nWidth*m_nHeight;i++)
-		pDataVec[i] = cvMat( 1, nSize, CV_32FC1, &pData[i*nSize]);
-		
-	// Combine all data set vectors into one pointer array
-	CvMat * pDataSet[m_nWidth*m_nHeight];
-	for (i=0;i<m_nWidth*m_nHeight;i++)
-		pDataSet[i] = &pDataVec[i];
-
+	{
+		pDataSet[i] = (CvMat*) malloc(sizeof(CvMat));
+		cvInitMatHeader(pDataSet[i], 1, nSize, CV_32FC1, &pData[i*nSize]);
+	}
+	
+	printf("DoPCA: Calc covariance matrix\n");
 	// Calc covariance matrix
 	CvMat* pCovMat = cvCreateMat( nSize, nSize, CV_32F );
 	CvMat* pMeanVec = cvCreateMat( 1, nSize, CV_32F );
@@ -254,20 +254,29 @@ bool CFeatureExtraction::DoPCA(CvMat * pMat, CvMat * pResultMat, int nSize)
 	
 	cvReleaseMat(&pMeanVec);
 	
+	printf("DoPCA: Do the SVD decomposition\n");
 	// Do the SVD decomposition
 	CvMat* pMatW = cvCreateMat( nSize, 1, CV_32F );
 	CvMat* pMatV = cvCreateMat( nSize, nSize, CV_32F );
 	CvMat* pMatU = cvCreateMat( nSize, nSize, CV_32F );
 	
-	cvSVD(pCovMat, pMatW, pMatU, pMatV, CV_SVD_MODIFY_A);
+	cvSVD(pCovMat, pMatW, pMatU, pMatV, CV_SVD_MODIFY_A+CV_SVD_V_T);
 	
 	cvReleaseMat(&pCovMat);
 	cvReleaseMat(&pMatW);
 	cvReleaseMat(&pMatV);
-	
-	// Transform to the new basis
-	cvMatMul(pMat, pMatU, pResultMat);
+
+	printf("DoPCA: Extract the requested number of dominant eigen vectors\n");
+	// Extract the requested number of dominant eigen vectors
+	CvMat* pEigenVecs = cvCreateMat( nSize, nExpectedSize, CV_32F );
+	for (i=0;i<nSize;i++)
+		memcpy(&pEigenVecs->data.fl[i*nExpectedSize], &pMatU->data.fl[i*nSize], nExpectedSize*sizeof(float));
+
+	printf("DoPCA: Transform to the new basis\n");
+	// Transform to the new basis	
+	cvMatMul(pMat, pEigenVecs, pResultMat);
 	cvReleaseMat(&pMatU);
+	cvReleaseMat(&pEigenVecs);
 
 	return true;
 }
@@ -314,9 +323,9 @@ bool CFeatureExtraction::GetChannels(CvMat * pMergedMat, CvMat * pChannels[], in
 		// TODO: Remove this, only a test
 		displayImage(filename, pImg);
 		
-		printf("Saving pchannel %d to: %s\n",s_nChannel, filename);
+		printf("GetChannels: Saving pchannel %d to: %s\n",s_nChannel, filename);
 		if (!cvSaveImage(filename,pImg)) 
-			printf("Could not save: %s\n",filename);
+			printf("GetChannels: Could not save: %s\n",filename);
 			
 		s_nChannel++;	
 	}
