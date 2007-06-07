@@ -57,8 +57,11 @@ void CFeatureExtraction::CalcHistogram(IplImage * pImg, CvMat * pHistogram)
 	                    if (i<0 || i>=w)
 	                            continue;
 						
+						int row = j*w+i;
+						pHistogram->data.fl[row*pHistogram->cols +k*nBins+bin]+=1;
+
 						//int row = j*w+x;
-						pHistogram->data.fl[j*step*10+x*channels*10 +k*nBins+bin]+=1;
+						//pHistogram->data.fl[j*step*10+x*channels*10 +k*nBins+bin]+=1;
 	                }
 				}
 			}
@@ -244,11 +247,7 @@ bool CFeatureExtraction::DoPCA(CvMat * pMat, CvMat * pResultMat, int nSize, int 
 
 	printf("DoPCA: Sort our data sets in a vector each\n");	
 	// Sort our data sets in a vector each
-<<<<<<< .mine
 	CvMat ** pDataSet = new CvMat*[m_nWidth*m_nHeight];
-=======
-	CvMat ** pDataSet = (CvMat **) malloc(m_nWidth*m_nHeight*sizeof(CvMat *));
->>>>>>> .r54
 	float * pData = pMat->data.fl;
 	for (i=0;i<m_nWidth*m_nHeight;i++)
 	{
