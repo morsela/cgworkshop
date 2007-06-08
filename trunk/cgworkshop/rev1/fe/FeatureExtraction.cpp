@@ -20,6 +20,28 @@ static void displayImage(char * title, IplImage * pImg)
 	cvDestroyWindow(title);		
 }
 
+static void saveChannel(char * title, CvMat * pMat)
+{
+	CvMat * p8UMat = cvCreateMat( pMat->rows,pMat->cols, CV_8U );
+	
+	// Convert to unsigned char, 0..255
+	cvConvertScale(pMat,p8UMat,255,0); 
+		
+	// Attach our data to an image header
+	IplImage tImg;
+	cvInitImageHeader(&tImg,cvSize(pMat->rows,pMat->cols),IPL_DEPTH_8U,1);
+	tImg.imageData = (char*) p8UMat->data.ptr;
+		
+	// TODO: Remove this, only a test
+	displayImage(title, &tImg);
+		
+	printf("GetChannels: Saving pchannel to: %s\n", title);
+	if (!cvSaveImage(title,&tImg)) 
+		printf("GetChannels: Could not save: %s\n",title);	
+		
+	cvReleaseMat(&p8UMat);
+}
+
 //////////////////////////////////////////////////////////////////////////////////////
 
 // TODO: Make sure working......
@@ -48,16 +70,29 @@ void CFeatureExtraction::CalcHistogram(IplImage * pImg, CvMat * pHistogram)
 				// Go over a 5x5 patch, increase appropriate bin by 1
 				for (int j=y-2;j<=y+2;j++)
 				{
-	
-					if (j<0 || j>=h)
-	                	continue;
+					
+					int rj = j;
+					//if (j<0 || j>=h)
+	                //	continue;
+	                // Symmetric mirroring, like matlab
+	                if (rj<0)
+	                	rj = -rj;
+	                if (rj >= h)
+	                	rj = 2*h-rj-1;
+	                
 
 	                for (int i=x-2;i<=x+2;i++)
 	                {
-	                    if (i<0 || i>=w)
-	                            continue;
-						
-						int row = j*w+i;
+	                	int ri = i;
+	                   // if (i<0 || i>=w)
+	                    //        continue;
+		                // Symmetric mirroring, like matlab
+		                if (ri<0)
+		                	ri = -ri;
+		                if (ri >= w)
+		                	ri = 2*w-ri-1;
+
+						int row = rj*w+ri;
 						pHistogram->data.fl[row*pHistogram->cols +k*nBins+bin]+=1;
 
 						//int row = j*w+x;
@@ -119,6 +154,9 @@ bool CFeatureExtraction::GetGaborResponse(CvMat * pGaborMat)
 			
 			// This being a test and all, display the image
 			// displayImage(title, reimg);
+			char filename[255];
+			sprintf(filename, "gabor%02d.bmp", idx+1);
+			cvSaveImage(filename,reimg);
 			
 			// Concat the new vector to the result matrix
 			int k;
@@ -156,19 +194,19 @@ bool CFeatureExtraction::GetColorChannels(CvMat * pColorChannels[])
 	IplImage *pLabImg = cvCreateImage(cvSize(m_pSrcImg->width,m_pSrcImg->height), IPL_DEPTH_32F, nSize);
 	cvCvtColor(m_pSrcImgFloat,pLabImg,CV_BGR2Lab);	
 
-	// Get our 32F matrix (From the 32F image created previously)	
-	CvMat * pMat = cvCreateMat( m_nWidth*m_nHeight, nSize , CV_32F );
-	memcpy(pMat->data.fl, (float*)pLabImg->imageData, pLabImg->imageSize);
+	// Put the 32F lab image data in a matrix header
+	CvMat srcMat;
+	cvInitMatHeader(&srcMat, m_nWidth*m_nHeight, nSize , CV_32F, (float*)pLabImg->imageData );
 
 	// This matrix would hold the values represented in the new basis we've found
 	CvMat * pResultMat = cvCreateMat( m_nWidth*m_nHeight, nSize , CV_32F );
 	// Actual calculation
-	DoPCA(pMat, pResultMat, nSize, 3);
+	DoPCA(&srcMat, pResultMat, nSize, 3);
 	// Extracting the 3 primary channels
 	GetChannels(pResultMat, pColorChannels, nSize, 3);
 	
 	// Useful releasing
-	cvReleaseMat(&pMat);
+
 	cvReleaseMat(&pResultMat);
 	
 	printf("CFeatureExtraction::GetColorChannels out\n");
@@ -307,46 +345,33 @@ bool CFeatureExtraction::GetChannels(CvMat * pMergedMat, CvMat * pChannels[], in
 	
 	// Store each of the 3 p-channels in a matrix
 	float val;
-	for (int k=0;k<nExtractChans;k++)
+
+	for (int i=0;i<m_nHeight;i++)
 	{
-		for (int i=0;i<m_nHeight;i++)
+		for (int j=0;j<m_nWidth;j++)
 		{
-			for (int j=0;j<m_nWidth;j++)
+			for (int k=0;k<nExtractChans;k++)
 			{
 				val = pMergedMat->data.fl[(i*m_nWidth+j)*nTotalChans + k];
-				((float*)pChannels[k]->data.ptr)[i*m_nWidth+j] = val;
+				pChannels[k]->data.fl[i*m_nWidth+j] = val;
 			}
 		}
+	}
+		
+	for (int k=0;k<nExtractChans;k++)
 		// Normalize to 0..1
 		cvNormalize(pChannels[k],pChannels[k], 0, 1, CV_MINMAX);
-	}
+
 
 	
 	// Save each channel to a bitmap, just for fun.
 	char filename[255];
-	IplImage * pImg = cvCreateImage(cvSize(m_nWidth,m_nHeight),IPL_DEPTH_8U,1);
-	CvMat * pTempMat = cvCreateMat( m_nWidth, m_nHeight, CV_8U );
-	char * tempData = pImg->imageData;
 	for (int i=0;i<m_nChannels;i++)
 	{
 		sprintf(filename, "chan%d.bmp", s_nChannel);
-		// Convert to unsigned char, 0..255
-		cvConvertScale(pChannels[i],pTempMat,255,0);
-		// Use the image header on our data
-		pImg->imageData = (char *) pTempMat->data.ptr;
-		
-		// TODO: Remove this, only a test
-		displayImage(filename, pImg);
-		
-		printf("GetChannels: Saving pchannel %d to: %s\n",s_nChannel, filename);
-		if (!cvSaveImage(filename,pImg)) 
-			printf("GetChannels: Could not save: %s\n",filename);
-			
+		saveChannel(filename, pChannels[i]);
 		s_nChannel++;	
 	}
-	pImg->imageData = tempData;
-	cvReleaseMat(&pTempMat);
-	cvReleaseImage(&pImg);
 
 	printf("CFeatureExtraction::GetChannels out\n");
 	return true;
@@ -374,6 +399,7 @@ CFeatureExtraction::CFeatureExtraction(char * file)
 	// Scale to a 32bit float image (needed for later stages)
 	m_pSrcImgFloat = cvCreateImage(cvSize(m_nWidth,m_nHeight),IPL_DEPTH_32F,3);
 	cvConvertScale(m_pSrcImg,m_pSrcImgFloat,1.0,0);
+	
 	printf("CFeatureExtraction::CFeatureExtraction out\n");
 }
 
