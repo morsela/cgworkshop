@@ -15,31 +15,38 @@ inline double round2( double d )
 static void displayImage(char * title, IplImage * pImg)
 {
 	cvNamedWindow(title, 1);
+	IplImage* pNewImg = cvCreateImage(cvSize(pImg->width,pImg->height),IPL_DEPTH_8U,1);
+	cvConvertScale(pImg,pNewImg,1,0); 
 	cvShowImage(title,pImg);
 	cvWaitKey(0);
 	cvDestroyWindow(title);		
+	
+	cvReleaseImage(&pNewImg);
 }
 
 static void saveChannel(char * title, CvMat * pMat)
 {
+	printf("\nsaveChannel in\n");
 	CvMat * p8UMat = cvCreateMat( pMat->rows,pMat->cols, CV_8U );
 	
 	// Convert to unsigned char, 0..255
 	cvConvertScale(pMat,p8UMat,255,0); 
-		
+
 	// Attach our data to an image header
 	IplImage tImg;
 	cvInitImageHeader(&tImg,cvSize(pMat->rows,pMat->cols),IPL_DEPTH_8U,1);
 	tImg.imageData = (char*) p8UMat->data.ptr;
-		
+
 	// TODO: Remove this, only a test
 	displayImage(title, &tImg);
 		
-	printf("GetChannels: Saving pchannel to: %s\n", title);
+	printf("saveChannel: Saving pchannel to: %s\n", title);
 	if (!cvSaveImage(title,&tImg)) 
-		printf("GetChannels: Could not save: %s\n",title);	
+		printf("saveChannel: Could not save: %s\n",title);	
 		
 	cvReleaseMat(&p8UMat);
+	
+	printf("saveChannel out\n");
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -343,6 +350,7 @@ bool CFeatureExtraction::GetChannels(CvMat * pMergedMat, CvMat * pChannels[], in
 
 	printf("\nCFeatureExtraction::GetChannels in\n");
 	
+	printf("GetChannels: Store each of the 3 p-channels in a matrix\n");
 	// Store each of the 3 p-channels in a matrix
 	float val;
 
@@ -357,13 +365,13 @@ bool CFeatureExtraction::GetChannels(CvMat * pMergedMat, CvMat * pChannels[], in
 			}
 		}
 	}
-		
+	
+	printf("GetChannels: Normalize to 0..1\n");
+	// Normalize to 0..1	
 	for (int k=0;k<nExtractChans;k++)
-		// Normalize to 0..1
 		cvNormalize(pChannels[k],pChannels[k], 0, 1, CV_MINMAX);
 
-
-	
+	printf("GetChannels: Save each channel to a bitmap, just for fun.\n");
 	// Save each channel to a bitmap, just for fun.
 	char filename[255];
 	for (int i=0;i<m_nChannels;i++)
