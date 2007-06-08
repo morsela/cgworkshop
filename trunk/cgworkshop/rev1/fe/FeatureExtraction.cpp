@@ -34,7 +34,7 @@ static void saveChannel(char * title, CvMat * pMat)
 
 	// Attach our data to an image header
 	IplImage tImg;
-	cvInitImageHeader(&tImg,cvSize(pMat->rows,pMat->cols),IPL_DEPTH_8U,1);
+	cvInitImageHeader(&tImg,cvSize(pMat->cols,pMat->rows),IPL_DEPTH_8U,1);
 	tImg.imageData = (char*) p8UMat->data.ptr;
 
 	// TODO: Remove this, only a test
@@ -420,13 +420,13 @@ bool CFeatureExtraction::Run()
 
 	CvMat * pColorChannels[3];
 	for (i=0;i<3;i++)
-		pColorChannels[i] = cvCreateMat( m_nWidth , m_nHeight , CV_32F );
+		pColorChannels[i] = cvCreateMat( m_nHeight , m_nWidth , CV_32F );
 
 	GetColorChannels(pColorChannels);
 
 	CvMat * pTextureChannels[3];
 	for (i = 0; i < 3; i++)
-		pTextureChannels[i] = cvCreateMat(m_nWidth, m_nHeight, CV_32F);
+		pTextureChannels[i] = cvCreateMat(m_nHeight, m_nWidth, CV_32F);
 
 	GetTextureChannels(pTextureChannels);
 
