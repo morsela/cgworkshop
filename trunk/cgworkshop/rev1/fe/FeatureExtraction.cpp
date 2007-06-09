@@ -71,7 +71,7 @@ void CFeatureExtraction::CalcHistogram(IplImage * pImg, CvMat * pHistogram)
 			for (int k=0;k<channels;k++)
 			{
 				// Get appropriate bin for current pixel
-				uchar val = pData[y*step+x*channels+k];;
+				uchar val = pData[y*step+x*channels+k];
 				uchar bin = val*nBins/256;
 	
 				// Go over a 5x5 patch, increase appropriate bin by 1
@@ -79,9 +79,8 @@ void CFeatureExtraction::CalcHistogram(IplImage * pImg, CvMat * pHistogram)
 				{
 					
 					int rj = j;
-					//if (j<0 || j>=h)
-	                //	continue;
-	                // Symmetric mirroring, like matlab
+
+	                // Symmetric mirroring
 	                if (rj<0)
 	                	rj = -rj;
 	                if (rj >= h)
@@ -91,9 +90,8 @@ void CFeatureExtraction::CalcHistogram(IplImage * pImg, CvMat * pHistogram)
 	                for (int i=x-2;i<=x+2;i++)
 	                {
 	                	int ri = i;
-	                   // if (i<0 || i>=w)
-	                    //        continue;
-		                // Symmetric mirroring, like matlab
+
+		                // Symmetric mirroring
 		                if (ri<0)
 		                	ri = -ri;
 		                if (ri >= w)
@@ -101,9 +99,6 @@ void CFeatureExtraction::CalcHistogram(IplImage * pImg, CvMat * pHistogram)
 
 						int row = rj*w+ri;
 						pHistogram->data.fl[row*pHistogram->cols +k*nBins+bin]+=1;
-
-						//int row = j*w+x;
-						//pHistogram->data.fl[j*step*10+x*channels*10 +k*nBins+bin]+=1;
 	                }
 				}
 			}
@@ -211,11 +206,10 @@ bool CFeatureExtraction::GetColorChannels(CvMat * pColorChannels[])
 	DoPCA(&srcMat, pResultMat, nSize, 3);
 	// Extracting the 3 primary channels
 	GetChannels(pResultMat, pColorChannels, nSize, 3);
-	
-	// Useful releasing
 
+	// Useful releasing
 	cvReleaseMat(&pResultMat);
-	
+	cvReleaseImage(&pLabImg);
 	printf("CFeatureExtraction::GetColorChannels out\n");
 	return true;	
 }
@@ -360,8 +354,8 @@ bool CFeatureExtraction::GetChannels(CvMat * pMergedMat, CvMat * pChannels[], in
 		{
 			for (int k=0;k<nExtractChans;k++)
 			{
-				val = pMergedMat->data.fl[(i*m_nWidth+j)*nTotalChans + k];
-				pChannels[k]->data.fl[i*m_nWidth+j] = val;
+				val = cvmGet(pMergedMat, i*m_nWidth+j, k);
+				cvmSet(pChannels[k], i,j, val);
 			}
 		}
 	}
