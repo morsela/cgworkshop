@@ -131,11 +131,11 @@ bool CFeatureExtraction::GetGaborResponse(CvMat * pGaborMat)
 	int idx = 0;
 	printf("\nCFeatureExtraction::GetGaborResponse in\n");	
 	// Convert our image to grayscale (Gabor doesn't care about colors! I hope?)	
-	IplImage *pGrayImg = cvCreateImage(cvSize(m_pSrcImg->width,m_pSrcImg->height), IPL_DEPTH_8U, 1);
-	cvCvtColor(m_pSrcImg,pGrayImg,CV_BGR2GRAY);
+	IplImage *pGrayImg = cvCreateImage(cvSize(m_pSrcImg->width,m_pSrcImg->height), IPL_DEPTH_32F, 1);
+	cvCvtColor(m_pSrcImgFloat,pGrayImg,CV_BGR2GRAY);
 
 	// The output image
-	IplImage *reimg = cvCreateImage(cvSize(pGrayImg->width,pGrayImg->height), IPL_DEPTH_8U, 1);
+	IplImage *reimg = cvCreateImage(cvSize(pGrayImg->width,pGrayImg->height), IPL_DEPTH_32F, 1);
 
 	double freq = 0.4;
 	int freq_steps = 4;
@@ -156,14 +156,14 @@ bool CFeatureExtraction::GetGaborResponse(CvMat * pGaborMat)
 			
 			// This being a test and all, display the image
 			// displayImage(title, reimg);
-			char filename[255];
-			sprintf(filename, "gabor%02d.bmp", idx+1);
-			cvSaveImage(filename,reimg);
+			//char filename[255];
+			//sprintf(filename, "gabor%02d.bmp", idx+1);
+			//cvSaveImage(filename,reimg);
 			
 			// Concat the new vector to the result matrix
 			int k;
 			pMatPos = (float *) pGaborMat->data.fl;
-			char * pResData = (char *) reimg->imageData;
+			float * pResData = (float *) reimg->imageData;
 			for (k=0;k<reimg->width*reimg->height;k++)
 			{
 				pMatPos[idx] = (float) pResData[0];
@@ -233,7 +233,7 @@ bool CFeatureExtraction::GetTextureChannels(CvMat * pTextureChannels[])
 	CvMat * pGaborMat = cvCreateMat (m_nWidth * m_nHeight, gaborSize, CV_32F);
 	GetGaborResponse(pGaborMat);
 	// Do we need to normalize?
-	cvNormalize(pGaborMat, pGaborMat, 0, 1, CV_MINMAX);
+	//cvNormalize(pGaborMat, pGaborMat, 0, 1, CV_MINMAX);
 
 	// Our merged matrix
 	CvMat * pTextureMat = cvCreateMat( m_nWidth*m_nHeight, vectorSize , CV_32F );
