@@ -198,9 +198,8 @@ bool CFeatureExtraction::GetColorChannels(CvMat * pChannels, CvMat * pColorChann
 	
 	// Convert to LAB color space
 	IplImage *pLabImg = cvCreateImage(cvSize(m_pSrcImg->width,m_pSrcImg->height), IPL_DEPTH_32F, nSize);
-	printf("A\n");
 	cvCvtColor(m_pSrcImgFloat,pLabImg,CV_BGR2Lab);	
-printf("b\n");
+
 	// Put the 32F lab image data in a matrix header
 	CvMat srcMat;
 	cvInitMatHeader(&srcMat, m_nWidth*m_nHeight, nSize , CV_32F, (float*)pLabImg->imageData );
@@ -215,7 +214,6 @@ printf("b\n");
 	GetChannels(pResultMat, pColorChannelsArr, nSize, COLOR_CHANNEL_NUM);
 
 	// Useful releasing
-	cvReleaseMat(&pResultMat);
 	cvReleaseImage(&pLabImg);
 	printf("CFeatureExtraction::GetColorChannels out\n");
 	return true;	
@@ -259,7 +257,6 @@ bool CFeatureExtraction::GetTextureChannels(CvMat * pChannels, CvMat * pTextureC
 	cvReleaseMat(&pHistMat);
 	cvReleaseMat(&pGaborMat);
 	cvReleaseMat(&pTextureMat);
-	cvReleaseMat(&pResultMat);
 	
 	printf("CFeatureExtraction::GetTextureChannels out\n");
 
