@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Point.h"
+#include <GL/glut.h>
 
 class CScribble
 {

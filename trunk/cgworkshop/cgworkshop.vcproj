@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="openCV/cv.lib openCV/cvaux.lib openCV/cxcore.lib openCV/highgui.lib"
+				AdditionalDependencies="openCV/cv.lib openCV/cvaux.lib openCV/cxcore.lib openCV/highgui.lib glut32.lib"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -229,10 +229,6 @@
 					RelativePath=".\src\fe\FeatureExtraction.h"
 					>
 				</File>
-				<File
-					RelativePath=".\src\fe\Main.cpp"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="GUI"
@@ -244,6 +240,28 @@
 				<File
 					RelativePath=".\src\GUI\GUI.h"
 					>
+				</File>
+				<File
+					RelativePath=".\src\GUI\main.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath=".\src\GUI\Point.h"
