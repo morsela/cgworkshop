@@ -23,3 +23,4 @@ struct CPoint
 
 
 #endif	//_H_POINT_H_
+

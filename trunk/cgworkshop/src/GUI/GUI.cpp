@@ -165,10 +165,12 @@ void CGUI::MouseAction(int button, int state, int x, int y)
 			leftVecs.push_back( (int)((GetHeight() - y) * ratio_y) );
 
 			// the start of the vector
-			m_scribbles.push_back( CScribble ( CPoint( m_orthoBBox[0] * ( 1 - 2 * (float)x / GetWidth() ),
-											m_orthoBBox[3] * ( 1 - 2 * (float)y / GetHeight() )),
-											CPoint( m_orthoBBox[0] * ( 1 - 2 * (float)x / GetWidth() ),
-											m_orthoBBox[3] * ( 1 - 2 * (float)y / GetHeight() )) ) );
+			CPoint p1 = CPoint( m_orthoBBox[0] * ( 1 - 2 * (float)x / GetWidth() ),
+											m_orthoBBox[3] * ( 1 - 2 * (float)y / GetHeight() ));
+											
+			CPoint p2 = CPoint( m_orthoBBox[0] * ( 1 - 2 * (float)x / GetWidth() ),
+											m_orthoBBox[3] * ( 1 - 2 * (float)y / GetHeight() ));
+			m_scribbles.push_back( CScribble ( p1,p2 ) );
 											
 				/*							
 			leftVecsRnd.push_back( CPoint( m_orthoBBox[0] * ( 1 - 2 * (float)x / GetWidth() ),
