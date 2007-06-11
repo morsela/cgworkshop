@@ -437,7 +437,6 @@ CFeatureExtraction::~CFeatureExtraction()
 {
 	int i;
 
-	cvReleaseImage(&m_pSrcImg);
 	cvReleaseImage(&m_pSrcImgFloat);
 
 	for (i=0;i<3;i++)
