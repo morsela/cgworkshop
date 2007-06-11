@@ -89,6 +89,8 @@ public:
 	/* Adds a bidirectional edge between 'from' and 'to'
 	   with the weights 'cap' and 'rev_cap' */
 	void add_edge(node_id from, node_id to, captype cap, captype rev_cap);
+	
+	void add_edge(node_id from, node_id to, captype cap);
 
 	/* Sets the weights of the edges 'SOURCE->i' and 'i->SINK'
 	   Can be called at most once for each node before any call to 'add_tweights'.

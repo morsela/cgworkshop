@@ -76,6 +76,9 @@ Graph::node_id Graph::add_node()
 	return (node_id) i;
 }
 
+void Graph::add_edge(node_id from, node_id to, captype cap) {
+	add_edge(from, to, cap, cap);
+}
 void Graph::add_edge(node_id from, node_id to, captype cap, captype rev_cap)
 {
 	arc_forward *a_for;

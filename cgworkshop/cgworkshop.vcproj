@@ -175,7 +175,11 @@
 			Name="src"
 			>
 			<File
-				RelativePath=".\GraphHandler.h"
+				RelativePath=".\src\GraphHandler.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\GraphHandler.h"
 				>
 			</File>
 			<File
