@@ -18,11 +18,13 @@ class CFeatureExtraction
 		bool Run();
 		
 	public:
+		CvMat const ** const GetColorChannels()  { return m_pColorChannels; }
+		CvMat const ** const GetTextureChannels()  { return m_pTextureChannels; }	
+
+	protected:
 
 		bool GetColorChannels(CvMat * pColorChannels[]);
 		bool GetTextureChannels(CvMat * pTextureChannels[]);
-		
-	protected:
 		
 		bool GetGaborResponse(CvMat * pGaborMat);
 		bool GetGaborResponse(IplImage *pGrayImg, IplImage *pResImg, float orientation, float freq, float sx, float sy);
