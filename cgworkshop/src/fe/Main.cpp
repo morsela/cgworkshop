@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <cv.h>
+#include <cxcore.h>
 
 int main(int argc, char ** argv) {
 	if (argc < 2 && 0)
@@ -16,10 +18,13 @@ int main(int argc, char ** argv) {
 	
 	CFeatureExtraction * fe;
 
-	fe = new CFeatureExtraction(argv[1]);
+
+	printf("Loading image %s\n", argv[1]);
+	IplImage *pSrcImg = cvLoadImage(argv[1],1);
+	
+	fe = new CFeatureExtraction(pSrcImg);
 	fe->Run();
 	
 	return 0;
 	
 }
-
