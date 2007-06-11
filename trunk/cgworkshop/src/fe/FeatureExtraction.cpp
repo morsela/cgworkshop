@@ -368,7 +368,7 @@ bool CFeatureExtraction::GetChannels(CvMat * pMergedMat, CvMat * pChannels[], in
 	printf("GetChannels: Save each channel to a bitmap, just for fun.\n");
 	// Save each channel to a bitmap, just for fun.
 	char filename[255];
-	for (int i=0;i<m_nChannels;i++)
+	for (i=0;i<m_nChannels;i++)
 	{
 		sprintf(filename, "chan%d.bmp", s_nChannel);
 		saveChannel(filename, pChannels[i]);
