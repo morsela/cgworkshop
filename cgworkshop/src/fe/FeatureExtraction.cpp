@@ -194,7 +194,7 @@ bool CFeatureExtraction::GetGaborResponse(CvMat * pGaborMat)
 bool CFeatureExtraction::GetColorChannels(CvMat * pColorChannels[])
 {
 	printf("\nCFeatureExtraction::GetColorChannels in\n");
-	int nSize = 3;
+	int nSize = COLOR_CHANNEL_NUM;
 	
 	// Convert to LAB color space
 	IplImage *pLabImg = cvCreateImage(cvSize(m_pSrcImg->width,m_pSrcImg->height), IPL_DEPTH_32F, nSize);
@@ -207,9 +207,9 @@ bool CFeatureExtraction::GetColorChannels(CvMat * pColorChannels[])
 	// This matrix would hold the values represented in the new basis we've found
 	CvMat * pResultMat = cvCreateMat( m_nWidth*m_nHeight, nSize , CV_32F );
 	// Actual calculation
-	DoPCA(&srcMat, pResultMat, nSize, 3);
+	DoPCA(&srcMat, pResultMat, nSize, COLOR_CHANNEL_NUM);
 	// Extracting the 3 primary channels
-	GetChannels(pResultMat, pColorChannels, nSize, 3);
+	GetChannels(pResultMat, pColorChannels, nSize, COLOR_CHANNEL_NUM);
 
 	// Useful releasing
 	cvReleaseMat(&pResultMat);
@@ -264,11 +264,11 @@ bool CFeatureExtraction::GetTextureChannels(CvMat * pTextureChannels[])
 	
 
 	// This matrix would hold the values represented in the new basis we've found
-	CvMat * pResultMat = cvCreateMat( m_nWidth*m_nHeight, 3 , CV_32F );
+	CvMat * pResultMat = cvCreateMat( m_nWidth*m_nHeight, TEXTURE_CHANNEL_NUM , CV_32F );
 	// Actual calculation
-	DoPCA(pTextureMat, pResultMat, vectorSize, 3);
+	DoPCA(pTextureMat, pResultMat, vectorSize, TEXTURE_CHANNEL_NUM);
 	// Extracting the 3 primary channels
-	GetChannels(pResultMat, pTextureChannels, 3, 3);
+	GetChannels(pResultMat, pTextureChannels, TEXTURE_CHANNEL_NUM, TEXTURE_CHANNEL_NUM);
 
 	cvReleaseMat(&pHistMat);
 	cvReleaseMat(&pGaborMat);
@@ -424,7 +424,7 @@ CFeatureExtraction::~CFeatureExtraction()
 	int i;
 
 	cvReleaseImage(&m_pSrcImg);
-	cvReleaseImage(&m_pSrcImgFloat)
+	cvReleaseImage(&m_pSrcImgFloat);
 
 	for (i=0;i<3;i++)
 		cvReleaseMat(&m_pColorChannels[i]);
