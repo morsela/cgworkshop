@@ -637,11 +637,11 @@ void CvGabor::Apply(IplImage *src, IplImage *dst, int Type)
         /* Real Response */
         cvCopy( (CvMat*)Real, (CvMat*)kernel, NULL );
         // TODO: Change the anchor (0,0) to another point (maybe center of matrix?))
-        cvFilter2D( (CvMat*)mat, (CvMat*)rmat, (CvMat*)kernel, cvPoint(0,0));
+        cvFilter2D( (CvMat*)mat, (CvMat*)rmat, (CvMat*)kernel, cvPoint(m_sizeY/2,m_sizeX/2));
         /* Imag Response */
         cvCopy( (CvMat*)Imag, (CvMat*)kernel, NULL );
         // TODO: Change the anchor (0,0) to another point (maybe center of matrix?))
-        cvFilter2D( (CvMat*)mat, (CvMat*)imat, (CvMat*)kernel, cvPoint(0,0));
+        cvFilter2D( (CvMat*)mat, (CvMat*)imat, (CvMat*)kernel, cvPoint(m_sizeY/2,m_sizeX/2));
         /* Magnitude response is the square root of the sum of the square of real response and imaginary response */
         for (i = 0; i < mat->rows; i++)
         {
