@@ -3,14 +3,16 @@
 #include <math.h>
 
 // TODO:
-// Add the destructor.
 // Make sure everything everywhere is cleaned up nicely.
+
+//////////////////////////////////////////////////////////////////////////////////////
 
 inline double round2( double d )
 {
 	return floor( d + 0.5 );
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
 
 static void displayImage(char * title, IplImage * pImg)
 {
@@ -23,6 +25,8 @@ static void displayImage(char * title, IplImage * pImg)
 	
 	cvReleaseImage(&pNewImg);
 }
+
+//////////////////////////////////////////////////////////////////////////////////////
 
 static void saveChannel(char * title, CvMat * pMat)
 {
@@ -383,6 +387,8 @@ bool CFeatureExtraction::GetChannels(CvMat * pMergedMat, CvMat * pChannels[], in
 
 CFeatureExtraction::CFeatureExtraction(char * file)
 {	
+	int i;
+
 	printf("\nCFeatureExtraction::CFeatureExtraction in\n");
 	// Load the input image
 	printf("CFeatureExtraction: Loading image %s\n", file);
@@ -402,7 +408,28 @@ CFeatureExtraction::CFeatureExtraction(char * file)
 	m_pSrcImgFloat = cvCreateImage(cvSize(m_nWidth,m_nHeight),IPL_DEPTH_32F,3);
 	cvConvertScale(m_pSrcImg,m_pSrcImgFloat,1.0,0);
 	
+	for (i=0;i<3;i++)
+		m_pColorChannels[i] = cvCreateMat( m_nHeight , m_nWidth , CV_32F );
+
+	for (i = 0; i < 3; i++)
+		m_pTextureChannels[i] = cvCreateMat(m_nHeight, m_nWidth, CV_32F);
+
 	printf("CFeatureExtraction::CFeatureExtraction out\n");
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+
+CFeatureExtraction::~CFeatureExtraction()
+{
+	int i;
+
+	cvReleaseImage(&m_pSrcImg);
+	cvReleaseImage(&m_pSrcImgFloat)
+
+	for (i=0;i<3;i++)
+		cvReleaseMat(&m_pColorChannels[i]);
+	for (i=0;i<3;i++)
+		cvReleaseMat(&m_pTextureChannels[i]);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -410,24 +437,10 @@ CFeatureExtraction::CFeatureExtraction(char * file)
 bool CFeatureExtraction::Run()
 {
 	printf("\nCFeatureExtraction::Run in\n");
-	int i;
 
-	CvMat * pColorChannels[3];
-	for (i=0;i<3;i++)
-		pColorChannels[i] = cvCreateMat( m_nHeight , m_nWidth , CV_32F );
+	GetColorChannels(m_pColorChannels);
 
-	GetColorChannels(pColorChannels);
-
-	CvMat * pTextureChannels[3];
-	for (i = 0; i < 3; i++)
-		pTextureChannels[i] = cvCreateMat(m_nHeight, m_nWidth, CV_32F);
-
-	GetTextureChannels(pTextureChannels);
-
-	for (i=0;i<3;i++)
-		cvReleaseMat(&pColorChannels[i]);
-	for (i=0;i<3;i++)
-		cvReleaseMat(&pTextureChannels[i]);
+	GetTextureChannels(m_pTextureChannels);
 
 	printf("CFeatureExtraction::out in\n");
 	return true;
