@@ -29,7 +29,7 @@ void CGMM::Evaluate(CvMat * pDataSet)
 
 float CGMM::GetProbability(CvMat * pFeatureVector)
 {
-	float _prob[m_nClusters]; // Take this!
+	float * _prob = new float[m_nClusters]; // Take this!
 	CvMat prob = cvMat( 1, m_nClusters, CV_32FC1, _prob );
 	m_model.predict( pFeatureVector, &prob );
 	
