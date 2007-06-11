@@ -191,25 +191,28 @@ bool CFeatureExtraction::GetGaborResponse(CvMat * pGaborMat)
 
 // TODO: Would fail if m_nChannels != 3
 // RGB to LAB
-bool CFeatureExtraction::GetColorChannels(CvMat * pColorChannels[])
+bool CFeatureExtraction::GetColorChannels(CvMat * pChannels, CvMat * pColorChannelsArr[])
 {
 	printf("\nCFeatureExtraction::GetColorChannels in\n");
 	int nSize = COLOR_CHANNEL_NUM;
 	
 	// Convert to LAB color space
 	IplImage *pLabImg = cvCreateImage(cvSize(m_pSrcImg->width,m_pSrcImg->height), IPL_DEPTH_32F, nSize);
+	printf("A\n");
 	cvCvtColor(m_pSrcImgFloat,pLabImg,CV_BGR2Lab);	
-
+printf("b\n");
 	// Put the 32F lab image data in a matrix header
 	CvMat srcMat;
 	cvInitMatHeader(&srcMat, m_nWidth*m_nHeight, nSize , CV_32F, (float*)pLabImg->imageData );
 
 	// This matrix would hold the values represented in the new basis we've found
-	CvMat * pResultMat = cvCreateMat( m_nWidth*m_nHeight, nSize , CV_32F );
+	//CvMat * pResultMat = cvCreateMat( m_nWidth*m_nHeight, nSize , CV_32F );
+	CvMat * pResultMat = pChannels;
+	
 	// Actual calculation
 	DoPCA(&srcMat, pResultMat, nSize, COLOR_CHANNEL_NUM);
 	// Extracting the 3 primary channels
-	GetChannels(pResultMat, pColorChannels, nSize, COLOR_CHANNEL_NUM);
+	GetChannels(pResultMat, pColorChannelsArr, nSize, COLOR_CHANNEL_NUM);
 
 	// Useful releasing
 	cvReleaseMat(&pResultMat);
@@ -220,9 +223,8 @@ bool CFeatureExtraction::GetColorChannels(CvMat * pColorChannels[])
 
 //////////////////////////////////////////////////////////////////////////////////////
 
-bool CFeatureExtraction::GetTextureChannels(CvMat * pTextureChannels[])
+bool CFeatureExtraction::GetTextureChannels(CvMat * pChannels, CvMat * pTextureChannelsArr[])
 {
-	int i;
 	printf("\nCFeatureExtraction::GetTextureChannels in\n");
 	int gaborSize = 24;
 	int histSize = 30;
@@ -241,34 +243,18 @@ bool CFeatureExtraction::GetTextureChannels(CvMat * pTextureChannels[])
 
 	// Our merged matrix
 	CvMat * pTextureMat = cvCreateMat( m_nWidth*m_nHeight, vectorSize , CV_32F );
-
-	// Go over row by row, concat the gabor and histogram matrices
-	float * pMatData = (float *) pTextureMat->data.fl;
-	float * pHistData = (float *)  pHistMat->data.fl;
-	float * pGaborData = (float *)  pGaborMat->data.fl;
 	
-	int gaborStep = pGaborMat->step;
-	int histStep = pHistMat->step;
-	
-	for (i=0;i<m_nWidth * m_nHeight;i++)
-	{
-		
-		memcpy(pMatData, pGaborData, gaborStep);
-		pMatData+=gaborSize;
-		pGaborData+=gaborSize;		
-		
-		memcpy(pMatData, pHistData, histStep);
-		pMatData+=histSize;
-		pHistData+=histSize;
-	}
-	
+	// Combine into a single matrix
+	MergeMatrices(pGaborMat, pHistMat, pTextureMat);
 
 	// This matrix would hold the values represented in the new basis we've found
-	CvMat * pResultMat = cvCreateMat( m_nWidth*m_nHeight, TEXTURE_CHANNEL_NUM , CV_32F );
+	//CvMat * pResultMat = cvCreateMat( m_nWidth*m_nHeight, TEXTURE_CHANNEL_NUM , CV_32F );
+	CvMat * pResultMat = pChannels;
+	
 	// Actual calculation
 	DoPCA(pTextureMat, pResultMat, vectorSize, TEXTURE_CHANNEL_NUM);
 	// Extracting the 3 primary channels
-	GetChannels(pResultMat, pTextureChannels, TEXTURE_CHANNEL_NUM, TEXTURE_CHANNEL_NUM);
+	GetChannels(pResultMat, pTextureChannelsArr, TEXTURE_CHANNEL_NUM, TEXTURE_CHANNEL_NUM);
 
 	cvReleaseMat(&pHistMat);
 	cvReleaseMat(&pGaborMat);
@@ -345,6 +331,7 @@ bool CFeatureExtraction::DoPCA(CvMat * pMat, CvMat * pResultMat, int nSize, int 
 bool CFeatureExtraction::GetChannels(CvMat * pMergedMat, CvMat * pChannels[], int nTotalChans, int nExtractChans)
 {
 	static int s_nChannel = 1;
+	int i;
 
 	printf("\nCFeatureExtraction::GetChannels in\n");
 	
@@ -352,7 +339,7 @@ bool CFeatureExtraction::GetChannels(CvMat * pMergedMat, CvMat * pChannels[], in
 	// Store each of the 3 p-channels in a matrix
 	float val;
 
-	for (int i=0;i<m_nHeight;i++)
+	for (i=0;i<m_nHeight;i++)
 	{
 		for (int j=0;j<m_nWidth;j++)
 		{
@@ -385,18 +372,41 @@ bool CFeatureExtraction::GetChannels(CvMat * pMergedMat, CvMat * pChannels[], in
 
 //////////////////////////////////////////////////////////////////////////////////////
 
-CFeatureExtraction::CFeatureExtraction(char * file)
+bool CFeatureExtraction::MergeMatrices(CvMat * pMatrix1, CvMat * pMatrix2, CvMat * pResultMat)
+{
+	printf("\nCFeatureExtraction::MergeMatrices in\n");
+	// Go over row by row, concat the two matrices
+	char * pResData= (char *) pResultMat->data.ptr;
+	char * pData1 = (char *)  pMatrix1->data.ptr;
+	char * pData2 = (char *)  pMatrix2->data.ptr;
+	
+	int step1 = pMatrix1->step;
+	int step2 = pMatrix2->step;
+	
+	int i;
+	for (i=0;i<pResultMat->rows;i++)
+	{
+		memcpy(pResData, pData1, step1);
+		pResData+=step1;
+		pData1+=step1;
+		
+		memcpy(pResData, pData2, step2);
+		pResData+=step2;
+		pData2+=step2;
+	}
+	
+	printf("\nCFeatureExtraction::MergeMatrices out\n");
+	return true;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+
+CFeatureExtraction::CFeatureExtraction(IplImage * pSrcImg)
 {	
 	int i;
 
 	printf("\nCFeatureExtraction::CFeatureExtraction in\n");
-	// Load the input image
-	printf("CFeatureExtraction: Loading image %s\n", file);
-	m_pSrcImg = cvLoadImage(file,1);
-	if (m_pSrcImg == NULL)
-		return;
-
-	m_pFile = file;
+	m_pSrcImg = pSrcImg;
 	
 	// Extract parameters
 	m_nChannels = m_pSrcImg->nChannels;
@@ -409,11 +419,15 @@ CFeatureExtraction::CFeatureExtraction(char * file)
 	cvConvertScale(m_pSrcImg,m_pSrcImgFloat,1.0,0);
 	
 	for (i=0;i<3;i++)
-		m_pColorChannels[i] = cvCreateMat( m_nHeight , m_nWidth , CV_32F );
+		m_pColorChannelsArr[i] = cvCreateMat( m_nHeight , m_nWidth , CV_32F );
 
 	for (i = 0; i < 3; i++)
-		m_pTextureChannels[i] = cvCreateMat(m_nHeight, m_nWidth, CV_32F);
+		m_pTextureChannelsArr[i] = cvCreateMat(m_nHeight, m_nWidth, CV_32F);
 
+	m_pTextureChannels = cvCreateMat(m_nHeight * m_nWidth, TEXTURE_CHANNEL_NUM,  CV_32F);
+	m_pColorChannels = cvCreateMat(m_nHeight * m_nWidth, COLOR_CHANNEL_NUM,  CV_32F);
+	m_pPrincipalChannels = cvCreateMat(m_nHeight * m_nWidth, COLOR_CHANNEL_NUM+TEXTURE_CHANNEL_NUM,  CV_32F);
+	
 	printf("CFeatureExtraction::CFeatureExtraction out\n");
 }
 
@@ -427,9 +441,13 @@ CFeatureExtraction::~CFeatureExtraction()
 	cvReleaseImage(&m_pSrcImgFloat);
 
 	for (i=0;i<3;i++)
-		cvReleaseMat(&m_pColorChannels[i]);
+		cvReleaseMat(&m_pColorChannelsArr[i]);
 	for (i=0;i<3;i++)
-		cvReleaseMat(&m_pTextureChannels[i]);
+		cvReleaseMat(&m_pTextureChannelsArr[i]);
+		
+	cvReleaseMat(&m_pTextureChannels);
+	cvReleaseMat(&m_pColorChannels);
+	cvReleaseMat(&m_pPrincipalChannels);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -438,9 +456,11 @@ bool CFeatureExtraction::Run()
 {
 	printf("\nCFeatureExtraction::Run in\n");
 
-	GetColorChannels(m_pColorChannels);
+	GetColorChannels(m_pColorChannels, m_pColorChannelsArr);
 
-	GetTextureChannels(m_pTextureChannels);
+	GetTextureChannels(m_pTextureChannels, m_pTextureChannelsArr);
+	
+	MergeMatrices(m_pColorChannels, m_pTextureChannels, m_pPrincipalChannels);
 
 	printf("CFeatureExtraction::out in\n");
 	return true;
