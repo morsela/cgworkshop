@@ -24,6 +24,13 @@ public:
 	// the probability it belongs to either of our two classes
 	// TODO: probably return this in a different format, figure out which
 	void GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs);
+	
+private:
+
+	CvEM m_model;
+	int m_nClusters;
+	int m_nMaxIter;
+	float m_nEpsilon;		
 };
 
 
@@ -72,4 +79,4 @@ public:
 
  */
 
-endif // __GMM_H__
+#endif // __GMM_H__
