@@ -17,8 +17,8 @@ public:
 	// Initializes and trains (runs EM) on the given data set
 	void Evaluate(CvMat * pDataSet);
 	
-	// Returns the probabilities for the given feature vector (for each class)
-	void GetProbability(CvMat * pFeatureVector, CvMat * pProbVector);
+	// Returns the probability for the given feature vector
+	float GetProbability(CvMat * pFeatureVector);
 	
 	// Returns a matrix that contains, for each feature vector in the data set,
 	// the probability it belongs to either of our two classes
@@ -34,7 +34,7 @@ public:
  * 
  * Evaluate(CvMat * pDataSet);
  *
-	int m_nClusters = 2;
+	int m_nClusters = 5;
 	int m_nMaxIter = 10;
 	float m_nEpsilon = 0.1;
 	
@@ -55,13 +55,15 @@ public:
     
 	em_model.train( pDataSet, 0, params); 
  *
- * void GetProbability(CvMat * pFeatureVector, CvMat * pProbVector);
+ * float GetProbability(CvMat * pFeatureVector);
  *
-
-	em_model.predict( pFeatureVector, pProbVector );
+	float _prob[m_nClusters]; // Take this!
+	CvMat prob = cvMat( 1, m_nClusters, CV_32FC1, _prob );
+	em_model.predict( pFeatureVector, &prob );
+	// return the max value in prob
 	
  *
- * GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs);
+ * void GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs);
  * 
 
 	// For each feature vector in the set,
