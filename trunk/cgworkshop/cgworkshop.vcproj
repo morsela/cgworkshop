@@ -257,6 +257,14 @@
 					RelativePath=".\src\GUI\Point.h"
 					>
 				</File>
+				<File
+					RelativePath=".\src\GUI\Scribble.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\GUI\Scribble.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="GMM"
