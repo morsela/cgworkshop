@@ -8,6 +8,10 @@ GraphHandler::GraphHandler()  {
 	m_igraph = new Graph(initial_graph);
 }
 
+GraphHandler::~GraphHandler() {
+	delete m_igraph;
+}
+
 double calcDist(CvMat * smoothness, int i, int j) {
 
 	double result=0;
