@@ -69,13 +69,14 @@ void myInitOpenGL()
 
 int main( int argc, char **argv)
 {
-	if ( argc != 2 )
+	if ( argc != 3 )
 	{
-		printf("Usage: image_path \n");
+		printf("Usage: image_path [scribble_file]\n");
 		return -1;
 	}
 
-	CGUI::GetInstance()->Setup(argv[1]);
+	//TODO: i guess setup should be able to receive only one arg. Lazy.
+	CGUI::GetInstance()->Setup(argv[1], argv[2]);
 
 	// specify parameters for the window
 	glutInitDisplayMode( GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH );

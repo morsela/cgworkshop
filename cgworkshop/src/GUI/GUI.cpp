@@ -8,6 +8,8 @@
 
 #include "GUI.h"
 
+#include "../fe/FeatureExtraction.h"
+
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 
@@ -44,16 +46,6 @@ void CGUI::Render()
 	// render the left vectors
 	if ( !m_scribbles.empty() )
 	{
-		// as lines
-		glBegin( GL_LINES );
-		{
-
-			for ( int i = 0; i < m_scribbles.size(); i ++)
-				m_scribbles[i].Draw();
-		}
-
-		glEnd();
-
 		// as points
 		glBegin( GL_POINTS);
 		{
@@ -109,6 +101,11 @@ void CGUI::Reshape(int x , int y)
 
 ///////////////////////////////////////////////////////////////////////////////////
 
+#include "ml.h"
+#include "highgui.h"
+
+#include <fstream>
+
 void CGUI::KeysAction( unsigned char key, int x, int y )
 {
 	switch( key )
@@ -116,6 +113,102 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 
 	case 'q':
 		exit(0);
+		break;
+
+	case 'l':
+		{
+			//FIXME: mm..This code is just not here.
+			std::ifstream ifs;
+			CScribble scribble;
+
+			ifs.open(m_pScribbleFile);
+			if (!ifs.is_open())
+				return;
+
+			m_scribbles.clear();
+
+			while (true)
+			{
+				bool fLoad = scribble.Load(ifs);
+				if (!fLoad)
+					break;
+
+				m_scribbles.push_back(scribble);
+			}
+
+			ifs.close();
+
+		} break;
+
+	case 's':
+		{
+			//FIXME: i'm not very good either
+
+			std::ofstream ofs;
+			//Truncate the scribble file
+			ofs.open(m_pScribbleFile, std::ios::trunc);
+			ofs.close();
+			for (int i = 0; i < m_scribbles.size(); i++)
+				m_scribbles[i].Save(m_pScribbleFile);
+		} break;
+
+	case '.':
+		{
+		
+/*		const CvScalar colors[] = {{{0,0,255}},{{0,255,0}},{{0,255,255}},{{255,255,0}}};
+		CvEM em_model;
+		CvEMParams params;
+
+		CFeatureExtraction * fe;
+
+		fe = new CFeatureExtraction(m_pImg);
+		fe->Run();
+
+		float _sample[2];
+    CvMat sample = cvMat( 1, 2, CV_32FC1, _sample );
+	
+		CvMat* labels = cvCreateMat( m_pImg->width * m_pImg->height, 1, CV_32SC1 );
+		IplImage* img = cvCreateImage( cvSize( 500, 500 ), 8, 3 );
+		
+		  // initialize model's parameters
+		params.covs      = NULL;
+		params.means     = NULL;
+		params.weights   = NULL;
+		params.probs     = NULL;
+		params.nclusters = 5;
+		params.cov_mat_type       = CvEM::COV_MAT_SPHERICAL;
+		params.start_step         = CvEM::START_AUTO_STEP;
+		params.term_crit.max_iter = 10;
+		params.term_crit.epsilon  = 0.1;
+		params.term_crit.type     = CV_TERMCRIT_ITER|CV_TERMCRIT_EPS;
+
+		CvMat * pChannels = fe->GetTextureChannels();
+		// cluster the data
+		em_model.train( pChannels, 0, params, labels );
+
+		// classify every image pixel
+		cvZero( img );
+		for( int i = 0; i < img->height; i++ )
+		{
+			for( int j = 0; j < img->width; j++ )
+			{
+				CvPoint pt = cvPoint(j, i);
+				pChannels->data.fl[0] = (float)j;
+				pChannels->data.fl[1] = (float)i;
+				int response = cvRound(em_model.predict( &sample, NULL ));
+				CvScalar c = colors[response];
+
+				cvCircle( img, pt, 1, cvScalar(c.val[0]*0.75,c.val[1]*0.75,c.val[2]*0.75), CV_FILLED );
+			}
+		}
+
+
+		cvNamedWindow( "EM-clustering result", 1 );
+		cvShowImage( "EM-clustering result", img );
+		cvWaitKey(0);
+
+*/
+		}
 		break;
 		
 	default:
@@ -127,60 +220,31 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 
 void CGUI::MouseAction(int button, int state, int x, int y)
 {
-	// find the case of the key
 	switch ( button )
 	{
 	case GLUT_LEFT_BUTTON:
 		
 		// released the left button
 		if ( state == GLUT_UP )
-		{
-			int height = m_pImg->height;
-			int width  = m_pImg->width;
-
-			float ratio_x = (float)2 * width / GetWidth();
-			float ratio_y = (float)	  height / GetHeight();
-
-			leftVecs.push_back( (int)(ratio_x * x) );
-			leftVecs.push_back( (int)((GetHeight() - y) * ratio_y) );
-
-			// set the end point of the vector
-			m_scribbles.back().m_endPoint.SetPoint
-			//leftVecsRnd.back().SetPoint
-			( m_orthoBBox[0] * ( 1 - 2 * (float)x / GetWidth() ),
-										 m_orthoBBox[3] * ( 1 - 2 * (float)y / GetHeight() ));
-
-		}
+			m_fScribbling = false;
 			
 			// pressed the left button
 		if ( state == GLUT_DOWN )
 		{
-			int height = m_pImg->height;
-			int width  = m_pImg->width;
+			//FIXME: id should not be constant
+			int id = 1;
+			
+			CScribble scribble(id);
 
-			float ratio_x = (float)2  * width / GetWidth();
-			float ratio_y = (float)	  height / GetHeight();
+			m_scribbles.push_back( scribble );
 
-			leftVecs.push_back( (int)(ratio_x * x) );
-			leftVecs.push_back( (int)((GetHeight() - y) * ratio_y) );
-
-			// the start of the vector
-			CPoint p1 = CPoint( m_orthoBBox[0] * ( 1 - 2 * (float)x / GetWidth() ),
-											m_orthoBBox[3] * ( 1 - 2 * (float)y / GetHeight() ));
-											
-			CPoint p2 = CPoint( m_orthoBBox[0] * ( 1 - 2 * (float)x / GetWidth() ),
-											m_orthoBBox[3] * ( 1 - 2 * (float)y / GetHeight() ));
-			m_scribbles.push_back( CScribble ( p1,p2 ) );
-											
-				/*							
-			leftVecsRnd.push_back( CPoint( m_orthoBBox[0] * ( 1 - 2 * (float)x / GetWidth() ),
-											m_orthoBBox[3] * ( 1 - 2 * (float)y / GetHeight() )) );
-
-			// second point is inserted for vector motion rendering
-			leftVecsRnd.push_back( CPoint( m_orthoBBox[0] * ( 1 - 2 * (float)x / GetWidth() ),
-											m_orthoBBox[3] * ( 1 - 2 * (float)y / GetHeight() )) );*/
+			AddScribblePoints(x,y);
+			
+			m_fScribbling = true;
 		}
+
 		break;
+
 	default:
 		break;
 	}
@@ -191,27 +255,42 @@ void CGUI::MouseAction(int button, int state, int x, int y)
 
 void CGUI::MouseMove(int x, int y)
 {
-	// set the end point of the vector
-	m_scribbles.back().m_endPoint.SetPoint
-	//leftVecsRnd.back().SetPoint
-	( m_orthoBBox[0] * ( 1 - 2 * (float)x / GetWidth() ),
-								 m_orthoBBox[3] * ( 1 - 2 * (float)y / GetHeight() ));
+	if (m_fScribbling)
+		AddScribblePoints(x,y);	
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-int CGUI::Setup(char * pszImagePath)
+void CGUI::AddScribblePoints(int x, int y)
+{
+	int height = m_pImg->height;
+	int width  = m_pImg->width;
+
+	float ratio_x = (float)2  * width / GetWidth();
+	float ratio_y = (float)	  height / GetHeight();
+
+	CPointInt pI = CPointInt( (int)(ratio_x * x), (int)((GetHeight() - y) * ratio_y));
+
+	// the start of the vector
+	CPointFloat pF = CPointFloat( m_orthoBBox[0] * ( 1 - 2 * (float)x / GetWidth() ),
+								m_orthoBBox[3] * ( 1 - 2 * (float)y / GetHeight() ));
+
+	m_scribbles.back().AddImagePoint (pI);
+	m_scribbles.back().AddObjectPoint(pF);
+}
+
+///////////////////////////////////////////////////////////////////////////////////
+
+int CGUI::Setup(char * pszImagePath, char *pScribbleFile)
 {
 	// Load the input image
 	m_pImg = cvLoadImage(pszImagePath,1);
 	if (m_pImg == NULL)
 		return -1;
-
-	//if the image is upside down
-	if( m_pImg->origin == IPL_ORIGIN_TL)
-		cvFlip(m_pImg,m_pImg, 0);
 	
 	SetWindowSize(m_pImg->width, m_pImg->height);
+
+	m_pScribbleFile = pScribbleFile;
 
 	return 1;
 }
@@ -220,20 +299,29 @@ int CGUI::Setup(char * pszImagePath)
 
 void CGUI::LoadTextures()
 {
-	loadTexture( GetImage(),  m_textures[0] );
+	loadTexture(GetImage(), m_textures[0]);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-void loadTexture( const IplImage *image, unsigned int &id )
+void loadTexture( const IplImage *pImage, unsigned int &id )
 {
+
+	//if the image is upside down
+	if( pImage->origin == IPL_ORIGIN_TL)
+	{
+		IplImage * pFlippedImg = cvCreateImage(cvSize(pImage->width,pImage->height), pImage->depth, pImage->nChannels);
+		cvFlip(pImage,pFlippedImg, 0);
+		pImage = pFlippedImg;
+	}
+
 	glGenTextures(1, &id);  
 	glBindTexture(GL_TEXTURE_2D, id);
 
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 
-	gluBuild2DMipmaps(GL_TEXTURE_2D,image->nChannels,image->width,image->height,GL_BGR_EXT,GL_UNSIGNED_BYTE,image->imageData);  
+	gluBuild2DMipmaps(GL_TEXTURE_2D,pImage->nChannels,pImage->width,pImage->height,GL_BGR_EXT,GL_UNSIGNED_BYTE,pImage->imageData);  
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
