@@ -1,30 +1,37 @@
-#pragma once
+#ifndef _H_SCRIBBLE_H_
+#define _H_SCRIBBLE_H_
+
 #include <cv.h>
-#include <string>
 
-using namespace std;
-
-
-class Scribble {
+class CScribble {
 
 public:
-	Scribble();
-	~Scribble();
+	CScribble();
+	virtual ~CScribble();
 
 public:
-	void loadScribble(string filename, CvMat *pchannels);
 
-	CvMat * getScribble() { return m_Scribbles;};
+	void Load(char * filename);
 
-	int getId() const {return m_id;};
+	CPoint * GetScribblePoints() { return m_pPoints;}
+
+	int	GetScribbleSize() const { return m_nPoints; }
+
+	int GetID() const {return m_nID;};
 
 
 
 
 
 private:
-	CvMat * m_Scribbles;
-	int m_id;
+
+	CPoint *	m_pPoints;
+
+	int			m_nPoints;
+
+	int			m_nID;
 
 
 };
+
+#endif	//_H_SCRIBBLE_H_
