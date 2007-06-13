@@ -114,9 +114,6 @@ bool CScribble::Load(ifstream &ifs)
 		m_pImagePoints.push_back(pI);
 	}
 
-	if (ifs.eof())
-		return false;
-
 	//remove the last \n
 	ifs.getline(buffer, 255);
 
