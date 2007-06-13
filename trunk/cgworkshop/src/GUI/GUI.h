@@ -2,10 +2,11 @@
 #define _H_GUI_H_
 
 #include <cv.h>
-#include <vector>
 
 #include <GL/glut.h>
-#include "Scribble.h"
+
+#include "TypeDefs.h"
+#include "Loader.h"
 
 class CGUI
 {
@@ -15,7 +16,7 @@ public:
 	CGUI() { m_fScribbling = false; }
 	virtual ~CGUI() {}
 
-	int Setup(char * pszImagePath, char * pScribbleFile);
+	int Setup(char * pszImagePath, char * pScribbleFile = NULL);
 
 	static CGUI * GetInstance() { static CGUI inst; return &inst; }
 
@@ -49,24 +50,23 @@ protected:
 
 protected:
 	
-	IplImage *					m_pImg;
+	IplImage *			m_pImg;
 
-	int							m_nWindowWidth;
+	int					m_nWindowWidth;
 
-	int							m_nWindowHeight;
+	int					m_nWindowHeight;
 
 	// the bounding box for the opengl orthogonal projection
-	float 						m_orthoBBox[4];
+	float 				m_orthoBBox[4];
 
-	unsigned int				m_textures[1];
+	unsigned int		m_textures[1];
 
 	// The vectors in object space coordinates (for rendering)
-	std::vector< CScribble >	m_scribbles;
+	ScribbleVector		m_scribbles;
 
+	bool				m_fScribbling;
 
-	bool						m_fScribbling;
-
-	char*						m_pScribbleFile;
+	CLoader				m_loader;
 
 };
 

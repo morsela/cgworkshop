@@ -102,9 +102,6 @@ void CGUI::Reshape(int x , int y)
 ///////////////////////////////////////////////////////////////////////////////////
 
 #include "ml.h"
-#include "highgui.h"
-
-#include <fstream>
 
 void CGUI::KeysAction( unsigned char key, int x, int y )
 {
@@ -116,41 +113,16 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 		break;
 
 	case 'l':
-		{
-			//FIXME: mm..This code is just not here.
-			std::ifstream ifs;
-			CScribble scribble;
-
-			ifs.open(m_pScribbleFile);
-			if (!ifs.is_open())
-				return;
-
-			m_scribbles.clear();
-
-			while (true)
-			{
-				bool fLoad = scribble.Load(ifs);
-				if (!fLoad)
-					break;
-
-				m_scribbles.push_back(scribble);
-			}
-
-			ifs.close();
-
-		} break;
+		m_loader.Load(m_scribbles);
+		break;
 
 	case 's':
-		{
-			//FIXME: i'm not very good either
+		m_loader.Save(m_scribbles);
+		break;
 
-			std::ofstream ofs;
-			//Truncate the scribble file
-			ofs.open(m_pScribbleFile, std::ios::trunc);
-			ofs.close();
-			for (int i = 0; i < m_scribbles.size(); i++)
-				m_scribbles[i].Save(m_pScribbleFile);
-		} break;
+	case 'c':
+		m_scribbles.clear();
+		break;
 
 	case '.':
 		{
@@ -281,7 +253,7 @@ void CGUI::AddScribblePoints(int x, int y)
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-int CGUI::Setup(char * pszImagePath, char *pScribbleFile)
+int CGUI::Setup(char * pszImagePath, char *pScribbleFile /* = NULL */)
 {
 	// Load the input image
 	m_pImg = cvLoadImage(pszImagePath,1);
@@ -290,7 +262,8 @@ int CGUI::Setup(char * pszImagePath, char *pScribbleFile)
 	
 	SetWindowSize(m_pImg->width, m_pImg->height);
 
-	m_pScribbleFile = pScribbleFile;
+	if (pScribbleFile)
+		m_loader.Setup(pScribbleFile);
 
 	return 1;
 }
