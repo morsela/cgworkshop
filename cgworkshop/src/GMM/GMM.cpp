@@ -4,8 +4,8 @@ CGMM::CGMM()
 {
 	// FIXME
 	m_nClusters = 5;
-	m_nMaxIter = 10;
-	m_nEpsilon = 0.1;		
+	m_nMaxIter = 20;
+	m_nEpsilon = 0.05;		
 }
 
 void CGMM::Evaluate(CvMat * pDataSet)
@@ -37,7 +37,7 @@ float CGMM::GetProbability(CvMat * pFeatureVector)
 	float max = _prob[i];
 	for (i=1;i<m_nClusters;i++)
 		if (_prob[i] > max)
-			_prob[i] = max;
+			max = _prob[i];
 	
 	return max;
 }
