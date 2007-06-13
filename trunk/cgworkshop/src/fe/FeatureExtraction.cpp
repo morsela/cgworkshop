@@ -352,7 +352,7 @@ bool CFeatureExtraction::GetChannels(CvMat * pMergedMat, CvMat * pChannels[], in
 	// Normalize to 0..1	
 	for (int k=0;k<nExtractChans;k++)
 		cvNormalize(pChannels[k],pChannels[k], 0, 1, CV_MINMAX);
-
+/*
 	printf("GetChannels: Save each channel to a bitmap, just for fun.\n");
 	// Save each channel to a bitmap, just for fun.
 	char filename[255];
@@ -362,7 +362,7 @@ bool CFeatureExtraction::GetChannels(CvMat * pMergedMat, CvMat * pChannels[], in
 		saveChannel(filename, pChannels[i]);
 		s_nChannel++;	
 	}
-
+*/
 	printf("CFeatureExtraction::GetChannels out\n");
 	return true;
 }
