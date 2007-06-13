@@ -9,6 +9,7 @@
 #include "GUI.h"
 
 #include "../fe/FeatureExtraction.h"
+#include "../GMM/GMM.h"
 
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
@@ -182,7 +183,57 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 */
 		}
 		break;
+
+	case 'r':
+		{
+
+		CFeatureExtraction * fe;
+
+		fe = new CFeatureExtraction(m_pImg);
+		fe->Run();
+
+
+		int n = m_scribbles[0].GetScribbleSize();
+		std::vector<CPointInt> points = m_scribbles[0].GetScribblePoints();
 		
+		CvMat * pChannels = fe->GetPrincipalChannels();
+		CvMat * pTrainMat = cvCreateMat(n, COLOR_CHANNEL_NUM+TEXTURE_CHANNEL_NUM,  CV_32F);
+		int step = pTrainMat->step;
+		printf("Scribble size=%d\n", n);
+		for (int i=0;i<n;i++)
+		{
+			CPointInt	pI = points[i];
+			int x = pI.x;
+			int y = pI.y;
+			printf("%d, %d\n", x,y);
+			
+			memcpy(&pTrainMat->data.fl[i*COLOR_CHANNEL_NUM+TEXTURE_CHANNEL_NUM], &pChannels->data.fl[y*m_pImg->width+x], step);
+		}
+			
+		CGMM * gmm = new CGMM();	
+
+		printf("gmm->Evaluate(pTrainMat);\n");
+		gmm->Evaluate(pTrainMat);
+		
+		IplImage * outImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_32F, 1);
+		CvMat outMat = cvMat( m_pImg->height * m_pImg->width, 1, CV_32FC1, outImg->imageData );
+		
+		printf("gmm->GetAllProbabilities(pChannels, &outMat);\n");
+		gmm->GetAllProbabilities(pChannels, &outMat);
+
+		IplImage * outImg2 = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_8U, 1);
+		cvConvertScale(outImg,outImg2,255,0); 
+		char a[50];
+		strcpy(a, "EM-clustering");
+		cvNamedWindow( a, 1 );
+		cvShowImage( a, outImg2 );
+		cvWaitKey(0);
+		cvDestroyWindow(a);
+		
+		cvSaveImage("test.bmp",outImg2);
+
+		}
+		break;		
 	default:
 		break;
 	}
