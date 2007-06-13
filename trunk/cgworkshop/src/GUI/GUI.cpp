@@ -238,8 +238,8 @@ void CGUI::AddScribblePoints(int x, int y)
 	int height = m_pImg->height;
 	int width  = m_pImg->width;
 
-	float ratio_x = (float)2  * width / GetWidth();
-	float ratio_y = (float)	  height / GetHeight();
+	float ratio_x = (float) width / GetWidth();
+	float ratio_y = (float)	height / GetHeight();
 
 	CPointInt pI = CPointInt( (int)(ratio_x * x), (int)((GetHeight() - y) * ratio_y));
 
