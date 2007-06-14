@@ -197,23 +197,24 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 		std::vector<CPointInt> points = m_scribbles[0].GetScribblePoints();
 		
 		CvMat * pChannels = fe->GetPrincipalChannels();
-		CvMat * pTrainMat = cvCreateMat(n, COLOR_CHANNEL_NUM+TEXTURE_CHANNEL_NUM,  CV_32F);
-		int step = pTrainMat->step;
 		printf("Scribble size=%d\n", n);
+		
+		CvMat * sample_idx = cvCreateMat( 1, pChannels->rows, CV_8UC1 );
+
+		cvSetZero( sample_idx );
 		for (int i=0;i<n;i++)
 		{
 			CPointInt	pI = points[i];
 			int x = pI.x;
 			int y = pI.y;
-			printf("%d, %d\n", x,y);
-			
-			memcpy(&pTrainMat->data.fl[i*COLOR_CHANNEL_NUM+TEXTURE_CHANNEL_NUM], &pChannels->data.fl[y*m_pImg->width+x], step);
+			//printf("%d, %d\n", x,y);
+			sample_idx->data.ptr[y*m_pImg->width+x]=1;
 		}
 			
 		CGMM * gmm = new CGMM();	
 
 		printf("gmm->Evaluate(pTrainMat);\n");
-		gmm->Evaluate(pTrainMat);
+		gmm->Evaluate(pChannels, sample_idx);
 		
 		IplImage * outImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_32F, 1);
 		CvMat outMat = cvMat( m_pImg->height * m_pImg->width, 1, CV_32FC1, outImg->imageData );
@@ -231,6 +232,8 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 		cvDestroyWindow(a);
 		
 		cvSaveImage("test.bmp",outImg2);
+		cvReleaseImage(&outImg2);
+		cvReleaseImage(&outImg);
 
 		}
 		break;		

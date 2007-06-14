@@ -17,6 +17,8 @@ public:
 	// Initializes and trains (runs EM) on the given data set
 	void Evaluate(CvMat * pDataSet);
 	
+	void Evaluate(CvMat * pDataSet, CvMat * pActiveMask);
+	
 	// Returns the probability for the given feature vector
 	float GetProbability(CvMat * pFeatureVector);
 	
