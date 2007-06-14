@@ -4,11 +4,16 @@ CGMM::CGMM()
 {
 	// FIXME
 	m_nClusters = 5;
-	m_nMaxIter = 20;
+	m_nMaxIter = 1;
 	m_nEpsilon = 0.05;		
 }
 
 void CGMM::Evaluate(CvMat * pDataSet)
+{
+	Evaluate(pDataSet, 0);	
+}
+
+void CGMM::Evaluate(CvMat * pDataSet , CvMat * pActiveMask)
 {
 	CvEMParams params;
 	
@@ -18,13 +23,13 @@ void CGMM::Evaluate(CvMat * pDataSet)
     params.weights   = NULL;
     params.probs     = NULL;
     params.nclusters = m_nClusters;
-    params.cov_mat_type       = CvEM::COV_MAT_SPHERICAL;
+    params.cov_mat_type       = CvEM::COV_MAT_DIAGONAL;
     params.start_step         = CvEM::START_AUTO_STEP;
     params.term_crit.max_iter = m_nMaxIter;
     params.term_crit.epsilon  = m_nEpsilon;
-    params.term_crit.type     = CV_TERMCRIT_ITER|CV_TERMCRIT_EPS;
+    params.term_crit.type     = CV_TERMCRIT_ITER;
     
-	m_model.train( pDataSet, 0, params); 	
+	m_model.train( pDataSet, pActiveMask, params); 	
 }
 
 float CGMM::GetProbability(CvMat * pFeatureVector)
