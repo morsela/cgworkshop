@@ -211,7 +211,7 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 			sample_idx->data.ptr[y*m_pImg->width+x]=1;
 		}
 			
-		CGMM * gmm = new CGMM();	
+		CGMM * gmm = new CGMM();
 
 		printf("gmm->Init(pTrainMat);\n");
 		gmm->Init(pChannels, sample_idx);
@@ -222,7 +222,52 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 		gmm->NextStep(pChannels, sample_idx);
 		printf("gmm->NextStep(pTrainMat);\n");
 		gmm->NextStep(pChannels, sample_idx);
+		/*
+		CGMM * gmm = new CGMM();
+		CGMM * backgmm = new CGMM();
+
+		printf("gmm->Init(pTrainMat);\n");
+		gmm->Init(pChannels, sample_idx);
+		backgmm->Init(pChannels);
+		gmm->NextStep(pChannels, sample_idx);
+		backgmm->NextStep(pChannels);
 		
+		//Sink (background)
+		CvMat * Tu = cvCreateMat( m_pImg->width,m_pImg->height, CV_8UC1 );
+		//Source (foreground)
+		CvMat * Su = cvCreateMat( m_pImg->width,m_pImg->height, CV_8UC1 );
+		
+		CvMat * point = cvCreateMat(1,6,CV_8UC1);
+
+		GraphHandler *graph = new GraphHandler();
+		int max_iter =6;
+		
+		for (int i=0; i<max_iter; i++) {
+			GraphHandler *graph = new GraphHandler();
+			printf("gmm->NextStep(pTrainMat);\n");
+
+			for (int j=0; j<m_pImg->width; j++)
+				for (int k=0; k<m_pImg->height; k++)
+					if (1)//inside scribble
+					{
+						cvmSet(Tu,j,k,100000);
+						cvmSet(Su,j,k,0);
+					}
+					else
+					{
+						for (int x=0; x<6; x++)
+							cvmSet(point,1,x,cvmGet(pChannels,j,k));
+						cvmSet(Tu,j,k,backgmm->GetProbability(point));
+						cvmSet(Su,j,k,gmm->GetProbability(point));
+					}
+
+			graph->do_MinCut(*sample_idx);
+			gmm->NextStep(pChannels, sample_idx);
+			//backgmm->NextStep(pChannels, opposite sample idx);	
+
+			delete graph;
+		}
+		*/
 		IplImage * outImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_32F, 1);
 		CvMat outMat = cvMat( m_pImg->height * m_pImg->width, 1, CV_32FC1, outImg->imageData );
 		
