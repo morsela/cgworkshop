@@ -213,8 +213,15 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 			
 		CGMM * gmm = new CGMM();	
 
-		printf("gmm->Evaluate(pTrainMat);\n");
-		gmm->Evaluate(pChannels, sample_idx);
+		printf("gmm->Init(pTrainMat);\n");
+		gmm->Init(pChannels, sample_idx);
+		
+		printf("gmm->NextStep(pTrainMat);\n");
+		gmm->NextStep(pChannels, sample_idx);
+		printf("gmm->NextStep(pTrainMat);\n");
+		gmm->NextStep(pChannels, sample_idx);
+		printf("gmm->NextStep(pTrainMat);\n");
+		gmm->NextStep(pChannels, sample_idx);
 		
 		IplImage * outImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_32F, 1);
 		CvMat outMat = cvMat( m_pImg->height * m_pImg->width, 1, CV_32FC1, outImg->imageData );

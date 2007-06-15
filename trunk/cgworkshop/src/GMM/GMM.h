@@ -14,10 +14,16 @@ public:
 	
 	CGMM();
 	
-	// Initializes and trains (runs EM) on the given data set
-	void Evaluate(CvMat * pDataSet);
+	// Initializes the model for given data set
+	void Init(CvMat * pDataSet);
 	
-	void Evaluate(CvMat * pDataSet, CvMat * pActiveMask);
+	void Init(CvMat * pDataSet, CvMat * pActiveMask);
+
+	// Runs a single EM iteration using the given data set
+	void NextStep(CvMat * pDataSet);
+	
+	void NextStep(CvMat * pDataSet, CvMat * pActiveMask);
+	
 	
 	// Returns the probability for the given feature vector
 	float GetProbability(CvMat * pFeatureVector);
@@ -29,10 +35,11 @@ public:
 	
 private:
 
-	CvEM m_model;
+	CvEM * m_model;
 	int m_nClusters;
 	int m_nMaxIter;
-	float m_nEpsilon;		
+	float m_nEpsilon;
+	CvEMParams m_params;
 };
 
 
