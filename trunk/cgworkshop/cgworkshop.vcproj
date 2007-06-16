@@ -183,7 +183,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\fe\Main.cpp"
+				RelativePath=".\src\GUI\main.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\Segmentator.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\Segmentator.h"
 				>
 			</File>
 			<Filter
@@ -254,6 +262,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\src\GUI\Loader.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\GUI\Loader.h"
+					>
+				</File>
+				<File
 					RelativePath=".\src\GUI\Point.h"
 					>
 				</File>
@@ -263,6 +279,10 @@
 				</File>
 				<File
 					RelativePath=".\src\GUI\Scribble.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\GUI\TypeDefs.h"
 					>
 				</File>
 			</Filter>
