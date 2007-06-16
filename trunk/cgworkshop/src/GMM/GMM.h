@@ -38,6 +38,7 @@ private:
 	CvEM * m_model;
 	int m_nClusters;
 	int m_nMaxIter;
+	int m_nMaxWeight;
 	float m_nEpsilon;
 	CvEMParams m_params;
 };

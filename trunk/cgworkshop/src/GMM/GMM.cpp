@@ -28,7 +28,7 @@ void CGMM::Init(CvMat * pDataSet , CvMat * pActiveMask)
     m_params.term_crit.type     = CV_TERMCRIT_ITER;
     
     m_model = new CvEM();
-	m_model->train( pDataSet, pActiveMask, m_params); 	
+	m_model->train( pDataSet, pActiveMask, m_params); 
 }
 
 
@@ -39,35 +39,32 @@ void CGMM::NextStep(CvMat * pDataSet)
 
 void CGMM::NextStep(CvMat * pDataSet , CvMat * pActiveMask)
 {
+	int i;
+
     // initialize model's parameters
-    m_params.covs      = (const CvMat**)m_model->get_covs();
-    m_params.means     	 = m_model->get_means();
-    m_params.weights   = m_model->get_weights();
+    m_params.covs = new (const CvMat*)[m_nClusters];
+    for (i=0;i<m_nClusters;i++)
+    	m_params.covs[i] = (const CvMat*) cvClone(m_model->get_covs()[i]);
+    
+    m_params.means     	 = (const CvMat*) cvClone(m_model->get_means());
+    m_params.weights   = (const CvMat*) cvClone(m_model->get_weights());
     m_params.probs     = NULL;
     m_params.start_step         = CvEM::START_E_STEP;
     
     
     // Switch to a new model, train it using the results of the old one
-    CvEM * pNewModel = new CvEM();
-	pNewModel->train( pDataSet, pActiveMask, m_params); 
-	
-	delete m_model;
-	m_model = pNewModel;
+    delete m_model;
+    CvEM * m_model = new CvEM();
+	m_model->train( pDataSet, pActiveMask, m_params); 
 }
 
 float CGMM::GetProbability(CvMat * pFeatureVector)
 {
 	float * _prob = new float[m_nClusters]; // Take this!
 	CvMat prob = cvMat( 1, m_nClusters, CV_32FC1, _prob );
-	m_model->predict( pFeatureVector, &prob );
-	
-	int i=0;
-	float max = _prob[i];
-	for (i=1;i<m_nClusters;i++)
-		if (_prob[i] > max)
-			max = _prob[i];
-	
-	return max;
+	int nCluster = (int) m_model->predict( pFeatureVector, &prob );
+
+	return _prob[nCluster];
 }
 
 void CGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)
