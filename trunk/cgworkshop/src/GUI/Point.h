@@ -19,6 +19,12 @@ public:
 		y = newY;
 	}
 
+	//is the <T> needed?
+	int operator==(const CPoint<T>& point)
+	{
+		return (point.x==x && point.y == y);
+	}
+
 	T x;
 	T y;
 };
