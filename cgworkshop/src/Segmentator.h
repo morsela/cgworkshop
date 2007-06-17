@@ -1,34 +1,35 @@
-#include "fe/FeatureExtraction.h"
-#include "GMM/GMM.h"
-#include "GraphHandler.h"
-#include "GUI/TypeDefs.h"
+#ifndef _H_SEGMENTATOR_H_
+#define _H_SEGMENTATOR_H_
+
 #include <cv.h>
-#include <algorithm>
-using namespace std;
+#include <highgui.h>
+
+#include "fe/FeatureExtraction.h"
+#include "GUI/TypeDefs.h"
+
 #define MAX_ITER 6
 
-
-class Segmentator {
-
-
-
+class Segmentator 
+{
 public:
 	Segmentator(IplImage * Img, CFeatureExtraction *fe, ScribbleVector scribbles);
-	virtual ~Segmentator(){};
-
+	virtual ~Segmentator() {};
 
 public:
+
 	void Segment();
 
 protected:
 	
 	void getMask(CvMat *mask, int isBackground);
 
-
 private:
+
 	std::vector<CPointInt> m_points;
 	CFeatureExtraction *m_pFe;
 	IplImage * m_pImg;
 	CvMat * m_Segmentation;
 	
 };
+
+#endif	//_H_SEGMENTATOR_H_
