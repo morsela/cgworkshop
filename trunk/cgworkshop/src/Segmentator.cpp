@@ -14,7 +14,7 @@ void Segmentator::getMask(CvMat * mask, int isBackground) {
 			int value = cvmGet(this->m_Segmentation,i,j);
 			if (isBackground) 
 				value = 1-value;
-			cvmSet(mask,1, i*m_pImg->height+j, value);
+			cvmSet(mask,1, i*m_pImg->width+j, value);
 		}
 }
 
@@ -45,9 +45,9 @@ void Segmentator::Segment() {
 	b_gmm->NextStep(pChannels);
 
 	//Sink (background)
-	CvMat * Tu = cvCreateMat( m_pImg->width,m_pImg->height, CV_8UC1 );
+	CvMat * Tu = cvCreateMat(m_pImg->height, m_pImg->width, CV_8UC1 );
 	//Source (foreground)
-	CvMat * Su = cvCreateMat( m_pImg->width,m_pImg->height, CV_8UC1 );
+	CvMat * Su = cvCreateMat( m_pImg->height, m_pImg->width, CV_8UC1 );
 	
 	CvMat * point = cvCreateMat(1,6,CV_8UC1);
 		
