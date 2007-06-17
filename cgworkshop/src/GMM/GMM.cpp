@@ -1,11 +1,11 @@
 #include "GMM.h"
 
-CGMM::CGMM()
+CGMM::CGMM():m_model(NULL)
 {
 	// FIXME
 	m_nClusters = 5;
 	m_nMaxIter = 1;
-	m_nEpsilon = 0.05;		
+	m_nEpsilon = 0.05f;		
 }
 
 void CGMM::Init(CvMat * pDataSet)
@@ -28,7 +28,7 @@ void CGMM::Init(CvMat * pDataSet , CvMat * pActiveMask)
     m_params.term_crit.type     = CV_TERMCRIT_ITER;
     
     m_model = new CvEM();
-	m_model->train( pDataSet, pActiveMask, m_params); 
+	m_model->train(pDataSet, pActiveMask, m_params); 
 }
 
 
@@ -42,7 +42,7 @@ void CGMM::NextStep(CvMat * pDataSet , CvMat * pActiveMask)
 	int i;
 
     // initialize model's parameters
-    m_params.covs = new (const CvMat*)[m_nClusters];
+    m_params.covs = new const CvMat*[m_nClusters];
     for (i=0;i<m_nClusters;i++)
     	m_params.covs[i] = (const CvMat*) cvClone(m_model->get_covs()[i]);
     
@@ -54,7 +54,7 @@ void CGMM::NextStep(CvMat * pDataSet , CvMat * pActiveMask)
     
     // Switch to a new model, train it using the results of the old one
     delete m_model;
-    CvEM * m_model = new CvEM();
+    m_model = new CvEM();
 	m_model->train( pDataSet, pActiveMask, m_params); 
 }
 
