@@ -13,15 +13,15 @@ class Segmentator {
 
 
 public:
-	Segmentator::Segmentator(IplImage * Img, CFeatureExtraction *fe, ScribbleVector scribbles);
-	virtual ~Segmentator();
+	Segmentator(IplImage * Img, CFeatureExtraction *fe, ScribbleVector scribbles);
+	virtual ~Segmentator(){};
 
 
 public:
 	void Segment();
 
 protected:
-	void doGraphCuts();
+	
 	void getMask(CvMat *mask, int isBackground);
 
 
