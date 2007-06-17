@@ -1,13 +1,22 @@
 #include "Segmentator.h"
 
-Segmentator::Segmentator(IplImage * Img, CFeatureExtraction *fe, ScribbleVector scribbles) :m_pImg(Img) {
+#include <algorithm>
 
+#include "GMM/GMM.h"
+
+#include "GraphHandler.h"
+
+using namespace std;
+
+Segmentator::Segmentator(IplImage * Img, CFeatureExtraction *fe, ScribbleVector scribbles) :m_pImg(Img)
+{
 	m_points = scribbles[0].GetScribblePoints();
 	m_pFe = fe;
 	m_Segmentation = cvCreateMat(m_pImg->width,m_pImg->height, CV_8UC1 );
 }
 
-void Segmentator::getMask(CvMat * mask, int isBackground) {
+void Segmentator::getMask(CvMat * mask, int isBackground) 
+{
 
 	for (int i=0; i<m_pImg->height; i++)
 		for (int j=0; j<m_pImg->width; j++) {
@@ -18,7 +27,8 @@ void Segmentator::getMask(CvMat * mask, int isBackground) {
 		}
 }
 
-void Segmentator::Segment() {
+void Segmentator::Segment() 
+{
 	CGMM * f_gmm = new CGMM();
 	CGMM * b_gmm = new CGMM();
 
@@ -28,7 +38,7 @@ void Segmentator::Segment() {
 
 	cvSetZero( f_mask );
 	//get initial foreground mask
-	for (int i=0;i<m_points.size();i++)
+	for (int i=0;i< (int)m_points.size();i++)
 	{
 		CPointInt	pI = m_points[i];
 		int x = pI.x;
