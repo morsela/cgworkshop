@@ -12,7 +12,7 @@ Segmentator::Segmentator(IplImage * Img, CFeatureExtraction *fe, ScribbleVector 
 {
 	m_points = scribbles[0].GetScribblePoints();
 	m_pFe = fe;
-	m_Segmentation = cvCreateMat(m_pImg->width,m_pImg->height, CV_8UC1 );
+	m_Segmentation = cvCreateMat(m_pImg->height,m_pImg->width, CV_64FC1 );
 }
 
 void Segmentator::getMask(CvMat * mask, int isBackground) 
@@ -23,7 +23,8 @@ void Segmentator::getMask(CvMat * mask, int isBackground)
 			int value = cvmGet(this->m_Segmentation,i,j);
 			if (isBackground) 
 				value = 1-value;
-			cvmSet(mask,1, i*m_pImg->width+j, value);
+			mask->data.ptr[i*m_pImg->width+j]=value;
+			
 		}
 }
 
@@ -55,33 +56,37 @@ void Segmentator::Segment()
 	b_gmm->NextStep(pChannels);
 
 	//Sink (background)
-	CvMat * Tu = cvCreateMat(m_pImg->height, m_pImg->width, CV_8UC1 );
+	CvMat * Tu = cvCreateMat(m_pImg->height, m_pImg->width, CV_32F );
 	//Source (foreground)
-	CvMat * Su = cvCreateMat( m_pImg->height, m_pImg->width, CV_8UC1 );
+	CvMat * Su = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
 	
-	CvMat * point = cvCreateMat(1,6,CV_8UC1);
+	CvMat * point = cvCreateMat(1,6,CV_32F);
 		
 	for (int n=0; n<MAX_ITER; n++) {
 		GraphHandler *graph = new GraphHandler();
 		printf("gmm->NextStep(pTrainMat);\n");
-		for (int i=0; i<m_pImg->width; i++)
-			for (int j=0; j<m_pImg->height; j++) 
+		for (int i=0; i<m_pImg->height; i++)
+			for (int j=0; j<m_pImg->width; j++) 
 				if (find(m_points.begin(), m_points.end(), CPointInt(i,j))!= m_points.end())
 				{//inside scribble
 					cvmSet(Tu,i,j,100000);
 					cvmSet(Su,i,j,0);
+				//	printf("%d %d", i , j);
 				}
 				else
 				{
 					//get the 6d point
 					for (int k=0; k<6; k++)
-						cvmSet(point,1,k,cvmGet(pChannels,i,j));
+						cvmSet(point,0,k,cvmGet(pChannels,i*m_pImg->width+j,k));
 					//calcweights
 					cvmSet(Tu,i,j,b_gmm->GetProbability(point));
 					cvmSet(Su,i,j,f_gmm->GetProbability(point));
+				//	printf("%d %d", i , j);
 				}
 			
-
+	
+		graph->init_graph(m_pImg->height, m_pImg->width, m_pFe->GetColorChannels());
+		graph->assign_weights(Tu, Su);
 		graph->do_MinCut(*m_Segmentation);
 		getMask(f_mask,0);
 		getMask(b_mask,1);

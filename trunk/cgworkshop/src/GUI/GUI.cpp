@@ -10,7 +10,8 @@
 
 #include "../fe/FeatureExtraction.h"
 #include "../GMM/GMM.h"
-
+#include "../GraphHandler.h"
+#include "../Segmentator.h"
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 
@@ -193,41 +194,18 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 		fe->Run();
 
 
-		int n = m_scribbles[0].GetScribbleSize();
-		std::vector<CPointInt> points = m_scribbles[0].GetScribblePoints();
+		Segmentator seg(m_pImg, fe, m_scribbles);
+
+		//GraphHandler::init_graph(m_pImg->height, m_pImg->width, fe->GetColorChannels());
+
+ 		seg.Segment();
+
 		
-		CvMat * pChannels = fe->GetPrincipalChannels();
-		printf("Scribble size=%d\n", n);
-
-		CvMat * sample_idx = cvCreateMat( 1, pChannels->rows, CV_8UC1 );
-
-		cvSetZero( sample_idx );
-		for (int i=0;i<n;i++)
-		{
-			CPointInt	pI = points[i];
-			int x = pI.x;
-			int y = pI.y;
-			//printf("%d, %d\n", x,y);
-			sample_idx->data.ptr[y*m_pImg->width+x]=1;
-		}
-		//init graph smoothness weights
-		CGMM * gmm = new CGMM();
-
-		printf("gmm->Init(pTrainMat);\n");
-		gmm->Init(pChannels, sample_idx);
-
-		printf("gmm->NextStep(pTrainMat);\n");
-		gmm->NextStep(pChannels, sample_idx);
-		printf("gmm->NextStep(pTrainMat);\n");
-		gmm->NextStep(pChannels, sample_idx);
-		printf("gmm->NextStep(pTrainMat);\n");
-		gmm->NextStep(pChannels, sample_idx);
-	
 		IplImage * outImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_32F, 1);
 		CvMat outMat = cvMat( m_pImg->height * m_pImg->width, 1, CV_32FC1, outImg->imageData );
 		
 		printf("gmm->GetAllProbabilities(pChannels, &outMat);\n");
-		gmm->GetAllProbabilities(pChannels, &outMat);
+	//	gmm->GetAllProbabilities(pChannels, &outMat);
 
 		IplImage * outImg2 = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_8U, 1);
 		cvConvertScale(outImg,outImg2,255,0); 
