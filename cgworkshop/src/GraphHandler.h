@@ -19,7 +19,7 @@ public:
 
 public:
 
-	static void init_graph(int height, int width, CvMat *smoothness);
+	void init_graph(int height, int width, CvMat *smoothness);
 
 	void assign_weights(CvMat * Tu, CvMat * Su);
 	
