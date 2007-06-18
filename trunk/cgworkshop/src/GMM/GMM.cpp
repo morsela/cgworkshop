@@ -16,10 +16,23 @@ void CGMM::Init(CvMat * pDataSet)
 void CGMM::Init(CvMat * pDataSet , CvMat * pActiveMask)
 {
     // initialize model's parameters
-    m_params.covs      = NULL;
-    m_params.means     = NULL;
-    m_params.weights   = NULL;
-    m_params.probs     = NULL;
+    int i;
+	int dims = pDataSet->cols;
+
+	pCovs = new (CvMat*)[m_nClusters];
+    for (i=0;i<m_nClusters;i++)
+    	pCovs[i] = cvCreateMat( dims, dims, CV_64FC1 );
+
+    pMeans     	 = cvCreateMat( m_nClusters, dims, CV_64FC1 );
+    pWeights   =  cvCreateMat( 1, m_nClusters, CV_64FC1 );
+    
+    
+    m_params.covs = (const CvMat **) pCovs;
+    m_params.means = pMeans;
+    m_params.weights = pWeights;
+    
+	m_params.probs     = NULL;
+	
     m_params.nclusters = m_nClusters;
     m_params.cov_mat_type       = CvEM::COV_MAT_DIAGONAL;
     m_params.start_step         = CvEM::START_AUTO_STEP;
@@ -28,7 +41,7 @@ void CGMM::Init(CvMat * pDataSet , CvMat * pActiveMask)
     m_params.term_crit.type     = CV_TERMCRIT_ITER;
     
     m_model = new CvEM();
-	m_model->train(pDataSet, pActiveMask, m_params); 
+	m_model->train( pDataSet, pActiveMask, m_params); 
 }
 
 
@@ -42,19 +55,19 @@ void CGMM::NextStep(CvMat * pDataSet , CvMat * pActiveMask)
 	int i;
 
     // initialize model's parameters
-    m_params.covs = new const CvMat*[m_nClusters];
+    const CvMat ** cov_mats = m_model->get_covs();
     for (i=0;i<m_nClusters;i++)
-    	m_params.covs[i] = (const CvMat*) cvClone(m_model->get_covs()[i]);
-    
-    m_params.means     	 = (const CvMat*) cvClone(m_model->get_means());
-    m_params.weights   = (const CvMat*) cvClone(m_model->get_weights());
-    m_params.probs     = NULL;
+    	cvConvert(cov_mats[i], pCovs[i]);
+
+	cvConvert(m_model->get_means(), pMeans);
+	cvConvert(m_model->get_weights(), pWeights);
+
     m_params.start_step         = CvEM::START_E_STEP;
-    
     
     // Switch to a new model, train it using the results of the old one
     delete m_model;
-    m_model = new CvEM();
+   	m_model = new CvEM();
+
 	m_model->train( pDataSet, pActiveMask, m_params); 
 }
 

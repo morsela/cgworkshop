@@ -41,6 +41,11 @@ private:
 	int m_nMaxWeight;
 	float m_nEpsilon;
 	CvEMParams m_params;
+	
+	
+	CvMat ** pCovs;
+	CvMat * pMeans;
+	CvMat * pWeights;
 };
 
 
