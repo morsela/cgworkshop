@@ -94,4 +94,16 @@ void Segmentator::Segment()
 		b_gmm->NextStep(pChannels, b_mask);	
 		delete graph;
 	}
+	
+	// display
+	IplImage * outImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_8U, 1);
+	cvConvertScale(m_Segmentation,outImg,255,0); 	
+	
+       char title[50];
+       strcpy(title, "Segmentation");
+        cvNamedWindow( title, 1 );
+        cvShowImage( title, outImg );
+        cvWaitKey(0);
+        cvDestroyWindow(title);	
+	cvReleaseImage(&outImg);
 }
