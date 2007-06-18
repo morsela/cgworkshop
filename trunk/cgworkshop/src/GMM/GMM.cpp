@@ -19,7 +19,7 @@ void CGMM::Init(CvMat * pDataSet , CvMat * pActiveMask)
     int i;
 	int dims = pDataSet->cols;
 
-	pCovs = new (CvMat*)[m_nClusters];
+	pCovs = new CvMat*[m_nClusters];
     for (i=0;i<m_nClusters;i++)
     	pCovs[i] = cvCreateMat( dims, dims, CV_64FC1 );
 
