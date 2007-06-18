@@ -65,8 +65,8 @@ void CGMM::NextStep(CvMat * pDataSet , CvMat * pActiveMask)
     m_params.start_step         = CvEM::START_E_STEP;
     
     // Switch to a new model, train it using the results of the old one
-    delete m_model;
-   	m_model = new CvEM();
+    //delete m_model;
+   	//m_model = new CvEM();
 
 	m_model->train( pDataSet, pActiveMask, m_params); 
 }
