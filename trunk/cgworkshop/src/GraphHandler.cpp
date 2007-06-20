@@ -5,7 +5,7 @@ Graph GraphHandler::initial_graph = Graph();
 GraphHandler::GraphHandler()  {
 
 	//should copy the initial graph using copy c'tor
-	m_igraph = new Graph(initial_graph);
+	m_igraph = new Graph();
 }
 
 GraphHandler::~GraphHandler() {
@@ -32,19 +32,19 @@ void GraphHandler::init_graph(int rows, int cols, CvMat * smoothness) {
 			nodes[i][j] = m_igraph->add_node();
 
 	//need to somehow calculate beta here
-	double beta = 1.0;
+	double beta = 10.0;
 
 	
 	for(int i=1; i<rows; i+=2)
 		for (int j=1; j< cols; j+=2) {
-			m_igraph->add_edge(nodes[i][j], nodes[i-1][j-1], calcDist(smoothness, i+rows*j, (i-1)+rows*(j-1)));
-			m_igraph->add_edge(nodes[i][j], nodes[i-1][j], calcDist(smoothness, i+rows*j, (i-1)+rows*j));						
-			m_igraph->add_edge(nodes[i][j], nodes[i-1][j+1], calcDist(smoothness, i+rows*j, (i-1)+rows*(j+1)));						
-			m_igraph->add_edge(nodes[i][j], nodes[i][j-1], calcDist(smoothness, i+rows*j, i+rows*(j-1)));						
-			m_igraph->add_edge(nodes[i][j], nodes[i][j+1], calcDist(smoothness, i+rows*j, i+rows*(j+1)));						
-			m_igraph->add_edge(nodes[i][j], nodes[i+1][j-1], calcDist(smoothness, i+rows*j, (i+1)+rows*(j-1)));						
-			m_igraph->add_edge(nodes[i][j], nodes[i+1][j], calcDist(smoothness, i+rows*j, (i+1)+rows*j));						
-			m_igraph->add_edge(nodes[i][j], nodes[i+1][j+1], calcDist(smoothness, i+rows*j, (i+1)+rows*(j+1)));				
+			m_igraph->add_edge(nodes[i][j], nodes[i-1][j-1], calcDist(smoothness, i*cols+j, (i-1)*cols+(j-1)));
+			m_igraph->add_edge(nodes[i][j], nodes[i-1][j], calcDist(smoothness, i*cols+j, (i-1)*cols+j));						
+			m_igraph->add_edge(nodes[i][j], nodes[i-1][j+1], calcDist(smoothness, i*cols +j, (i-1)*cols +(j+1)));						
+			m_igraph->add_edge(nodes[i][j], nodes[i][j-1], calcDist(smoothness, i*cols+j, i*cols+(j-1)));						
+			m_igraph->add_edge(nodes[i][j], nodes[i][j+1], calcDist(smoothness, i*cols + j, i*cols + (j+1)));						
+			m_igraph->add_edge(nodes[i][j], nodes[i+1][j-1], calcDist(smoothness, i*cols+j, (i+1)*cols+(j-1)));						
+			m_igraph->add_edge(nodes[i][j], nodes[i+1][j], calcDist(smoothness, i*cols+j, (i+1)*cols+j));						
+			m_igraph->add_edge(nodes[i][j], nodes[i+1][j+1], calcDist(smoothness, i*cols+j, (i+1)*cols+(j+1)));				
 		}
 
 }

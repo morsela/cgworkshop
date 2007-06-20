@@ -61,8 +61,8 @@ void Segmentator::Segment()
 	CvMat * Su = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
 	
 	CvMat * point = cvCreateMat(1,6,CV_32F);
-		
-	for (int n=0; n<MAX_ITER; n++) {
+	
+	for (int n=0; n<1; n++) {
 		GraphHandler *graph = new GraphHandler();
 		printf("gmm->NextStep(pTrainMat);\n");
 		for (int i=0; i<m_pImg->height; i++)
@@ -99,11 +99,11 @@ void Segmentator::Segment()
 	IplImage * outImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_8U, 1);
 	cvConvertScale(m_Segmentation,outImg,255,0); 	
 	
-       char title[50];
-       strcpy(title, "Segmentation");
-        cvNamedWindow( title, 1 );
-        cvShowImage( title, outImg );
-        cvWaitKey(0);
-        cvDestroyWindow(title);	
+	char title[50];
+	strcpy(title, "Segmentation");
+	cvNamedWindow( title, 1 );
+	cvShowImage( title, outImg );
+	cvWaitKey(0);
+	cvDestroyWindow(title);	
 	cvReleaseImage(&outImg);
 }
