@@ -62,12 +62,12 @@ void Segmentator::Segment()
 	
 	CvMat * point = cvCreateMat(1,6,CV_32F);
 	
-	for (int n=0; n<1; n++) {
+	for (int n=0; n<3; n++) {
 		GraphHandler *graph = new GraphHandler();
 		printf("gmm->NextStep(pTrainMat);\n");
 		for (int i=0; i<m_pImg->height; i++)
-			for (int j=0; j<m_pImg->width; j++) 
-				if (find(m_points.begin(), m_points.end(), CPointInt(i,j))!= m_points.end())
+			for (int j=0; j<m_pImg->width; j++)                     //j i or i j?
+				if (find(m_points.begin(), m_points.end(), CPointInt(j,i))!= m_points.end())
 				{//inside scribble
 					cvmSet(Tu,i,j,100000);
 					cvmSet(Su,i,j,0);
@@ -81,6 +81,7 @@ void Segmentator::Segment()
 					//calcweights
 					cvmSet(Tu,i,j,b_gmm->GetProbability(point));
 					cvmSet(Su,i,j,f_gmm->GetProbability(point));
+					
 				//	printf("%d %d", i , j);
 				}
 			
