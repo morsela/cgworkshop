@@ -37,7 +37,7 @@ private:
 
 	Graph *m_igraph;
 	Graph::flowtype m_flow;
-	map<int ,map< int, Graph::node_id>> nodes;
+	map<int ,map< int, Graph::node_id>> m_nodes;
 
 
 };
