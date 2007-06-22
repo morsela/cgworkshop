@@ -51,7 +51,7 @@ void CGUI::Render()
 		// as points
 		glBegin( GL_POINTS);
 		{
-			for ( int i = 0; i < m_scribbles.size(); i ++)
+			for ( unsigned int i = 0; i < m_scribbles.size(); i ++)
 				m_scribbles[i].Draw();
 		}
 		glEnd();

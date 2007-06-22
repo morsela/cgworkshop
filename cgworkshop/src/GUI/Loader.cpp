@@ -29,7 +29,7 @@ void CLoader::Load(ScribbleVector & scribbles)
 	//load all the scribbles from the file
 	while (true)
 	{
-		bool fLoad = scribble.Load(ifs);
+		// bool fLoad = scribble.Load(ifs);
 		if (ifs.eof())
 			break;
 
@@ -53,7 +53,7 @@ void CLoader::Save(ScribbleVector & scribbles)
 	ofs.close();
 
 	//save all scribbles
-	for (int i = 0; i < scribbles.size(); i++)
+	for (unsigned int i = 0; i < scribbles.size(); i++)
 		scribbles[i].Save(m_pScribbleFile);
 }
 

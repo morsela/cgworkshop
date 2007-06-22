@@ -13,7 +13,7 @@ inline double round2( double d )
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-
+/*
 static void displayImage(char * title, IplImage * pImg)
 {
 	cvNamedWindow(title, 1);
@@ -25,9 +25,9 @@ static void displayImage(char * title, IplImage * pImg)
 	
 	cvReleaseImage(&pNewImg);
 }
-
+*/
 //////////////////////////////////////////////////////////////////////////////////////
-
+/*
 static void saveChannel(char * title, CvMat * pMat)
 {
 	printf("\nsaveChannel in\n");
@@ -52,7 +52,7 @@ static void saveChannel(char * title, CvMat * pMat)
 	
 	printf("saveChannel out\n");
 }
-
+*/
 //////////////////////////////////////////////////////////////////////////////////////
 
 // TODO: Make sure working......
@@ -327,7 +327,7 @@ bool CFeatureExtraction::DoPCA(CvMat * pMat, CvMat * pResultMat, int nSize, int 
 // Only nExtractChans=3 is supported!!!
 bool CFeatureExtraction::GetChannels(CvMat * pMergedMat, CvMat * pChannels[], int nTotalChans, int nExtractChans)
 {
-	static int s_nChannel = 1;
+	//static int s_nChannel = 1;
 	int i;
 
 	printf("\nCFeatureExtraction::GetChannels in\n");
