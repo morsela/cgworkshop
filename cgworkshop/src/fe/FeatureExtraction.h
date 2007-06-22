@@ -39,6 +39,7 @@ class CFeatureExtraction
 		bool GetChannels(CvMat * pMergedMat, CvMat * pChannels[], int nTotalChans, int nExtractChans);
 		bool DoPCA(CvMat * pMat, CvMat * pResultMat, int nSize, int nExpectedSize); 
 		
+		bool CFeatureExtraction::MergeMatrices(CvMat * pMatrix1, CvMat * pMatrix2, CvMat * pMatrix3, CvMat * pResultMat);
 		bool MergeMatrices(CvMat * pMatrix1, CvMat * pMatrix2, CvMat * pResultMat);
 
 	protected:
