@@ -1,4 +1,6 @@
-#pragma once
+#ifndef __GRAPH_HANDLER_H__
+#define __GRAPH_HANDLER_H__
+
 #include <map>
 #include "MaxFlow/graph.h"
 #include <cv.h>
@@ -41,3 +43,5 @@ private:
 
 
 };
+
+#endif // __GRAPH_HANDLER_H__

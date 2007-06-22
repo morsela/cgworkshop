@@ -20,7 +20,7 @@ void Segmentator::getMask(CvMat * mask, int isBackground)
 
 	for (int i=0; i<m_pImg->height; i++)
 		for (int j=0; j<m_pImg->width; j++) {
-			int value = cvmGet(this->m_Segmentation,i,j);
+			int value = (int) cvmGet(this->m_Segmentation,i,j);
 			if (isBackground) 
 				value = 1-value;
 			mask->data.ptr[i*m_pImg->width+j]=value;
@@ -97,3 +97,5 @@ void Segmentator::Segment()
 	}
 
 }
+
+

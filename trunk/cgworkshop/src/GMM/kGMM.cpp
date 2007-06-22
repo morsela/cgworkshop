@@ -60,6 +60,7 @@ void CkGMM::NextStep(CvMat * pDataSet)
 
 float CkGMM::GetProbability(CvMat * pFeatureVector)
 {
+	return 0;
 }
 
 void CkGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)

@@ -32,31 +32,32 @@ void GraphHandler::init_graph(int rows, int cols, CvMat * smoothness) {
 			m_nodes[i][j] = m_igraph->add_node();
 
 	//need to somehow calculate beta here
-	double beta = 10.0;
+	// double beta = 10.0;
 
 	for(int i = 1; i < rows; i += 2)
 	{
 		for (int j = 1; j < cols; j += 2) 
 		{
-			m_igraph->add_edge(m_nodes[i][j], m_nodes[i-1][j-1], calcDist(smoothness, i*cols+j, (i-1)*cols+(j-1)));
-			m_igraph->add_edge(m_nodes[i][j], m_nodes[i][j-1], calcDist(smoothness, i*cols+j, i*cols+(j-1)));
+			// Casting to short here is very very bad.
+			m_igraph->add_edge(m_nodes[i][j], m_nodes[i-1][j-1], (short) calcDist(smoothness, i*cols+j, (i-1)*cols+(j-1)));
+			m_igraph->add_edge(m_nodes[i][j], m_nodes[i][j-1], (short) calcDist(smoothness, i*cols+j, i*cols+(j-1)));
 
-			m_igraph->add_edge(m_nodes[i][j], m_nodes[i-1][j], calcDist(smoothness, i*cols+j, (i-1)*cols+j));
+			m_igraph->add_edge(m_nodes[i][j], m_nodes[i-1][j], (short) calcDist(smoothness, i*cols+j, (i-1)*cols+j));
 			
 			if (j < cols - 1)
 			{
-				m_igraph->add_edge(m_nodes[i][j], m_nodes[i-1][j+1], calcDist(smoothness, i*cols +j, (i-1)*cols +(j+1)));		
-				m_igraph->add_edge(m_nodes[i][j], m_nodes[i][j+1], calcDist(smoothness, i*cols + j, i*cols + (j+1)));						
+				m_igraph->add_edge(m_nodes[i][j], m_nodes[i-1][j+1], (short) calcDist(smoothness, i*cols +j, (i-1)*cols +(j+1)));		
+				m_igraph->add_edge(m_nodes[i][j], m_nodes[i][j+1], (short) calcDist(smoothness, i*cols + j, i*cols + (j+1)));						
 			}
 
 			if (i < rows - 1)
 			{
-				m_igraph->add_edge(m_nodes[i][j], m_nodes[i+1][j-1], calcDist(smoothness, i*cols+j, (i+1)*cols+(j-1)));						
-				m_igraph->add_edge(m_nodes[i][j], m_nodes[i+1][j], calcDist(smoothness, i*cols+j, (i+1)*cols+j));	
+				m_igraph->add_edge(m_nodes[i][j], m_nodes[i+1][j-1], (short) calcDist(smoothness, i*cols+j, (i+1)*cols+(j-1)));						
+				m_igraph->add_edge(m_nodes[i][j], m_nodes[i+1][j], (short) calcDist(smoothness, i*cols+j, (i+1)*cols+j));	
 			}
 
 			if ((j < cols - 1) && (i < rows - 1))
-				m_igraph->add_edge(m_nodes[i][j], m_nodes[i+1][j+1], calcDist(smoothness, i*cols+j, (i+1)*cols+(j+1)));				
+				m_igraph->add_edge(m_nodes[i][j], m_nodes[i+1][j+1], (short) calcDist(smoothness, i*cols+j, (i+1)*cols+(j+1)));				
 		}
 	}
 
@@ -70,8 +71,10 @@ void GraphHandler::assign_weights(CvMat *Tu, CvMat *Su) {
 		for (int j=0; j<Tu->cols; j++) {
 			//add the Sink E1 term
 			m_igraph->set_tweights(m_nodes[i][j], 
-										cvmGet(Su,i,j),
-										cvmGet(Tu,i,j));
+										(short)cvmGet(Su,i,j),
+										(short)cvmGet(Tu,i,j));
+										
+		// Casting to short here is very very bad.								
 	}
 
 
@@ -99,3 +102,4 @@ void GraphHandler::do_MinCut(CvMat &result) {
 			
 	printf("COUNTER1 %d COUNTER2 %d", counter1, counter2);
 }
+
