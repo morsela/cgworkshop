@@ -32,7 +32,6 @@ double calcDist(CvMat * smoothness, int i, int j) {
 }
 
 void GraphHandler::init_graph(int rows, int cols, CvMat * smoothness) {
-	pixel_count = rows*cols;
 	//map <int, map<int, Graph::node_id>> node;
 	
 	//create m_nodes
@@ -79,8 +78,8 @@ void GraphHandler::assign_weights(CvMat *Tu, CvMat *Su) {
 		for (int j=0; j<Tu->cols; j++) {
 			//add the Sink E1 term
 			m_igraph->set_tweights(m_nodes[i][j], 
-										cvmGet(Su,i,j),
-										cvmGet(Tu,i,j));
+										cvmGet(Tu,i,j),
+										cvmGet(Su,i,j));
 														
 	}
 
