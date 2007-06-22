@@ -12,6 +12,8 @@ GraphHandler::~GraphHandler() {
 	delete m_igraph;
 }
 
+double counter =0;
+int n=0;
 double calcDist(CvMat * smoothness, int i, int j) {
 
 	//static double sum = 0;
@@ -27,11 +29,13 @@ double calcDist(CvMat * smoothness, int i, int j) {
 	}
 	//sum += result;
 	//count ++;
-	
+	counter +=exp(-result/beta);
+	n++;
 	return exp(-result/beta);
 }
 
 void GraphHandler::init_graph(int rows, int cols, CvMat * smoothness) {
+
 	//map <int, map<int, Graph::node_id>> node;
 	
 	//create m_nodes
@@ -68,18 +72,20 @@ void GraphHandler::init_graph(int rows, int cols, CvMat * smoothness) {
 		}
 	}
 
+	printf("Smoothness avg %lf\n", counter/n);
+
 }
 
 
 
-void GraphHandler::assign_weights(CvMat *Tu, CvMat *Su) {
+void GraphHandler::assign_weights(CvMat *Bu, CvMat *Fu) {
 
-	for (int i=0; i<Tu->rows; i++)
-		for (int j=0; j<Tu->cols; j++) {
+	for (int i=0; i<Bu->rows; i++)
+		for (int j=0; j<Bu->cols; j++) {
 			//add the Sink E1 term
 			m_igraph->set_tweights(m_nodes[i][j], 
-										cvmGet(Tu,i,j),
-										cvmGet(Su,i,j));
+										cvmGet(Fu,i,j),
+										cvmGet(Bu,i,j));
 														
 	}
 
