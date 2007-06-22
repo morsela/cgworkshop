@@ -68,7 +68,7 @@ public:
 	   Can be changed to char, int, float, double, ... */
 	typedef double captype;
 	/* Type of total flow */
-	typedef int flowtype;
+	typedef double flowtype;
 
 	typedef void * node_id;
 
