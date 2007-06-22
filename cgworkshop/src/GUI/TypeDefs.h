@@ -8,4 +8,4 @@
 typedef std::vector< CScribble > ScribbleVector;
 
 
-#endif _H_TYPEDEFS_H
+#endif // _H_TYPEDEFS_H
