@@ -352,6 +352,9 @@ bool CFeatureExtraction::GetChannels(CvMat * pMergedMat, CvMat * pChannels[], in
 	// Normalize to 0..1	
 	for (int k=0;k<nExtractChans;k++)
 		cvNormalize(pChannels[k],pChannels[k], 0, 1, CV_MINMAX);
+		
+	// TODO: This is either really good, or really bad	
+	MergeMatrices(pChannels[0], pChannels[1], pChannels[2], pMergedMat);
 /*
 	printf("GetChannels: Save each channel to a bitmap, just for fun.\n");
 	// Save each channel to a bitmap, just for fun.
@@ -395,6 +398,41 @@ bool CFeatureExtraction::MergeMatrices(CvMat * pMatrix1, CvMat * pMatrix2, CvMat
 	printf("\nCFeatureExtraction::MergeMatrices out\n");
 	return true;
 }
+
+// TODO: Fix this.
+bool CFeatureExtraction::MergeMatrices(CvMat * pMatrix1, CvMat * pMatrix2, CvMat * pMatrix3, CvMat * pResultMat)
+{
+	printf("\nCFeatureExtraction::MergeMatrices3 in\n");
+	// Go over row by row, concat the two matrices
+	char * pResData= (char *) pResultMat->data.ptr;
+	char * pData1 = (char *)  pMatrix1->data.ptr;
+	char * pData2 = (char *)  pMatrix2->data.ptr;
+	char * pData3 = (char *)  pMatrix3->data.ptr;
+	
+	int step1 = pMatrix1->step / pMatrix1->cols;
+	int step2 = pMatrix2->step / pMatrix2->cols;
+	int step3 = pMatrix3->step / pMatrix3->cols;
+	
+	int i;
+	for (i=0;i<pResultMat->rows;i++)
+	{
+		memcpy(pResData, pData1, step1);
+		pResData+=step1;
+		pData1+=step1;
+		
+		memcpy(pResData, pData2, step2);
+		pResData+=step2;
+		pData2+=step2;
+		
+		memcpy(pResData, pData3, step3);
+		pResData+=step3;
+		pData3+=step3;		
+	}
+	
+	printf("\nCFeatureExtraction::MergeMatrices out\n");
+	return true;
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////
 
