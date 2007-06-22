@@ -7,7 +7,7 @@
 #include "fe/FeatureExtraction.h"
 #include "GUI/TypeDefs.h"
 
-#define MAX_ITER 6
+#define MAX_ITER 3
 
 class Segmentator 
 {
@@ -18,6 +18,7 @@ public:
 public:
 
 	void Segment();
+	CvMat * getSegmentation() {return m_Segmentation;}
 
 protected:
 	

@@ -200,24 +200,18 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 
  		seg.Segment();
 
+		// display
+		IplImage * outImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_8U, 1);
+		cvConvertScale(seg.getSegmentation(),outImg,255,0); 	
 		
-		IplImage * outImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_32F, 1);
-		CvMat outMat = cvMat( m_pImg->height * m_pImg->width, 1, CV_32FC1, outImg->imageData );
-		
-		printf("gmm->GetAllProbabilities(pChannels, &outMat);\n");
-	//	gmm->GetAllProbabilities(pChannels, &outMat);
-
-		IplImage * outImg2 = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_8U, 1);
-		cvConvertScale(outImg,outImg2,255,0); 
-		char a[50];
-		strcpy(a, "EM-clustering");
-		cvNamedWindow( a, 1 );
-		cvShowImage( a, outImg2 );
+		char title[50];
+		strcpy(title, "Segmentation");
+		cvNamedWindow( title, 1 );
+		cvShowImage( title, outImg );
 		cvWaitKey(0);
-		cvDestroyWindow(a);
+		cvDestroyWindow(title);	
 		
-		cvSaveImage("test.bmp",outImg2);
-		cvReleaseImage(&outImg2);
+		cvSaveImage("test.bmp",outImg);
 		cvReleaseImage(&outImg);
 
 		}

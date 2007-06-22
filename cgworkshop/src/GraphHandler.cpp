@@ -24,7 +24,7 @@ double calcDist(CvMat * smoothness, int i, int j) {
 
 void GraphHandler::init_graph(int rows, int cols, CvMat * smoothness) {
 
-	map <int, map<int, Graph::node_id>> node;
+	//map <int, map<int, Graph::node_id>> node;
 	
 	//create nodes
 	for (int i=0; i<rows; i++) 
@@ -56,9 +56,9 @@ void GraphHandler::assign_weights(CvMat *Tu, CvMat *Su) {
 	for (int i=0; i<Tu->rows; i++)
 		for (int j=0; j<Tu->cols; j++) {
 			//add the Sink E1 term
-			m_igraph->add_tweights(nodes[i][j], 
-										-log(cvmGet(Tu,i,j)),
-										-log(cvmGet(Su,i,j)));
+			m_igraph->set_tweights(nodes[i][j], 
+										cvmGet(Su,i,j),
+										cvmGet(Tu,i,j));
 	}
 
 
@@ -67,13 +67,22 @@ void GraphHandler::assign_weights(CvMat *Tu, CvMat *Su) {
 void GraphHandler::do_MinCut(CvMat &result) {
 
 	m_flow = m_igraph->maxflow();
+	int counter1 = 0;
+	int counter2 = 0;
+
 
 	for(int i=0; i<result.rows; i++)
 		for (int j=0; j<result.cols; j++)
 			//we can push it all into one line...
-			if (m_igraph->what_segment(nodes[i][j])==Graph::SINK)
+			if (m_igraph->what_segment(nodes[i][j])==Graph::SINK){
+				counter1++;
 				cvmSet(&result, i,j,0);
-			else
+			}
+			else {
 				cvmSet(&result, i,j,1);
-
+				counter2++;
+				printf("%d %d \n", i, j);
+			}
+			
+	printf("COUNTER1 %d COUNTER2 %d", counter1, counter2);
 }
