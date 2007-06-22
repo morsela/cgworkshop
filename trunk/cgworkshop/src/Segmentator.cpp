@@ -45,32 +45,33 @@ void Segmentator::Segment()
 		int x = pI.x;
 		int y = pI.y;
 		//printf("%d, %d\n", x,y);
-		f_mask->data.ptr[y*m_pImg->width+m_pImg->height-x]=1;
+		f_mask->data.ptr[(m_pImg->height - y)*m_pImg->width+x]=1;
 	}
 			
 
 	//init GMMs
 	f_gmm->Init(pChannels, f_mask);
 	b_gmm->Init(pChannels);
-	f_gmm->NextStep(pChannels, f_mask);
-	b_gmm->NextStep(pChannels);
+	//f_gmm->NextStep(pChannels, f_mask);
+	//b_gmm->NextStep(pChannels);
 
-	//Sink (background)
-	CvMat * Tu = cvCreateMat(m_pImg->height, m_pImg->width, CV_32F );
-	//Source (foreground)
-	CvMat * Su = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
+	//Sink (Background)
+	CvMat * Bu = cvCreateMat(m_pImg->height, m_pImg->width, CV_32F );
+	//Source (Foreground)
+	CvMat * Fu = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
 	
 	CvMat * point = cvCreateMat(1,6,CV_32F);
-	
 	for (int n=0; n<MAX_ITER; n++) {
+		double s1 =0, s2=0;
+		int x=0;
 		GraphHandler *graph = new GraphHandler();
 		printf("gmm->NextStep(pTrainMat);\n");
 		for (int i=0; i<m_pImg->height; i++)
 			for (int j=0; j<m_pImg->width; j++)                     
 				if (find(m_points.begin(), m_points.end(), CPointInt(j,m_pImg->height-i))!= m_points.end())
 				{//inside scribble
-					cvmSet(Tu,i,j,100000);
-					cvmSet(Su,i,j,0);
+					cvmSet(Fu,i,j,100000);
+					cvmSet(Bu,i,j,0);
 				
 				}
 				else
@@ -79,16 +80,20 @@ void Segmentator::Segment()
 					for (int k=0; k<6; k++)
 						cvmSet(point,0,k,cvmGet(pChannels,i*m_pImg->width+j,k));
 					//calcweights
-					cvmSet(Tu,i,j,-log(b_gmm->GetProbability(point)));
-					cvmSet(Su,i,j,-log(f_gmm->GetProbability(point)));
+					x++;
+					s1+=-log(b_gmm->GetProbability(point));
+					s2+=-log(f_gmm->GetProbability(point));
+					cvmSet(Bu,i,j,-log(b_gmm->GetProbability(point)));
+					cvmSet(Fu,i,j,-log(f_gmm->GetProbability(point)));
 				}
 				
 			
-	
+		printf("%lf %lf \n", s1/x, s2/x);
 		graph->init_graph(m_pImg->height, m_pImg->width, m_pFe->GetColorChannels());
-		graph->assign_weights(Tu, Su);
+		graph->assign_weights(Bu, Fu);
+		
 		graph->do_MinCut(*m_Segmentation);
-		//std::cout << "Flow is "<< graph->getFlow()<<endl;
+		printf("Flow is %lf\n" ,graph->getFlow());
 		getMask(f_mask,0);
 		getMask(b_mask,1);
 		f_gmm->NextStep(pChannels, f_mask);
