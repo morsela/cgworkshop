@@ -29,7 +29,7 @@ void GraphHandler::init_graph(int rows, int cols, CvMat * smoothness) {
 	//create m_nodes
 	for (int i = 0; i <rows; i++) 
 		for (int j = 0; j < cols; j++)
-			m_m_nodes[i][j] = m_igraph->add_node();
+			m_nodes[i][j] = m_igraph->add_node();
 
 	//need to somehow calculate beta here
 	double beta = 10.0;
