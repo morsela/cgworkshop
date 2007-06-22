@@ -263,7 +263,7 @@ void Graph::prepare_graph()
 		arc_reverse *ar;
 		node *from;
 		int shift = 0, shift_new;
-		captype r_cap, r_rev_cap, r_cap_new, r_rev_cap_new;
+		captype r_cap = 0, r_rev_cap = 0, r_cap_new, r_rev_cap_new;
 
 		if (!(from=(node *)(a_rev->sister))) continue;
 		af = a_for;
@@ -292,7 +292,7 @@ void Graph::prepare_graph()
 				from -> parent = (arc_forward *)(((arc_reverse *)(from -> parent)) - 1);
 				ar = (arc_reverse *)(from -> parent);
 			}
-		} while (from=(node *)(ar->sister));
+		} while ( (from=(node *)(ar->sister)) );
 
 		af -> shift = shift;
 		af -> r_cap = r_cap;
