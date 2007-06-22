@@ -23,8 +23,11 @@ public:
 
 	void assign_weights(CvMat * Tu, CvMat * Su);
 	
+
+public:
 	void do_MinCut(CvMat & result);
 
+public:
 	Graph::flowtype getFlow() const {return m_flow;};
 	
 

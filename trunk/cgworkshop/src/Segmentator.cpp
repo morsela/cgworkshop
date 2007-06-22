@@ -45,7 +45,7 @@ void Segmentator::Segment()
 		int x = pI.x;
 		int y = pI.y;
 		//printf("%d, %d\n", x,y);
-		f_mask->data.ptr[y*m_pImg->width+x]=1;
+		f_mask->data.ptr[y*m_pImg->width+m_pImg->height-x]=1;
 	}
 			
 
@@ -62,16 +62,16 @@ void Segmentator::Segment()
 	
 	CvMat * point = cvCreateMat(1,6,CV_32F);
 	
-	for (int n=0; n<3; n++) {
+	for (int n=0; n<MAX_ITER; n++) {
 		GraphHandler *graph = new GraphHandler();
 		printf("gmm->NextStep(pTrainMat);\n");
 		for (int i=0; i<m_pImg->height; i++)
-			for (int j=0; j<m_pImg->width; j++)                     //j i or i j?
-				if (find(m_points.begin(), m_points.end(), CPointInt(j,i))!= m_points.end())
+			for (int j=0; j<m_pImg->width; j++)                     
+				if (find(m_points.begin(), m_points.end(), CPointInt(j,m_pImg->height-i))!= m_points.end())
 				{//inside scribble
 					cvmSet(Tu,i,j,100000);
 					cvmSet(Su,i,j,0);
-				//	printf("%d %d", i , j);
+				
 				}
 				else
 				{
@@ -79,32 +79,21 @@ void Segmentator::Segment()
 					for (int k=0; k<6; k++)
 						cvmSet(point,0,k,cvmGet(pChannels,i*m_pImg->width+j,k));
 					//calcweights
-					cvmSet(Tu,i,j,b_gmm->GetProbability(point));
-					cvmSet(Su,i,j,f_gmm->GetProbability(point));
-					
-				//	printf("%d %d", i , j);
+					cvmSet(Tu,i,j,-log(b_gmm->GetProbability(point)));
+					cvmSet(Su,i,j,-log(f_gmm->GetProbability(point)));
 				}
+				
 			
 	
 		graph->init_graph(m_pImg->height, m_pImg->width, m_pFe->GetColorChannels());
 		graph->assign_weights(Tu, Su);
 		graph->do_MinCut(*m_Segmentation);
+		//std::cout << "Flow is "<< graph->getFlow()<<endl;
 		getMask(f_mask,0);
 		getMask(b_mask,1);
 		f_gmm->NextStep(pChannels, f_mask);
 		b_gmm->NextStep(pChannels, b_mask);	
 		delete graph;
 	}
-	
-	// display
-	IplImage * outImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_8U, 1);
-	cvConvertScale(m_Segmentation,outImg,255,0); 	
-	
-	char title[50];
-	strcpy(title, "Segmentation");
-	cvNamedWindow( title, 1 );
-	cvShowImage( title, outImg );
-	cvWaitKey(0);
-	cvDestroyWindow(title);	
-	cvReleaseImage(&outImg);
+
 }
