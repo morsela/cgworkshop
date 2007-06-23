@@ -39,13 +39,13 @@ void Segmentator::Segment()
 
 	cvSetZero( f_mask );
 	//get initial foreground mask
-	for (int i=0;i< (int)m_points.size();i++)
+	for (int i = 0; i < (int)m_points.size();i++)
 	{
-		CPointInt	pI = m_points[i];
+		CPointInt pI = m_points[i];
 		int x = pI.x;
 		int y = pI.y;
 		//printf("%d, %d\n", x,y);
-		f_mask->data.ptr[(m_pImg->height - y)*m_pImg->width+x]=1;
+		f_mask->data.ptr[y*m_pImg->width+x]=1;
 	}
 			
 
@@ -68,7 +68,7 @@ void Segmentator::Segment()
 		printf("gmm->NextStep(pTrainMat);\n");
 		for (int i=0; i<m_pImg->height; i++)
 			for (int j=0; j<m_pImg->width; j++)                     
-				if (find(m_points.begin(), m_points.end(), CPointInt(j,m_pImg->height-i))!= m_points.end())
+				if (find(m_points.begin(), m_points.end(), CPointInt(j,i))!= m_points.end())
 				{//inside scribble
 					cvmSet(Fu,i,j,100000);
 					cvmSet(Bu,i,j,0);
@@ -93,7 +93,7 @@ void Segmentator::Segment()
 		graph->assign_weights(Bu, Fu);
 		
 		graph->do_MinCut(*m_Segmentation);
-		
+
 		printf("Flow is %lf\n" ,graph->getFlow());
 
 		getMask(f_mask,0);

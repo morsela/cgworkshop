@@ -51,7 +51,7 @@ void CGUI::Render()
 		// as points
 		glBegin( GL_POINTS);
 		{
-			for ( unsigned int i = 0; i < m_scribbles.size(); i ++)
+			for ( int i = 0; i < m_scribbles.size(); i ++)
 				m_scribbles[i].Draw();
 		}
 		glEnd();
@@ -268,13 +268,20 @@ void CGUI::MouseMove(int x, int y)
 
 void CGUI::AddScribblePoints(int x, int y)
 {
+	int origY;
+
 	int height = m_pImg->height;
 	int width  = m_pImg->width;
 
 	float ratio_x = (float) width / GetWidth();
 	float ratio_y = (float)	height / GetHeight();
 
-	CPointInt pI = CPointInt( (int)(ratio_x * x), (int)((GetHeight() - y) * ratio_y));
+	if( m_pImg->origin == IPL_ORIGIN_TL)
+		origY = y;
+	else
+		origY = GetHeight() - y;
+
+	CPointInt pI = CPointInt( (int)(ratio_x * x), (int)(origY * ratio_y));
 
 	// the start of the vector
 	CPointFloat pF = CPointFloat( m_orthoBBox[0] * ( 1 - 2 * (float)x / GetWidth() ),
