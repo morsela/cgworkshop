@@ -52,8 +52,8 @@ void Segmentator::Segment()
 	//init GMMs
 	f_gmm->Init(pChannels, f_mask);
 	b_gmm->Init(pChannels);
-	//f_gmm->NextStep(pChannels, f_mask);
-	//b_gmm->NextStep(pChannels);
+	f_gmm->NextStep(pChannels, f_mask);
+	b_gmm->NextStep(pChannels);
 
 	//Sink (Background)
 	CvMat * Bu = cvCreateMat(m_pImg->height, m_pImg->width, CV_32F );
@@ -77,8 +77,8 @@ void Segmentator::Segment()
 				else
 				{
 					//get the 6d point
-					for (int k=0; k<6; k++)
-						cvmSet(point,0,k,cvmGet(pChannels,i*m_pImg->width+j,k));
+					cvGetRow(pChannels, point, i*m_pImg->width+j);
+
 					//calcweights
 					x++;
 					s1+=-log(b_gmm->GetProbability(point));
@@ -93,7 +93,9 @@ void Segmentator::Segment()
 		graph->assign_weights(Bu, Fu);
 		
 		graph->do_MinCut(*m_Segmentation);
+		
 		printf("Flow is %lf\n" ,graph->getFlow());
+
 		getMask(f_mask,0);
 		getMask(b_mask,1);
 		f_gmm->NextStep(pChannels, f_mask);
