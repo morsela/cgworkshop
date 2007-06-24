@@ -20,7 +20,8 @@ double calcDist(CvMat * smoothness, int i, int j) {
 	//static int count = 0;
 	double result=0;
 
-	double beta = 0.005837*10;
+	//double beta = 0.005837*10; // normalized
+	double beta = 1782.446183 * 10; // unnormalized
 
 	for (int k = 0; k<3; k++)
 	{
