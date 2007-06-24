@@ -354,7 +354,7 @@ bool CFeatureExtraction::GetChannels(CvMat * pMergedMat, CvMat * pChannels[], in
 		cvNormalize(pChannels[k],pChannels[k], 0, 1, CV_MINMAX);
 		
 	// TODO: This is either really good, or really bad	
-	MergeMatrices(pChannels[0], pChannels[1], pChannels[2], pMergedMat);
+	// MergeMatrices(pChannels[0], pChannels[1], pChannels[2], pMergedMat);
 /*
 	printf("GetChannels: Save each channel to a bitmap, just for fun.\n");
 	// Save each channel to a bitmap, just for fun.
