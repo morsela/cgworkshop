@@ -29,8 +29,8 @@ void CLoader::Load(ScribbleVector & scribbles)
 	//load all the scribbles from the file
 	while (true)
 	{
-		// bool fLoad = scribble.Load(ifs);
-		if (ifs.eof())
+		bool fLoad = scribble.Load(ifs);
+		if (ifs.eof() || !fLoad)
 			break;
 
 		scribbles.push_back(scribble);
