@@ -67,6 +67,8 @@ void Segmentator::Segment()
 	IplImage * outImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_8U, 1);
 	
 	CvMat * conf_map = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
+	CvMat * conf_map_fg = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
+	CvMat * conf_map_bg = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
 	char title[50];
 	CvMat * point = cvCreateMat(1,6,CV_32F);
 	for (int n=0; n<MAX_ITER; n++) {
@@ -74,6 +76,9 @@ void Segmentator::Segment()
 		int x=0;
 		GraphHandler *graph = new GraphHandler();
 		printf("gmm->NextStep(pTrainMat);\n");
+		
+		f_gmm->GetAllProbabilities(pChannels, conf_map_fg);
+		b_gmm->GetAllProbabilities(pChannels, conf_map_bg);
 		for (int i=0; i<m_pImg->height; i++)
 			for (int j=0; j<m_pImg->width; j++)                     
 				if (find(m_points.begin(), m_points.end(), CPointInt(j,i))!= m_points.end())
@@ -92,8 +97,10 @@ void Segmentator::Segment()
 					s1+=-log(b_gmm->GetProbability(point));
 					s2+=-log(f_gmm->GetProbability(point));
 
-					cvmSet(Fu,i,j,-1*log(b_gmm->GetProbability(point)));
-					cvmSet(Bu,i,j,-1*log(f_gmm->GetProbability(point)));
+					//cvmSet(Fu,i,j,-1*log(b_gmm->GetProbability(point)));
+					//cvmSet(Bu,i,j,-1*log(f_gmm->GetProbability(point)));
+					cvmSet(Fu,i,j,-1*log(cvmGet(conf_map_bg, i,j)));
+					cvmSet(Bu,i,j,-1*log(cvmGet(conf_map_fg, i,j)));
 				}
 				
 			

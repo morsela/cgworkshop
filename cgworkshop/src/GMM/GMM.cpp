@@ -44,6 +44,7 @@ void CGMM::Init(CvMat * pDataSet , CvMat * pActiveMask, int covType)
 
 	m_model = new CvEM();
 	m_model->train( pDataSet, pActiveMask, m_params); 
+	cvConvert(m_model->get_weights(), pWeights);
 }
 
 
@@ -62,7 +63,6 @@ void CGMM::NextStep(CvMat * pDataSet , CvMat * pActiveMask, int covType)
     	cvConvert(cov_mats[i], pCovs[i]);
 
 	cvConvert(m_model->get_means(), pMeans);
-	cvConvert(m_model->get_weights(), pWeights);
 
     m_params.start_step         = CvEM::START_E_STEP;
     m_params.cov_mat_type       = covType;
@@ -72,6 +72,7 @@ void CGMM::NextStep(CvMat * pDataSet , CvMat * pActiveMask, int covType)
    	//m_model = new CvEM();
 
 	m_model->train( pDataSet, pActiveMask, m_params); 
+	cvConvert(m_model->get_weights(), pWeights);
 }
 
 float CGMM::GetProbability(CvMat * pFeatureVector)
@@ -99,4 +100,6 @@ void CGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)
 		
 		pProbs->data.fl[i] = prob;
 	}
+
+	cvNormalize(pProbs, pProbs, 0, 1, CV_MINMAX);
 }
