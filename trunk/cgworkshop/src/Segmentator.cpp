@@ -55,8 +55,8 @@ void Segmentator::Segment()
 			
 
 	//init GMMs
-	f_gmm->Init(pChannels, f_mask);
-	b_gmm->Init(pChannels, b_mask);
+	f_gmm->Init(pChannels, f_mask, CvEM::COV_MAT_GENERIC);
+	b_gmm->Init(pChannels, b_mask, CvEM::COV_MAT_GENERIC);
 	//f_gmm->NextStep(pChannels, f_mask);
 	//b_gmm->NextStep(pChannels, b_mask);
 
@@ -92,8 +92,8 @@ void Segmentator::Segment()
 					s1+=-log(b_gmm->GetProbability(point));
 					s2+=-log(f_gmm->GetProbability(point));
 
-					cvmSet(Fu,i,j,-log(b_gmm->GetProbability(point)));
-					cvmSet(Bu,i,j,-log(f_gmm->GetProbability(point)));
+					cvmSet(Fu,i,j,-1*log(b_gmm->GetProbability(point)));
+					cvmSet(Bu,i,j,-1*log(f_gmm->GetProbability(point)));
 				}
 				
 			
@@ -133,8 +133,8 @@ void Segmentator::Segment()
 
 		getMask(f_mask,0);
 		getMask(b_mask,1);
-		f_gmm->NextStep(pChannels, f_mask);
-		b_gmm->NextStep(pChannels, b_mask);	
+		f_gmm->NextStep(pChannels, f_mask, CvEM::COV_MAT_DIAGONAL);
+		b_gmm->NextStep(pChannels, b_mask, CvEM::COV_MAT_DIAGONAL);	
 		
 		delete graph;
 	}
