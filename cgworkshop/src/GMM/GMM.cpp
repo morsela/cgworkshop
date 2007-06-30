@@ -10,10 +10,10 @@ CGMM::CGMM():m_model(NULL)
 
 void CGMM::Init(CvMat * pDataSet)
 {
-	Init(pDataSet, 0);	
+//	Init(pDataSet, 0);	
 }
 
-void CGMM::Init(CvMat * pDataSet , CvMat * pActiveMask)
+void CGMM::Init(CvMat * pDataSet , CvMat * pActiveMask, int covType)
 {
     // initialize model's parameters
     int i;
@@ -34,23 +34,25 @@ void CGMM::Init(CvMat * pDataSet , CvMat * pActiveMask)
 	m_params.probs     = NULL;
 	
     m_params.nclusters = m_nClusters;
-    m_params.cov_mat_type       = CvEM::COV_MAT_DIAGONAL;
+    m_params.cov_mat_type       = covType;
     m_params.start_step         = CvEM::START_AUTO_STEP;
     m_params.term_crit.max_iter = m_nMaxIter;
     m_params.term_crit.epsilon  = m_nEpsilon;
     m_params.term_crit.type     = CV_TERMCRIT_ITER;
     
-    m_model = new CvEM();
+    //m_model = new CvEM(pDataSet,pActiveMask,m_params,0);
+
+	m_model = new CvEM();
 	m_model->train( pDataSet, pActiveMask, m_params); 
 }
 
 
 void CGMM::NextStep(CvMat * pDataSet)
 {
-	NextStep(pDataSet, 0);	
+//	NextStep(pDataSet, 0);	
 }
 
-void CGMM::NextStep(CvMat * pDataSet , CvMat * pActiveMask)
+void CGMM::NextStep(CvMat * pDataSet , CvMat * pActiveMask, int covType)
 {
 	int i;
 
@@ -63,7 +65,8 @@ void CGMM::NextStep(CvMat * pDataSet , CvMat * pActiveMask)
 	cvConvert(m_model->get_weights(), pWeights);
 
     m_params.start_step         = CvEM::START_E_STEP;
-    
+    m_params.cov_mat_type       = covType;
+
     // Switch to a new model, train it using the results of the old one
     //delete m_model;
    	//m_model = new CvEM();
@@ -77,7 +80,10 @@ float CGMM::GetProbability(CvMat * pFeatureVector)
 	CvMat prob = cvMat( 1, m_nClusters, CV_32FC1, _prob );
 	int nCluster = (int) m_model->predict( pFeatureVector, &prob );
 
-	return _prob[nCluster];
+	float result = 0.0f;
+	for (int i=0; i<this->m_nClusters; i++)
+		result += _prob[i]*cvmGet(this->m_model->get_weights(),0,i);
+	return result;
 }
 
 void CGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)
