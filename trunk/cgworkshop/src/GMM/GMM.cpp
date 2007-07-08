@@ -101,5 +101,5 @@ void CGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)
 		pProbs->data.fl[i] = prob;
 	}
 
-	cvNormalize(pProbs, pProbs, 0, 1, CV_MINMAX);
+	cvNormalize(pProbs, pProbs, 0.5, 1, CV_MINMAX);
 }
