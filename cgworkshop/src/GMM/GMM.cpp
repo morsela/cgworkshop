@@ -63,8 +63,7 @@ void CGMM::NextStep(CvMat * pDataSet , CvMat * pActiveMask, int covType)
     	cvConvert(cov_mats[i], pCovs[i]);
 
 	cvConvert(m_model->get_means(), pMeans);
-
-    m_params.start_step         = CvEM::START_E_STEP;
+//    m_params.start_step         = CvEM::START_E_STEP;
     m_params.cov_mat_type       = covType;
 
     // Switch to a new model, train it using the results of the old one
@@ -97,9 +96,7 @@ void CGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)
 	{
 		cvInitMatHeader(&vector, 1, pDataSet->cols, CV_32FC1, &pData[i*pDataSet->cols]);
 		float prob = GetProbability(&vector);
-		
+
 		pProbs->data.fl[i] = prob;
 	}
-
-	cvNormalize(pProbs, pProbs, 0.5, 1, CV_MINMAX);
 }

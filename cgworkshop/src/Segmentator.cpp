@@ -99,8 +99,8 @@ void Segmentator::Segment()
 
 					//cvmSet(Fu,i,j,-1*log(b_gmm->GetProbability(point)));
 					//cvmSet(Bu,i,j,-1*log(f_gmm->GetProbability(point)));
-					cvmSet(Fu,i,j,-1*log(cvmGet(conf_map_bg, i,j)));
-					cvmSet(Bu,i,j,-1*log(cvmGet(conf_map_fg, i,j)));
+					cvmSet(Fu,i,j,-1*log(cvmGet(conf_map_bg, i,j))/log(10.0));
+					cvmSet(Bu,i,j,-1*log(cvmGet(conf_map_fg, i,j))/log(10.0));
 				}
 				
 			
