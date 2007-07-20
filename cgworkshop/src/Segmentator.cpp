@@ -70,17 +70,20 @@ void Segmentator::Segment()
 	CvMat * conf_map_fg = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
 	CvMat * conf_map_bg = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
 	char title[50];
-	CvMat * point = cvCreateMat(1,6,CV_32F);
+
 	for (int n=0; n<MAX_ITER; n++) {
-		double s1 =0, s2=0;
-		int x=0;
+
 		GraphHandler *graph = new GraphHandler();
-		printf("gmm->NextStep(pTrainMat);\n");
 		
+		// Get probabilites
 		f_gmm->GetAllProbabilities(pChannels, conf_map_fg);
 		b_gmm->GetAllProbabilities(pChannels, conf_map_bg);
+		
+		// Set weights
 		for (int i=0; i<m_pImg->height; i++)
-			for (int j=0; j<m_pImg->width; j++)                     
+		{
+			for (int j=0; j<m_pImg->width; j++)
+			{
 				if (find(m_points.begin(), m_points.end(), CPointInt(j,i))!= m_points.end())
 				{//inside scribble
 					cvmSet(Fu,i,j,10000);
@@ -89,47 +92,38 @@ void Segmentator::Segment()
 				}
 				else
 				{
-					//get the 6d point
-					cvGetRow(pChannels, point, i*m_pImg->width+j);
-
 					//calcweights
-					x++;
-					s1+=-log(b_gmm->GetProbability(point));
-					s2+=-log(f_gmm->GetProbability(point));
-
-					//cvmSet(Fu,i,j,-1*log(b_gmm->GetProbability(point)));
-					//cvmSet(Bu,i,j,-1*log(f_gmm->GetProbability(point)));
-					cvmSet(Fu,i,j,-1*log(cvmGet(conf_map_bg, i,j))/log(10.0));
-					cvmSet(Bu,i,j,-1*log(cvmGet(conf_map_fg, i,j))/log(10.0));
+					cvmSet(Fu,i,j,-1*log(cvmGet(conf_map_bg, i,j)));
+					cvmSet(Bu,i,j,-1*log(cvmGet(conf_map_fg, i,j)));
 				}
-				
-			
-		printf("%lf %lf \n", s1/x, s2/x);
-		graph->init_graph(m_pImg->height, m_pImg->width, m_pFe->GetColorChannels());
-		graph->assign_weights(Bu, Fu);
+			}
+		}
 		
-		graph->do_MinCut(*m_Segmentation);
-
-		printf("Flow is %lf\n" ,graph->getFlow());
-		
-		f_gmm->GetAllProbabilities(pChannels, conf_map);
-		
-		cvConvertScale(conf_map, outImg,255,0); 
+		// Display FG conf map
+		cvConvertScale(conf_map_fg, outImg,255,0); 
 		strcpy(title, "fg-conf-map");
 		cvNamedWindow( title, 1 );
 		cvShowImage( title, outImg );
 		cvWaitKey(0);
 		cvDestroyWindow(title);	
-
-		b_gmm->GetAllProbabilities(pChannels, conf_map);
 		
-		cvConvertScale(conf_map, outImg,255,0); 
+		// Display BG conf map
+		cvConvertScale(conf_map_bg, outImg,255,0); 
 		strcpy(title, "bg-conf-map");
 		cvNamedWindow( title, 1 );
 		cvShowImage( title, outImg );
 		cvWaitKey(0);
 		cvDestroyWindow(title);	
 		
+		// Graph cut
+		graph->init_graph(m_pImg->height, m_pImg->width, m_pFe->GetColorChannels());
+		graph->assign_weights(Bu, Fu);
+		
+		graph->do_MinCut(*m_Segmentation);
+
+		printf("Flow is %lf\n" ,graph->getFlow());
+
+		// Display segmentation
 		cvConvertScale(m_Segmentation, outImg,255,0); 
 		strcpy(title, "Segmentation");
 		cvNamedWindow( title, 1 );
@@ -137,11 +131,11 @@ void Segmentator::Segment()
 		cvWaitKey(0);
 		cvDestroyWindow(title);	
 		
-
+		// Update GMM
 		getMask(f_mask,0);
 		getMask(b_mask,1);
-		f_gmm->NextStep(pChannels, f_mask, CvEM::COV_MAT_DIAGONAL);
-		b_gmm->NextStep(pChannels, b_mask, CvEM::COV_MAT_DIAGONAL);	
+		f_gmm->NextStep(pChannels, f_mask, CvEM::COV_MAT_GENERIC);
+		b_gmm->NextStep(pChannels, b_mask, CvEM::COV_MAT_GENERIC);	
 		
 		delete graph;
 	}
