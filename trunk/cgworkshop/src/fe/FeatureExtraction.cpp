@@ -211,7 +211,7 @@ bool CFeatureExtraction::GetColorChannels(CvMat * pChannels, CvMat * pColorChann
 	// Actual calculation
 	DoPCA(&srcMat, pResultMat, nSize, COLOR_CHANNEL_NUM);
 	// Extracting the 3 primary channels
-	GetChannels(pResultMat, pColorChannelsArr, nSize, COLOR_CHANNEL_NUM);
+	//GetChannels(pResultMat, pColorChannelsArr, nSize, COLOR_CHANNEL_NUM);
 
 	// Useful releasing
 	cvReleaseImage(&pLabImg);
@@ -252,7 +252,7 @@ bool CFeatureExtraction::GetTextureChannels(CvMat * pChannels, CvMat * pTextureC
 	// Actual calculation
 	DoPCA(pTextureMat, pResultMat, vectorSize, TEXTURE_CHANNEL_NUM);
 	// Extracting the 3 primary channels
-	GetChannels(pResultMat, pTextureChannelsArr, TEXTURE_CHANNEL_NUM, TEXTURE_CHANNEL_NUM);
+	//GetChannels(pResultMat, pTextureChannelsArr, TEXTURE_CHANNEL_NUM, TEXTURE_CHANNEL_NUM);
 
 	cvReleaseMat(&pHistMat);
 	cvReleaseMat(&pGaborMat);
@@ -319,54 +319,6 @@ bool CFeatureExtraction::DoPCA(CvMat * pMat, CvMat * pResultMat, int nSize, int 
 	delete [] pDataSet;
 
 	printf("CFeatureExtraction::DoPCA out\n");
-	return true;
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-
-// Only nExtractChans=3 is supported!!!
-bool CFeatureExtraction::GetChannels(CvMat * pMergedMat, CvMat * pChannels[], int nTotalChans, int nExtractChans)
-{
-	//static int s_nChannel = 1;
-	int i;
-
-	printf("\nCFeatureExtraction::GetChannels in\n");
-	
-	printf("GetChannels: Store each of the 3 p-channels in a matrix\n");
-	// Store each of the 3 p-channels in a matrix
-	float val;
-
-	for (i=0;i<m_nHeight;i++)
-	{
-		for (int j=0;j<m_nWidth;j++)
-		{
-			for (int k=0;k<nExtractChans;k++)
-			{
-				val = cvmGet(pMergedMat, i*m_nWidth+j, k);
-				cvmSet(pChannels[k], i,j, val);
-			}
-		}
-	}
-	
-	printf("GetChannels: Normalize to 0..1\n");
-	// Normalize to 0..1	
-	for (int k=0;k<nExtractChans;k++)
-		cvNormalize(pChannels[k],pChannels[k], 0, 1, CV_MINMAX);
-		
-	// TODO: This is either really good, or really bad	
-	// MergeMatrices(pChannels[0], pChannels[1], pChannels[2], pMergedMat);
-/*
-	printf("GetChannels: Save each channel to a bitmap, just for fun.\n");
-	// Save each channel to a bitmap, just for fun.
-	char filename[255];
-	for (i=0;i<m_nChannels;i++)
-	{
-		sprintf(filename, "chan%d.bmp", s_nChannel);
-		saveChannel(filename, pChannels[i]);
-		s_nChannel++;	
-	}
-*/
-	printf("CFeatureExtraction::GetChannels out\n");
 	return true;
 }
 
