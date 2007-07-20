@@ -26,7 +26,7 @@ public:
 	
 	
 	// Returns the probability for the given feature vector
-	float GetProbability(CvMat * pFeatureVector);
+	double GetProbability(CvMat * pFeatureVector);
 	
 	// Returns a matrix that contains, for each feature vector in the data set,
 	// the probability it belongs to either of our two classes
@@ -46,6 +46,7 @@ private:
 	CvMat ** pCovs;
 	CvMat * pMeans;
 	CvMat * pWeights;
+	CvMat * pProbs;
 };
 
 
