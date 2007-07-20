@@ -25,6 +25,7 @@ void CGMM::Init(CvMat * pDataSet , CvMat * pActiveMask, int covType)
 
     pMeans     	 = cvCreateMat( m_nClusters, dims, CV_64FC1 );
     pWeights   =  cvCreateMat( 1, m_nClusters, CV_64FC1 );
+    pProbs     	 = cvCreateMat( 1, m_nClusters, CV_64FC1 );
     
     
     m_params.covs = (const CvMat **) pCovs;
@@ -74,16 +75,10 @@ void CGMM::NextStep(CvMat * pDataSet , CvMat * pActiveMask, int covType)
 	cvConvert(m_model->get_weights(), pWeights);
 }
 
-float CGMM::GetProbability(CvMat * pFeatureVector)
+double CGMM::GetProbability(CvMat * pFeatureVector)
 {
-	float * _prob = new float[m_nClusters]; // Take this!
-	CvMat prob = cvMat( 1, m_nClusters, CV_32FC1, _prob );
-	int nCluster = (int) m_model->predict( pFeatureVector, &prob );
-
-	float result = 0.0f;
-	for (int i=0; i<this->m_nClusters; i++)
-		result += _prob[i]*cvmGet(this->m_model->get_weights(),0,i);
-	return result;
+	m_model->predict( pFeatureVector, pProbs );
+	return cvDotProduct(pWeights,pProbs);
 }
 
 void CGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)
@@ -95,7 +90,7 @@ void CGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)
 	for (i=0;i<pDataSet->rows;i++)
 	{
 		cvInitMatHeader(&vector, 1, pDataSet->cols, CV_32FC1, &pData[i*pDataSet->cols]);
-		float prob = GetProbability(&vector);
+		double prob = GetProbability(&vector);
 
 		pProbs->data.fl[i] = prob;
 	}
