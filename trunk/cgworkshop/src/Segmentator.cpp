@@ -13,19 +13,26 @@ Segmentator::Segmentator(IplImage * Img, CFeatureExtraction *fe, ScribbleVector 
 	m_points = scribbles[0].GetScribblePoints();
 	m_pFe = fe;
 	m_Segmentation = cvCreateMat(m_pImg->height,m_pImg->width, CV_64FC1 );
+	m_pSegImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height),m_pImg->depth,m_pImg->nChannels);
+}
+
+Segmentator::~Segmentator()
+{
+	cvReleaseImage(&m_pSegImg);
 }
 
 void Segmentator::getMask(CvMat * mask, int isBackground) 
 {
-
 	for (int i=0; i<m_pImg->height; i++)
-		for (int j=0; j<m_pImg->width; j++) {
+	{
+		for (int j=0; j<m_pImg->width; j++) 
+		{
 			int value = (int) cvmGet(this->m_Segmentation,i,j);
 			if (isBackground) 
 				value = 1-value;
 			mask->data.ptr[i*m_pImg->width+j]=value;
-			
 		}
+	}
 }
 
 void Segmentator::Segment() 
@@ -71,7 +78,7 @@ void Segmentator::Segment()
 	CvMat * conf_map_bg = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
 	char title[50];
 
-	for (int n=0; n<MAX_ITER; n++) {
+	for (int n=0; n < MAX_ITER; n++) {
 
 		GraphHandler *graph = new GraphHandler();
 		
@@ -99,6 +106,7 @@ void Segmentator::Segment()
 			}
 		}
 		
+#ifdef DISP_CONF_MAPS
 		// Display FG conf map
 		cvConvertScale(conf_map_fg, outImg,255,0); 
 		strcpy(title, "fg-conf-map");
@@ -114,7 +122,8 @@ void Segmentator::Segment()
 		cvShowImage( title, outImg );
 		cvWaitKey(0);
 		cvDestroyWindow(title);	
-		
+#endif
+
 		// Graph cut
 		graph->init_graph(m_pImg->height, m_pImg->width, m_pFe->GetColorChannels());
 		graph->assign_weights(Bu, Fu);
@@ -123,6 +132,7 @@ void Segmentator::Segment()
 
 		printf("Flow is %lf\n" ,graph->getFlow());
 
+#ifdef DISP_SEGMENTATION
 		// Display segmentation
 		cvConvertScale(m_Segmentation, outImg,255,0); 
 		strcpy(title, "Segmentation");
@@ -130,7 +140,8 @@ void Segmentator::Segment()
 		cvShowImage( title, outImg );
 		cvWaitKey(0);
 		cvDestroyWindow(title);	
-		
+#endif
+
 		// Update GMM
 		getMask(f_mask,0);
 		getMask(b_mask,1);
@@ -142,4 +153,28 @@ void Segmentator::Segment()
 
 }
 
+IplImage * Segmentator::GetSegmentedImage()
+{
+	int step = m_pImg->widthStep;
+	memcpy((uchar *)m_pSegImg->imageData,m_pImg->imageData, m_pImg->imageSize);
+
+	uchar * pData  = (uchar *)m_pSegImg->imageData;
+
+	for (int y = 0; y < m_pImg->height; y++)
+	{
+		for (int x = 0; x < m_pImg->width; x++)
+		{
+			int value = (int) cvmGet(this->m_Segmentation,y,x);
+
+			if (value == 1)
+				//make segmented foreground image yellow
+				pData[y*step+x*3] = 0;
+			else
+				//make segmented background image blue
+				pData[y*step+x*3+2] = 0;
+		}
+	}
+
+	return m_pSegImg;
+}
 

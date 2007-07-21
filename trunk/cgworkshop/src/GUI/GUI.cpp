@@ -48,6 +48,7 @@ void CGUI::Render()
 	// render the left vectors
 	if ( !m_scribbles.empty() )
 	{
+		glPointSize(0.5);
 		// as points
 		glBegin( GL_POINTS);
 		{
@@ -207,7 +208,8 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 		char title[50];
 		strcpy(title, "Segmentation");
 		cvNamedWindow( title, 1 );
-		cvShowImage( title, outImg );
+		//cvShowImage( title, outImg );
+		cvShowImage( title, seg.GetSegmentedImage() );
 		cvWaitKey(0);
 		cvDestroyWindow(title);	
 		
@@ -276,19 +278,25 @@ void CGUI::AddScribblePoints(int x, int y)
 	float ratio_x = (float) width / GetWidth();
 	float ratio_y = (float)	height / GetHeight();
 
-	if( m_pImg->origin == IPL_ORIGIN_TL)
-		origY = y;
-	else
-		origY = GetHeight() - y;
+	for (int i = x - 1; i <= x + 1; i++)
+	{
+		for (int j = y - 1; j <= y + 1; j++)
+		{
+			if( m_pImg->origin == IPL_ORIGIN_TL)
+				origY = j;
+			else
+				origY = GetHeight() - j;
 
-	CPointInt pI = CPointInt( (int)(ratio_x * x), (int)(origY * ratio_y));
+			CPointInt pI = CPointInt( (int)(ratio_x * i), (int)(origY * ratio_y));
 
-	// the start of the vector
-	CPointFloat pF = CPointFloat( m_orthoBBox[0] * ( 1 - 2 * (float)x / GetWidth() ),
-								m_orthoBBox[3] * ( 1 - 2 * (float)y / GetHeight() ));
+			// the start of the vector
+			CPointFloat pF = CPointFloat( m_orthoBBox[0] * ( 1 - 2 * (float)i / GetWidth() ),
+										m_orthoBBox[3] * ( 1 - 2 * (float)j / GetHeight() ));
 
-	m_scribbles.back().AddImagePoint (pI);
-	m_scribbles.back().AddObjectPoint(pF);
+			m_scribbles.back().AddImagePoint (pI);
+			m_scribbles.back().AddObjectPoint(pF);
+		}
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
