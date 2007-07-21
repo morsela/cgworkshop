@@ -46,18 +46,29 @@ void GraphHandler::init_graph(int rows, int cols, CvMat * smoothness) {
 		for (int j = 0; j < cols; j ++) 
 		{
 			if (i<rows-1)
+			{
 				sum += getDist(smoothness, i*cols +j, (i+1)*cols +(j+0));
+				count++;
+			}
 			
 			if (j<cols-1)
+			{
 				sum += getDist(smoothness, i*cols +j, (i+0)*cols +(j+1));
+				count++;
+			}
 			
 			if ((i<rows-1) && (j<cols-1))
+			{
 				sum += getDist(smoothness, i*cols +j, (i+1)*cols +(j+1));
+				count++;
+			}
 			
 			if ((i>0) && (j<cols-1))
+			{
 				sum += getDist(smoothness, i*cols +j, (i-1)*cols +(j+1));
-						
-			count += 4;
+				count++;
+			}
+
 		}
 	}
 	
