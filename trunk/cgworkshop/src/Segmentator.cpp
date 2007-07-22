@@ -170,8 +170,11 @@ IplImage * Segmentator::GetSegmentedImage()
 				//make segmented foreground image yellow
 				pData[y*step+x*3] = 0;
 			else
+			{
+				pData[y*step+x*3+1] = 0;
 				//make segmented background image blue
 				pData[y*step+x*3+2] = 0;
+			}
 		}
 	}
 
