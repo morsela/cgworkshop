@@ -216,6 +216,8 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 		cvSaveImage("test.bmp",outImg);
 		cvReleaseImage(&outImg);
 
+		delete fe;
+
 		}
 		break;		
 	default:
@@ -239,12 +241,14 @@ void CGUI::MouseAction(int button, int state, int x, int y)
 		if ( state == GLUT_DOWN )
 		{
 			//FIXME: id should not be constant
-			int id = 1;
-			
-			CScribble scribble(id);
+			if (m_scribbles.size() == 0)
+			{
+				int id = 1;
+				CScribble scribble(id);
 
-			m_scribbles.push_back( scribble );
-
+				m_scribbles.push_back( scribble );
+			}
+		
 			AddScribblePoints(x,y);
 			
 			m_fScribbling = true;
