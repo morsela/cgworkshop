@@ -3,6 +3,8 @@
 
 #define EXPIREMENTAL_PROBABILITY_CALCULATION
 
+#define SMALL_EPS 0.01
+
 CGMM::CGMM():m_model(NULL)
 {
 	// FIXME
@@ -57,6 +59,14 @@ m_nDims = dims;
     for (i=0;i<m_nClusters;i++)
     {
     	cvConvert(cov_mats[i], pCovs[i]);
+    	double det = cvDet(pCovs[i]);
+   				while (det < SMALL_EPS) 
+				{
+					int j;
+					for (j=0;j<m_nDims;j++)
+						cvmSet(pCovs[i], j, j, cvmGet(pCovs[i], j,j)+SMALL_EPS);
+					det = cvDet(pCovs[i]);
+				} 	    	
     	printf("Det(%d)=%lf\n", i, cvDet(pCovs[i]));
     }
 
@@ -84,6 +94,14 @@ void CGMM::NextStep(CvMat * pDataSet , CvMat * pActiveMask, int covType)
     for (i=0;i<m_nClusters;i++)
 	{
     	cvConvert(cov_mats[i], pCovs[i]);
+    	double det = cvDet(pCovs[i]);
+   				while (det < SMALL_EPS) 
+				{
+					int j;
+					for (j=0;j<m_nDims;j++)
+						cvmSet(pCovs[i], j, j, cvmGet(pCovs[i], j,j)+SMALL_EPS);
+					det = cvDet(pCovs[i]);
+				} 	
     	printf("Det(%d)=%lf\n", i, cvDet(pCovs[i]));
 	}
 	cvConvert(m_model->get_means(), pMeans);
@@ -117,17 +135,29 @@ void CGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)
 		prob = 0;
 		{
 			int i;
+				int j;
 			for (i=0;i<m_nClusters;i++)
 			{
+				if (cvmGet(pWeights, 0,i) == 0)
+					continue;
 				double det = cvInvert(pCovs[i], covInv);
-				//printf("Cluster %d, det=%f\n", i, det);
-				if (det == 0) det = 0.01;
+				//for (j=0;j<m_nDims;j++)
+				//	printf("vector[j]=%lf\n", cvmGet(&vector,0,j));
 				cvGetRow(pMeans, mean, i);
-				
+				//printf("Weight=%d\n", cvmGet(pWeights, 0,i));
+				//for (j=0;j<m_nDims;j++)
+				//	printf("pMeans[i,j]=%lf\n", cvmGet(pMeans,i,j));						
+				//for (j=0;j<m_nDims;j++)
+				//	printf("mean[j]=%lf\n", cvmGet(mean,0,j));					
 				cvSub(&vector, mean, temp1);
-				//printf("covInv=(%d,%d), temp1=(%d,%d)\n", covInv->rows, covInv->cols, temp1->rows, temp1->cols);	
+				//for (j=0;j<m_nDims;j++)
+				//	printf("temp1[j]=%lf\n", cvmGet(temp1,0,j));				
 				cvMatMul(temp1, covInv, temp2);
+				
 				double hez = -0.5 * cvDotProduct(temp1, temp2);
+				//for (j=0;j<m_nDims;j++)
+				//	printf("temp2[j]=%lf\n", cvmGet(temp2,0,j));					
+				//printf("dot=%f\n", cvDotProduct(temp1, temp2));
 				//printf("Hez=%f\n", hez);
 				
 				double pi = exp(hez)/sqrt(det) * pow(2*MY_PI,m_nDims/2);
