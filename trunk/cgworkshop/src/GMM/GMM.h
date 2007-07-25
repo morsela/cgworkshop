@@ -39,6 +39,7 @@ private:
 	int m_nClusters;
 	int m_nMaxIter;
 	int m_nMaxWeight;
+	int m_nDims;
 	float m_nEpsilon;
 	CvEMParams m_params;
 	
