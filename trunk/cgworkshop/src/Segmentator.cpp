@@ -42,7 +42,9 @@ void Segmentator::Segment()
 	CGMM * f_gmm = new CGMM();
 	CGMM * b_gmm = new CGMM();
 
-	CvMat * pChannels = m_pFe->GetPrincipalChannels();
+	CvMat * pChannels = cvCreateMat(m_pFe->GetPrincipalChannels()->rows,m_pFe->GetPrincipalChannels()->cols,m_pFe->GetPrincipalChannels()->type);
+	cvConvertScale(m_pFe->GetPrincipalChannels(), pChannels, 0.2);
+
 	CvMat * f_mask = cvCreateMat( 1, pChannels->rows, CV_8UC1 );
 	CvMat * b_mask = cvCreateMat( 1, pChannels->rows, CV_8UC1 );
 	
@@ -59,13 +61,13 @@ void Segmentator::Segment()
 		int y = pI.y;
 		//printf("%d, %d\n", x,y);
 		f_mask->data.ptr[y*m_pImg->width+x]=1;
-		b_mask->data.ptr[y*m_pImg->width+x]=0;
+//		b_mask->data.ptr[y*m_pImg->width+x]=0;
 	}
 			
 
 	//init GMMs
-	f_gmm->Init(pChannels, f_mask, CvEM::COV_MAT_GENERIC);
-	b_gmm->Init(pChannels, b_mask, CvEM::COV_MAT_GENERIC);
+	f_gmm->Init(pChannels, f_mask, CvEM::COV_MAT_DIAGONAL);
+	b_gmm->Init(pChannels, b_mask, CvEM::COV_MAT_DIAGONAL);
 	
 	//Sink (Background)
 	CvMat * Bu = cvCreateMat(m_pImg->height, m_pImg->width, CV_32F );
@@ -153,8 +155,8 @@ void Segmentator::Segment()
 		// Update GMM
 		getMask(f_mask,0);
 		getMask(b_mask,1);
-		f_gmm->NextStep(pChannels, f_mask, CvEM::COV_MAT_GENERIC);
-		b_gmm->NextStep(pChannels, b_mask, CvEM::COV_MAT_GENERIC);	
+		f_gmm->NextStep(pChannels, f_mask, CvEM::COV_MAT_DIAGONAL);
+		b_gmm->NextStep(pChannels, b_mask, CvEM::COV_MAT_DIAGONAL);	
 		
 		delete graph;
 	}
