@@ -8,6 +8,8 @@
 
 using namespace std;
 
+#define DISP_SEGMENTATION
+
 Segmentator::Segmentator(IplImage * Img, CFeatureExtraction *fe, ScribbleVector scribbles) :m_pImg(Img)
 {
 	m_points = scribbles[0].GetScribblePoints();
@@ -64,9 +66,7 @@ void Segmentator::Segment()
 	//init GMMs
 	f_gmm->Init(pChannels, f_mask, CvEM::COV_MAT_GENERIC);
 	b_gmm->Init(pChannels, b_mask, CvEM::COV_MAT_GENERIC);
-	//f_gmm->NextStep(pChannels, f_mask);
-	//b_gmm->NextStep(pChannels, b_mask);
-
+	
 	//Sink (Background)
 	CvMat * Bu = cvCreateMat(m_pImg->height, m_pImg->width, CV_32F );
 	//Source (Foreground)
@@ -108,18 +108,18 @@ void Segmentator::Segment()
 		
 #ifdef DISP_CONF_MAPS
 		// Display FG conf map
-		cvConvertScale(conf_map_fg, outImg,255,0); 
+		//cvConvertScale(conf_map_fg, outImg,255,0); 
 		strcpy(title, "fg-conf-map");
 		cvNamedWindow( title, 1 );
-		cvShowImage( title, outImg );
+		cvShowImage( title, conf_map_fg );
 		cvWaitKey(0);
 		cvDestroyWindow(title);	
 		
 		// Display BG conf map
-		cvConvertScale(conf_map_bg, outImg,255,0); 
+		//cvConvertScale(conf_map_bg, outImg,255,0); 
 		strcpy(title, "bg-conf-map");
 		cvNamedWindow( title, 1 );
-		cvShowImage( title, outImg );
+		cvShowImage( title, conf_map_bg );
 		cvWaitKey(0);
 		cvDestroyWindow(title);	
 #endif
@@ -140,6 +140,14 @@ void Segmentator::Segment()
 		cvShowImage( title, outImg );
 		cvWaitKey(0);
 		cvDestroyWindow(title);	
+		
+		
+		IplImage * img = GetSegmentedImage();
+		strcpy(title, "Segmentation");
+		cvNamedWindow( title, 1 );
+		cvShowImage( title, img );
+		cvWaitKey(0);
+		cvDestroyWindow(title);				
 #endif
 
 		// Update GMM
