@@ -55,8 +55,10 @@ m_nDims = dims;
 	
     const CvMat ** cov_mats = m_model->get_covs();
     for (i=0;i<m_nClusters;i++)
+    {
     	cvConvert(cov_mats[i], pCovs[i]);
- 
+    	printf("Det(%d)=%lf\n", i, cvDet(pCovs[i]));
+    }
 
 	cvConvert(m_model->get_means(), pMeans);	
 }
@@ -80,8 +82,10 @@ void CGMM::NextStep(CvMat * pDataSet , CvMat * pActiveMask, int covType)
 	cvConvert(m_model->get_weights(), pWeights);
 	const CvMat ** cov_mats = m_model->get_covs();
     for (i=0;i<m_nClusters;i++)
+	{
     	cvConvert(cov_mats[i], pCovs[i]);
- 
+    	printf("Det(%d)=%lf\n", i, cvDet(pCovs[i]));
+	}
 	cvConvert(m_model->get_means(), pMeans);
 }
 
