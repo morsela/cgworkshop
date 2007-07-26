@@ -14,15 +14,15 @@ GraphHandler::~GraphHandler() {
 
 double getDist(CvMat * smoothness, int i, int j) {
 	double result=0;
+	
 	for (int k = 0; k<3; k++)
-	{
-		//printf("smooth %d: %f,%f\n", k, cvmGet(smoothness, i, k), cvmGet(smoothness, j, k));
-		result += pow(cvmGet(smoothness, i, k) - cvmGet(smoothness, j, k),2);
-	}
+			result += pow(cvmGet(smoothness, i, k) - cvmGet(smoothness, j, k),2);
+	
 	return result;
 }
 
 double calcDist(CvMat * smoothness, int i, int j, double beta) {
+	
 	double alpha = 15;
 	return alpha*exp(-getDist(smoothness,i,j)/beta);
 }

@@ -8,7 +8,7 @@
 
 using namespace std;
 
-#define DISP_SEGMENTATION
+//#define DISP_SEGMENTATION
 
 Segmentator::Segmentator(IplImage * Img, CFeatureExtraction *fe, ScribbleVector scribbles) :m_pImg(Img)
 {
@@ -67,8 +67,8 @@ void Segmentator::Segment()
 	//calculate beta
 	GraphHandler::calc_beta(m_pImg->height, m_pImg->width, m_pFe->GetColorChannels());
 	//init GMMs
-	f_gmm->Init(pChannels, f_mask, CvEM::COV_MAT_DIAGONAL);
-	b_gmm->Init(pChannels, b_mask, CvEM::COV_MAT_DIAGONAL);
+	f_gmm->Init(pChannels, f_mask, CvEM::COV_MAT_GENERIC);
+	b_gmm->Init(pChannels, b_mask, CvEM::COV_MAT_GENERIC);
 	
 	//Sink (Background)
 	CvMat * Bu = cvCreateMat(m_pImg->height, m_pImg->width, CV_32F );
@@ -81,6 +81,7 @@ void Segmentator::Segment()
 	CvMat * conf_map_bg = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
 	char title[50];
 
+	double CurFlow =0, PrevFlow = 0;
 	for (int n=0; n < MAX_ITER; n++) {
 
 		GraphHandler *graph = new GraphHandler();
@@ -132,6 +133,11 @@ void Segmentator::Segment()
 		graph->assign_weights(Bu, Fu);
 		
 		graph->do_MinCut(*m_Segmentation);
+		
+		PrevFlow = CurFlow;
+		CurFlow = graph->getFlow();
+		if (abs((CurFlow-PrevFlow)/CurFlow)<TOLLERANCE)
+			break;
 
 		printf("Flow is %lf\n" ,graph->getFlow());
 
@@ -156,8 +162,8 @@ void Segmentator::Segment()
 		// Update GMM
 		getMask(f_mask,0);
 		getMask(b_mask,1);
-		f_gmm->NextStep(pChannels, f_mask, CvEM::COV_MAT_DIAGONAL);
-		b_gmm->NextStep(pChannels, b_mask, CvEM::COV_MAT_DIAGONAL);	
+		f_gmm->NextStep(pChannels, f_mask, CvEM::COV_MAT_GENERIC);
+		b_gmm->NextStep(pChannels, b_mask, CvEM::COV_MAT_GENERIC);	
 		
 		delete graph;
 	}

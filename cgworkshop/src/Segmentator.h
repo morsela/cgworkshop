@@ -7,7 +7,8 @@
 #include "fe/FeatureExtraction.h"
 #include "GUI/TypeDefs.h"
 
-#define MAX_ITER 6
+#define MAX_ITER 10
+#define TOLLERANCE 0.05
 
 class Segmentator 
 {
