@@ -10,9 +10,6 @@ using namespace std;
 
 class GraphHandler {
 
-	static Graph initial_graph;
-
-
 public:
 
 	GraphHandler();
@@ -22,6 +19,8 @@ public:
 public:
 
 	void init_graph(int height, int width, CvMat *smoothness);
+
+	double static calc_beta(int height, int width, CvMat* smoothness);
 
 	void assign_weights(CvMat * Bu, CvMat * Fu);
 	
@@ -38,6 +37,7 @@ private:
 
 
 	Graph *m_igraph;
+	double static beta;
 	Graph::flowtype m_flow;
 	map<int ,map< int, Graph::node_id> > m_nodes;
 

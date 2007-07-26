@@ -61,10 +61,11 @@ void Segmentator::Segment()
 		int y = pI.y;
 		//printf("%d, %d\n", x,y);
 		f_mask->data.ptr[y*m_pImg->width+x]=1;
-//		b_mask->data.ptr[y*m_pImg->width+x]=0;
+		b_mask->data.ptr[y*m_pImg->width+x]=0;
 	}
 			
-
+	//calculate beta
+	GraphHandler::calc_beta(m_pImg->height, m_pImg->width, m_pFe->GetColorChannels());
 	//init GMMs
 	f_gmm->Init(pChannels, f_mask, CvEM::COV_MAT_DIAGONAL);
 	b_gmm->Init(pChannels, b_mask, CvEM::COV_MAT_DIAGONAL);
