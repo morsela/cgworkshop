@@ -1,6 +1,6 @@
 #include "GraphHandler.h"
 
-Graph GraphHandler::initial_graph = Graph();
+double GraphHandler::beta = 0;
 
 GraphHandler::GraphHandler()  {
 
@@ -11,9 +11,6 @@ GraphHandler::GraphHandler()  {
 GraphHandler::~GraphHandler() {
 	delete m_igraph;
 }
-
-double counter =0;
-int n=0;
 
 double getDist(CvMat * smoothness, int i, int j) {
 	double result=0;
@@ -30,14 +27,7 @@ double calcDist(CvMat * smoothness, int i, int j, double beta) {
 	return alpha*exp(-getDist(smoothness,i,j)/beta);
 }
 
-void GraphHandler::init_graph(int rows, int cols, CvMat * smoothness) {
-
-	//map <int, map<int, Graph::node_id>> node;
-	
-	//create m_nodes
-	for (int i = 0; i <rows; i++) 
-		for (int j = 0; j < cols; j++)
-			m_nodes[i][j] = m_igraph->add_node();
+double GraphHandler::calc_beta(int rows, int cols, CvMat* smoothness) {
 
  	double sum = 0;
  	int count = 0;
@@ -72,8 +62,20 @@ void GraphHandler::init_graph(int rows, int cols, CvMat * smoothness) {
 		}
 	}
 	
-	double beta = (sum/count) * 10;
+	beta = (sum/count) * 10;
 	printf("Calculated beta to be: %f\n", beta);
+	return beta;
+
+}
+
+
+void GraphHandler::init_graph(int rows, int cols, CvMat * smoothness) {
+	
+	//create m_nodes
+	for (int i = 0; i <rows; i++) 
+		for (int j = 0; j < cols; j++)
+			m_nodes[i][j] = m_igraph->add_node();
+
 	for(int i = 0; i < rows; i ++)
 	{
 		for (int j = 0; j < cols; j ++) 
@@ -92,8 +94,6 @@ void GraphHandler::init_graph(int rows, int cols, CvMat * smoothness) {
 
 		}
 	}
-
-	printf("Smoothness avg %lf\n", counter/n);
 
 }
 
@@ -130,7 +130,7 @@ void GraphHandler::do_MinCut(CvMat &result) {
 			else {
 				cvmSet(&result, i,j,1);
 				counter2++;
-				//printf("%d %d \n", i, j);
+
 			}
 			
 	printf("COUNTER1 %d COUNTER2 %d", counter1, counter2);
