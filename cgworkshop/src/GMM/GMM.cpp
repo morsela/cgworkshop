@@ -3,14 +3,14 @@
 
 #define EXPIREMENTAL_PROBABILITY_CALCULATION
 
-#define SMALL_EPS 0.01
+#define SMALL_EPS 0.1
 
 CGMM::CGMM():m_model(NULL)
 {
 	// FIXME
 	m_nClusters = 5;
 	m_nMaxIter = 1;
-	m_nEpsilon = 0.05f;		
+	m_nEpsilon = 0.01f;		
 }
 
 void CGMM::Init(CvMat * pDataSet)
@@ -28,10 +28,16 @@ m_nDims = dims;
     for (i=0;i<m_nClusters;i++)
     	pCovs[i] = cvCreateMat( dims, dims, CV_32FC1 );
 
+	pCovsInv = new CvMat*[m_nClusters];
+    for (i=0;i<m_nClusters;i++)
+    	pCovsInv[i] = cvCreateMat( dims, dims, CV_32FC1 );
+
     pMeans     	 = cvCreateMat( m_nClusters, dims, CV_32FC1 );
     pWeights   =  cvCreateMat( 1, m_nClusters, CV_32FC1 );
     pProbs     	 = cvCreateMat( 1, m_nClusters, CV_32FC1 );
     
+    
+    pDet = new double[m_nClusters];
     
     m_params.covs = (const CvMat **) pCovs;
     m_params.means = pMeans;
@@ -44,13 +50,22 @@ m_nDims = dims;
     m_params.start_step         = CvEM::START_AUTO_STEP;
     m_params.term_crit.max_iter = m_nMaxIter;
     m_params.term_crit.epsilon  = m_nEpsilon;
-    m_params.term_crit.type     = CV_TERMCRIT_ITER;
+    m_params.term_crit.type     = CV_TERMCRIT_ITER+CV_TERMCRIT_EPS;
     
     //m_model = new CvEM(pDataSet,pActiveMask,m_params,0);
 
 	printf("GMM: Active pixels=%f\n", cvNorm(pActiveMask,0,CV_L1,0));
 
 	m_model = new CvEM();
+
+	OneStep(pDataSet, pActiveMask);	
+}
+
+
+void CGMM::OneStep(CvMat * pDataSet, CvMat * pActiveMask)
+{
+	int i;
+	
 	m_model->train( pDataSet, pActiveMask, m_params); 
 	
 	cvConvert(m_model->get_weights(), pWeights);
@@ -59,52 +74,27 @@ m_nDims = dims;
     for (i=0;i<m_nClusters;i++)
     {
     	cvConvert(cov_mats[i], pCovs[i]);
-    	double det = cvDet(pCovs[i]);
-   				while (det < SMALL_EPS) 
-				{
-					int j;
-					for (j=0;j<m_nDims;j++)
-						cvmSet(pCovs[i], j, j, cvmGet(pCovs[i], j,j)+SMALL_EPS);
-					det = cvDet(pCovs[i]);
-				} 	    	
+    	
+    	// Make sure Det is positive
+    	int j;
+    	for (j=0;j<m_nDims;j++)
+			cvmSet(pCovs[i], j, j, cvmGet(pCovs[i], j,j)+SMALL_EPS);
+
+		pDet[i] = cvInvert(pCovs[i], pCovsInv[i]);	
     	printf("Det(%d)=%lf\n", i, cvDet(pCovs[i]));
     }
 
 	cvConvert(m_model->get_means(), pMeans);	
 }
 
-
-void CGMM::NextStep(CvMat * pDataSet)
-{
-//	NextStep(pDataSet, 0);	
-}
-
 void CGMM::NextStep(CvMat * pDataSet , CvMat * pActiveMask, int covType)
 {
-	int i;
-
     m_params.start_step         = CvEM::START_E_STEP;
     m_params.cov_mat_type       = covType;
 
 	printf("GMM: Active pixels=%f\n", cvNorm(pActiveMask,0,CV_L1,0));
-	m_model->train( pDataSet, pActiveMask, m_params); 
 	
-	cvConvert(m_model->get_weights(), pWeights);
-	const CvMat ** cov_mats = m_model->get_covs();
-    for (i=0;i<m_nClusters;i++)
-	{
-    	cvConvert(cov_mats[i], pCovs[i]);
-    	double det = cvDet(pCovs[i]);
-   				while (det < SMALL_EPS) 
-				{
-					int j;
-					for (j=0;j<m_nDims;j++)
-						cvmSet(pCovs[i], j, j, cvmGet(pCovs[i], j,j)+SMALL_EPS);
-					det = cvDet(pCovs[i]);
-				} 	
-    	printf("Det(%d)=%lf\n", i, cvDet(pCovs[i]));
-	}
-	cvConvert(m_model->get_means(), pMeans);
+	OneStep(pDataSet, pActiveMask);	
 }
 
 double CGMM::GetProbability(CvMat * pFeatureVector)
@@ -132,6 +122,7 @@ void CGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)
 		double prob = GetProbability(&vector);
 	
 #ifdef EXPIREMENTAL_PROBABILITY_CALCULATION
+		double max = 0;
 		prob = 0;
 		{
 			int i;
@@ -140,29 +131,17 @@ void CGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)
 			{
 				if (cvmGet(pWeights, 0,i) == 0)
 					continue;
-				double det = cvInvert(pCovs[i], covInv);
-				//for (j=0;j<m_nDims;j++)
-				//	printf("vector[j]=%lf\n", cvmGet(&vector,0,j));
-				cvGetRow(pMeans, mean, i);
-				//printf("Weight=%d\n", cvmGet(pWeights, 0,i));
-				//for (j=0;j<m_nDims;j++)
-				//	printf("pMeans[i,j]=%lf\n", cvmGet(pMeans,i,j));						
-				//for (j=0;j<m_nDims;j++)
-				//	printf("mean[j]=%lf\n", cvmGet(mean,0,j));					
-				cvSub(&vector, mean, temp1);
-				//for (j=0;j<m_nDims;j++)
-				//	printf("temp1[j]=%lf\n", cvmGet(temp1,0,j));				
-				cvMatMul(temp1, covInv, temp2);
+
+				cvGetRow(pMeans, mean, i);			
+				cvSub(&vector, mean, temp1);			
+				cvMatMul(temp1, pCovsInv[i], temp2);
 				
 				double hez = -0.5 * cvDotProduct(temp1, temp2);
-				//for (j=0;j<m_nDims;j++)
-				//	printf("temp2[j]=%lf\n", cvmGet(temp2,0,j));					
-				//printf("dot=%f\n", cvDotProduct(temp1, temp2));
-				//printf("Hez=%f\n", hez);
+				//printf("Hez[%d]=%lf\n", i, hez);
 				
-				double pi = exp(hez)/sqrt(det) * pow(2*MY_PI,m_nDims/2);
-				prob += pWeights->data.fl[i] * pi;
-				//printf("Prob=%f\n", pi);
+				double pi = exp(hez)*(pWeights->data.fl[i]/sqrt(pDet[i]));
+				prob += pi;
+
 				
 			}
 		}

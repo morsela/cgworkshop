@@ -20,7 +20,7 @@ public:
 	void Init(CvMat * pDataSet, CvMat * pActiveMask, int covType);
 
 	// Runs a single EM iteration using the given data set
-	void NextStep(CvMat * pDataSet);
+	void OneStep(CvMat * pDataSet, CvMat * pActiveMask);
 	
 	void NextStep(CvMat * pDataSet, CvMat * pActiveMask, int covType);
 	
@@ -43,8 +43,9 @@ private:
 	float m_nEpsilon;
 	CvEMParams m_params;
 	
-	
+	double * pDet;
 	CvMat ** pCovs;
+	CvMat ** pCovsInv;
 	CvMat * pMeans;
 	CvMat * pWeights;
 	CvMat * pProbs;
