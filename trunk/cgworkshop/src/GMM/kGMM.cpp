@@ -172,15 +172,9 @@ void CkGMM::ComputeParams(CvMat * pActiveMask)
 		m_pWeightVec->data.fl[i] = (double)count/m_nSamplesCount;
 		
 		// Make covariance matrix non-singular
-	    double det = cvDet(pCovMat);
-	    	
-		while (det < SMALL_EPS) 
-		{
-			for (j=0;j<m_nDims;j++)
-				cvmSet(pCovMat, j, j, cvmGet(pCovMat, j,j)+SMALL_EPS);
-				det = cvDet(pCovMat);
-			} 	    	
-			
+    	for (j=0;j<m_nDims;j++)
+			cvmSet(pCovMat, j, j, cvmGet(pCovMat, j,j)+SMALL_EPS);
+
 		m_pDetVec[i] = cvInvert(pCovMat, m_pInvCovMats[i]);	
 	    printf("Det(%d)=%lf\n", i, m_pDetVec[i]);
 	    printf("DetInv(%d)=%lf\n", i, cvDet(m_pInvCovMats[i]));
