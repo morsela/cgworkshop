@@ -348,12 +348,14 @@ void CkGMM::ComputerProbabilities(CvMat * pActiveMask)
 		//printf("Prob[%d]=%lf\n", i, max);
 		m_pLabelMat->data.ptr[i] = cluster;
 		
-		m_pProbabilityMat->data.fl[i] = prob;
+		m_pProbabilityMat->data.fl[i] = max;
 	}
 
 	// Free
 	cvReleaseMat(&temp1);
 	cvReleaseMat(&temp2);
+
+	//cvNormalize(m_pProbabilityMat, m_pProbabilityMat, 0.01, 1, CV_MINMAX);
 
 	printf("CkGMM::ComputerProbabilities out\n");		
 }
