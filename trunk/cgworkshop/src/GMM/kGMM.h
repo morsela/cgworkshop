@@ -17,6 +17,7 @@ public:
 	CkGMM(int clusters, double accuracy);
 	CkGMM(int clusters, int max_iterations, double accuracy);
 	
+	
 	// Initializes the model for given data set
 	void Init(CvMat * pDataSet, CvMat * pActiveMask);
 	
