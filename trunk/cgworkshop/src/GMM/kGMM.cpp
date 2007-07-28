@@ -117,13 +117,114 @@ void CkGMM::InitClusters(CvMat * pActiveMask)
 	printf("CkGMM::InitClusters out\n");	
 }
 
+void CkGMM::ComputeCovar(CvMat * pActiveMask)
+{
+	int i,j;
+	printf("CkGMM::ComputeCovar in\n");
+	
+	CvMat tempVec;
+	CvMat * pTempVec1 = cvCreateMat( 1, m_nDims, CV_32FC1 );
+	CvMat * pTempVec2 = cvCreateMat( m_nDims, 1, CV_32FC1 );
+	CvMat * pCovMat = cvCreateMat( m_nDims, m_nDims, CV_32FC1 );
+	
+	for (i=0;i<m_nClusters;i++)
+	{
+		printf("CkGMM::ComputeCovar Cluster %d\n",i);
+
+		cvSetZero(pCovMat);
+
+		int count = 0;
+		for (j=0;j<m_nSamplesCount;j++)
+		{
+			
+			if (pActiveMask->data.ptr[j] && (m_pLabelMat->data.ptr[j] == i))
+			{
+				cvInitMatHeader(&tempVec, 1, m_nDims, CV_32FC1, &m_pAllSamplesMat->data.fl[j*m_nDims]);
+
+				cvSub( &tempVec, m_pMeanVecs[i], pTempVec1);
+				cvTranspose(pTempVec1, pTempVec2);
+				
+				cvMatMul(pTempVec2, pTempVec1, m_pInvCovMats[i]);
+				cvScale(m_pInvCovMats[i], m_pInvCovMats[i], 1/(m_pWeightVec->data.fl[i] * m_nActiveCount));
+				cvAdd(m_pInvCovMats[i], pCovMat, pCovMat);
+				
+				count++;
+			}
+		}
+		
+		if (count == 0)
+			continue;
+			
+		//cvScale(pCovMat, pCovMat, 1./count);		
+		// Make covariance matrix non-singular
+    	for (j=0;j<m_nDims;j++)
+			cvmSet(pCovMat, j, j, cvmGet(pCovMat, j,j)+SMALL_EPS);
+
+		m_pDetVec[i] = cvInvert(pCovMat, m_pInvCovMats[i]);	
+	    printf("CkGMM::ComputeCovar Det(%d)=%lf\n", i, m_pDetVec[i]);
+	    printf("CkGMM::ComputeCovar DetInv(%d)=%lf\n", i, cvDet(m_pInvCovMats[i]));
+	}		
+	
+	
+	cvReleaseMat(&pTempVec1);
+	cvReleaseMat(&pTempVec2);
+	cvReleaseMat(&pCovMat);
+	
+	printf("CkGMM::ComputeCovar out\n");
+}
+
+void CkGMM::ComputeMeans(CvMat * pActiveMask)
+{
+	int i,j;
+	
+	m_nActiveCount = (int) cvNorm(pActiveMask, 0, CV_L1, 0);
+	
+	printf("CkGMM::ComputeMeans in\n");
+	
+	CvMat tempVec;
+	
+	for (i=0;i<m_nClusters;i++)
+	{
+		printf("CkGMM::ComputeMeans Cluster %d\n",i);
+
+		cvSetZero( m_pMeanVecs[i] );
+		int count = 0;
+		for (j=0;j<m_nSamplesCount;j++)
+		{
+			
+			if (pActiveMask->data.ptr[j] && (m_pLabelMat->data.ptr[j] == i))
+			{
+				cvInitMatHeader(&tempVec, 1, m_nDims, CV_32FC1, &m_pAllSamplesMat->data.fl[j*m_nDims]);
+				//printf("Dot=%lf\n", cvDotProduct(m_ppCompData[count],m_ppCompData[count]));
+				cvAdd( &tempVec, m_pMeanVecs[i], m_pMeanVecs[i]);
+				count++;
+			}
+		}
+		
+		m_pWeightVec->data.fl[i] = (double)count/m_nActiveCount;
+		if (count == 0)
+			continue;
+				
+		cvScale(m_pMeanVecs[i], m_pMeanVecs[i], 1./count);
+		
+		printf("CkGMM::ComputeMeans MeanxMean[%d]=%lf\n", i, cvDotProduct( m_pMeanVecs[i], m_pMeanVecs[i]));
+		printf("CkGMM::ComputeMeans Count(%d)=%lf\n", i, count);
+	    printf("CkGMM::ComputeMeans Weight(%d)=%lf\n", i, m_pWeightVec->data.fl[i]);
+	}	
+	
+	printf("CkGMM::ComputeMeans out\n");
+}
+
 void CkGMM::ComputeParams(CvMat * pActiveMask)
 {
 	int i,j;
 	
 	printf("CkGMM::ComputeParams in\n");
 
-	// Calculate model parameters
+	ComputeMeans(pActiveMask);
+	ComputeCovar(pActiveMask);
+
+// Calculate model parameters
 	CvMat * pCovMat = cvCreateMat( m_nDims, m_nDims, CV_32FC1 );
 	for (i=0;i<m_nClusters;i++)
 	{
@@ -182,6 +283,7 @@ void CkGMM::ComputeParams(CvMat * pActiveMask)
 	}
 
 	cvReleaseMat(&pCovMat);
+
 
 	printf("CkGMM::ComputeParams out\n");			
 }
