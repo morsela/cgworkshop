@@ -3,12 +3,17 @@
 #include <algorithm>
 
 #include "GMM/GMM.h"
+#include "GMM/kGMM.h"
 
 #include "GraphHandler.h"
 
 using namespace std;
 
-//#define DISP_SEGMENTATION
+#define DISP_SEGMENTATION
+
+//#define DISP_CONF_MAPS
+
+//#define NEW_GMM
 
 Segmentator::Segmentator(IplImage * Img, CFeatureExtraction *fe, ScribbleVector scribbles) :m_pImg(Img)
 {
@@ -39,8 +44,13 @@ void Segmentator::getMask(CvMat * mask, int isBackground)
 
 void Segmentator::Segment() 
 {
+#ifdef NEW_GMM
+	CkGMM * f_gmm = new CkGMM(5,1,0.01);
+	CkGMM * b_gmm = new CkGMM(5,1,0.01);	
+#else	
 	CGMM * f_gmm = new CGMM();
 	CGMM * b_gmm = new CGMM();
+#endif
 
 	CvMat * pChannels = cvCreateMat(m_pFe->GetPrincipalChannels()->rows,m_pFe->GetPrincipalChannels()->cols,m_pFe->GetPrincipalChannels()->type);
 	cvConvertScale(m_pFe->GetPrincipalChannels(), pChannels, 0.2);
@@ -67,8 +77,13 @@ void Segmentator::Segment()
 	//calculate beta
 	GraphHandler::calc_beta(m_pImg->height, m_pImg->width, m_pFe->GetColorChannels());
 	//init GMMs
+#ifdef NEW_GMM
+	f_gmm->Init(pChannels, f_mask);
+	b_gmm->Init(pChannels, b_mask);
+#else
 	f_gmm->Init(pChannels, f_mask, CvEM::COV_MAT_GENERIC);
 	b_gmm->Init(pChannels, b_mask, CvEM::COV_MAT_GENERIC);
+#endif
 	
 	//Sink (Background)
 	CvMat * Bu = cvCreateMat(m_pImg->height, m_pImg->width, CV_32F );
@@ -77,8 +92,17 @@ void Segmentator::Segment()
 	IplImage * outImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_8U, 1);
 	
 	CvMat * conf_map = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
+
+#ifdef NEW_GMM	
+	CvMat * conf_map_fg = new CvMat;
+	cvInitMatHeader(conf_map_fg, m_pImg->height, m_pImg->width, CV_32F, f_gmm->GetProbabilities()->data.fl);
+	
+	CvMat * conf_map_bg = new CvMat;
+	cvInitMatHeader(conf_map_bg, m_pImg->height, m_pImg->width, CV_32F, b_gmm->GetProbabilities()->data.fl);
+#else	
 	CvMat * conf_map_fg = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
 	CvMat * conf_map_bg = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
+#endif	
 	char title[50];
 
 	double CurFlow =0, PrevFlow = 0;
@@ -87,8 +111,11 @@ void Segmentator::Segment()
 		GraphHandler *graph = new GraphHandler();
 		
 		// Get probabilites
+#ifdef NEW_GMM	
+#else
 		f_gmm->GetAllProbabilities(pChannels, conf_map_fg);
 		b_gmm->GetAllProbabilities(pChannels, conf_map_bg);
+#endif
 		
 		// Set weights
 		for (int i=0; i<m_pImg->height; i++)
@@ -136,8 +163,8 @@ void Segmentator::Segment()
 		
 		PrevFlow = CurFlow;
 		CurFlow = graph->getFlow();
-		if (abs((CurFlow-PrevFlow)/CurFlow)<TOLLERANCE)
-			break;
+		//if (abs((CurFlow-PrevFlow)/CurFlow)<TOLLERANCE)
+		//	break;
 
 		printf("Flow is %lf\n" ,graph->getFlow());
 
@@ -162,9 +189,15 @@ void Segmentator::Segment()
 		// Update GMM
 		getMask(f_mask,0);
 		getMask(b_mask,1);
-		f_gmm->NextStep(pChannels, f_mask, CvEM::COV_MAT_GENERIC);
-		b_gmm->NextStep(pChannels, b_mask, CvEM::COV_MAT_GENERIC);	
 		
+#ifdef NEW_GMM	
+		f_gmm->NextStep(f_mask);
+		b_gmm->NextStep(b_mask);
+#else
+		f_gmm->NextStep(pChannels, f_mask, CvEM::COV_MAT_DIAGONAL);
+		b_gmm->NextStep(pChannels, b_mask, CvEM::COV_MAT_DIAGONAL);	
+#endif
+			
 		delete graph;
 	}
 

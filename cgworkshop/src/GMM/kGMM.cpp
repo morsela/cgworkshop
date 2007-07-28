@@ -187,6 +187,8 @@ void CkGMM::ComputeParams(CvMat * pActiveMask)
 	    printf("Weight(%d)=%lf\n", i, m_pWeightVec->data.fl[i]);
 	}
 
+	cvReleaseMat(&pCovMat);
+
 	printf("CkGMM::ComputeParams out\n");			
 }
 
