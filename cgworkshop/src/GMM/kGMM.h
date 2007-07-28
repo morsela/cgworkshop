@@ -31,7 +31,9 @@ private:
 	void ComputeParams(CvMat * pActiveMask);
 	void ComputerProbabilities(CvMat * pActiveMask);
 	void InitClusters(CvMat * pActiveMask);
-
+	void ComputeMeans(CvMat * pActiveMask);
+	void ComputeCovar(CvMat * pActiveMask);
+	
 private:
 
 	// General parameters
