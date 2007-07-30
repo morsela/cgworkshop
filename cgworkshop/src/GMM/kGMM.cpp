@@ -234,7 +234,6 @@ void CkGMM::ComputeParams(CvMat * pActiveMask)
 		// Find all features of component i
 		for (j=0;j<m_nSamplesCount;j++)
 		{
-			
 			if (pActiveMask->data.ptr[j] && (m_pLabelMat->data.ptr[j] == i))
 			{
 				cvInitMatHeader(m_ppCompData[count], 1, m_nDims, CV_32FC1, &m_pAllSamplesMat->data.fl[j*m_nDims]);
@@ -329,7 +328,7 @@ void CkGMM::ComputerProbabilities(CvMat * pActiveMask)
 				//printf("Det[%d]=%lf\n", i, m_pDetVec[i]);
 				
 				//-probability vector belongs to this cluster
-				double p_i = exp(expo) * pow(m_pDetVec[i],-0.5);
+				double p_i = m_pWeightVec->data.fl[i]*exp(expo) * pow(m_pDetVec[i],-0.5);
 				//printf("Prob[%d]=%lf\n",i, p_i);
 				
 				// Track closest cluster
@@ -340,22 +339,23 @@ void CkGMM::ComputerProbabilities(CvMat * pActiveMask)
 				}
 				
 				// Calc total probability
-				prob += m_pWeightVec->data.fl[i]*p_i;
+				prob += p_i;
 
 				
 			}
 		}
-		//printf("Prob[%d]=%lf\n", i, max);
+
 		m_pLabelMat->data.ptr[i] = cluster;
 		
-		m_pProbabilityMat->data.fl[i] = max;
+		m_pProbabilityMat->data.fl[i] = prob;
+		//printf("Prob[%d]=%lf\n", m_pProbabilityMat->data.fl[i]);
 	}
 
 	// Free
 	cvReleaseMat(&temp1);
 	cvReleaseMat(&temp2);
 
-	//cvNormalize(m_pProbabilityMat, m_pProbabilityMat, 0.01, 1, CV_MINMAX);
+	cvNormalize(m_pProbabilityMat, m_pProbabilityMat, 0.01, 1, CV_MINMAX);
 
 	printf("CkGMM::ComputerProbabilities out\n");		
 }
