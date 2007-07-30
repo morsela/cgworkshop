@@ -11,7 +11,7 @@ using namespace std;
 
 #define DISP_SEGMENTATION
 
-//#define DISP_CONF_MAPS
+#define DISP_CONF_MAPS
 
 //#define NEW_GMM
 
@@ -53,7 +53,13 @@ void Segmentator::Segment()
 #endif
 
 	CvMat * pChannels = cvCreateMat(m_pFe->GetPrincipalChannels()->rows,m_pFe->GetPrincipalChannels()->cols,m_pFe->GetPrincipalChannels()->type);
-	cvConvertScale(m_pFe->GetPrincipalChannels(), pChannels, 0.2);
+	double c_norm = cvNorm(m_pFe->GetPrincipalChannels(), 0, CV_C, 0);
+	double l1_norm = cvNorm(m_pFe->GetPrincipalChannels(), 0, CV_L1, 0);
+	double l2_norm = cvNorm(m_pFe->GetPrincipalChannels(), 0, CV_L2, 0);
+	printf("PChannels matrix c norm = %lf\n", c_norm);
+	printf("PChannels matrix l1 norm = %lf\n", l1_norm);
+	printf("PChannels matrix l2 norm = %lf\n", l2_norm);
+	cvConvertScale(m_pFe->GetPrincipalChannels(), pChannels, 0.02);
 
 	CvMat * f_mask = cvCreateMat( 1, pChannels->rows, CV_8UC1 );
 	CvMat * b_mask = cvCreateMat( 1, pChannels->rows, CV_8UC1 );
