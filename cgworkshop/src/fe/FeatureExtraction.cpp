@@ -198,7 +198,7 @@ bool CFeatureExtraction::GetColorChannels(CvMat * pChannels, CvMat * pColorChann
 	
 	// Convert to LAB color space
 	IplImage *pLabImg = cvCreateImage(cvSize(m_pSrcImg->width,m_pSrcImg->height), IPL_DEPTH_32F, nSize);
-	cvCvtColor(m_pSrcImgFloat,pLabImg,CV_BGR2Lab);	
+	cvCvtColor(m_pSrcImgFloat,pLabImg,CV_RGB2Lab);	
 
 	// Put the 32F lab image data in a matrix header
 	CvMat srcMat;
@@ -232,7 +232,7 @@ bool CFeatureExtraction::GetTextureChannels(CvMat * pChannels, CvMat * pTextureC
 	CvMat * pHistMat = cvCreateMat( m_nWidth*m_nHeight, histSize , CV_32F );
 	CalcHistogram(m_pSrcImg, pHistMat);
 	// Do we need to normalize?
-	cvNormalize(pHistMat, pHistMat, 0, 1, CV_MINMAX);
+	// cvNormalize(pHistMat, pHistMat, 0, 1, CV_MINMAX);
 
 	CvMat * pGaborMat = cvCreateMat (m_nWidth * m_nHeight, gaborSize, CV_32F);
 	GetGaborResponse(pGaborMat);
