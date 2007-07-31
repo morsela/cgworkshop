@@ -71,7 +71,7 @@ Return the width of mask (should be NxN) by the value of Sigma and iNu.
 
 long CvGabor::CalcKernelSize()
 {
-	printf("CvGabor::CalcKernelSize\n");
+	//printf("CvGabor::CalcKernelSize\n");
     if (IsInit() == FALSE)  {
        perror ("Error: The Object has not been initilised in CalcKernelSize()!\n");
        return 0;
@@ -188,7 +188,7 @@ gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + r
   
 void CvGabor::CreateKernel()
 {
-	printf("CvGabor::CreateKernel\n");
+	//printf("CvGabor::CreateKernel\n");
 	if (IsInit() == FALSE) {perror("Error: The Object has not been initilised in CreateKernel()!\n");}
 	else {
 		// [MATLAB] x = (-half_filter_size_x):half_filter_size_x;
@@ -602,7 +602,7 @@ void CvGabor::show(int Type)
 // TODO : Make this work with the new changes 
 void CvGabor::Apply(IplImage *src, IplImage *dst, int Type)
 {
-	printf("CvGabor::Apply\n");
+	//printf("CvGabor::Apply\n");
 	int i,j;
     double ve, re,im;
 
