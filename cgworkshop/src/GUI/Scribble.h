@@ -37,6 +37,8 @@ public:
 
 public: 
 
+	void SetID(int id)							{ m_nID = id; }
+
 	std::vector<CPointInt> GetScribblePoints()	{ return m_pImagePoints;}
 
 	int	GetScribbleSize() const				{ return m_nPoints; }

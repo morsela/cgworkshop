@@ -8,6 +8,8 @@
 #include "TypeDefs.h"
 #include "Loader.h"
 
+#define SCRIBBLE_NUMBER	4
+
 class CGUI
 {
 public:
@@ -67,6 +69,8 @@ protected:
 	bool				m_fScribbling;
 
 	CLoader				m_loader;
+
+	int					m_nCurScribble;
 
 };
 
