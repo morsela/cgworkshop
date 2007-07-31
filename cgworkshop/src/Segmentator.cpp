@@ -280,14 +280,14 @@ void Segmentator::Segment()
 		cvWaitKey(0);
 		cvDestroyWindow(title);	
 		
-		/*
+		
 		IplImage * img = GetSegmentedImage();
 		strcpy(title, "Segmentation");
 		cvNamedWindow( title, 1 );
 		cvShowImage( title, img );
 		cvWaitKey(0);
 		cvDestroyWindow(title);				
-		*/
+		
 #endif
 
 		// Update GMM
@@ -320,7 +320,7 @@ IplImage * Segmentator::GetSegmentedImage()
 		{
 			int value = (int) cvmGet(this->m_Segmentation,y,x);
 
-			if (value == 1)
+			if (value == 0)
 				//make segmented foreground image yellow
 				pData[y*step+x*3] = 0;
 			else
