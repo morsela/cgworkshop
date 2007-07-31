@@ -183,6 +183,28 @@ void Segmentator::Segment()
 		for (int i=0;i<nScribbles;i++)
 			pGMM[i]->GetAllProbabilities(pChannels, pConfMaps[i]);
 #endif
+
+/*
+ * THIS IS BAD!!!!!
+ * 
+ * Would only work good (well) with 2 scribbles
+ * 
+ * In the graph for scribbles (i,j) we need:
+ * 
+ * - Point in scribble i:
+ * 		- Weight 10000 in pTWeights[i]
+ * 		- Weight 0 in pTWeights[j]
+ * 
+ * - Point in scribble j:
+ * 		- Weight 10000 in pTWeights[j]
+ * 		- Weight 0 in pTWeights[i]
+ * 
+ * - Point not in either scribbles:
+ * 		- Weight -log(pConfMap[i](point)) in pTWeights[j]
+ * 		- Weight -log(pConfMap[j](point)) in pTWeights[i]
+ * 
+*/
+
 		printf("Setting weights 1 (ALL)\n");
 		// Set weights
 		for (int k = 0;k<nScribbles;k++)
