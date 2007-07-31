@@ -131,13 +131,18 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 	case 'r':
 		{
 
+			int nScribbles = 0;
 		CFeatureExtraction * fe;
 
 		fe = new CFeatureExtraction(m_pImg);
 		fe->Run();
 
 
-		Segmentator seg(m_pImg, fe, m_scribbles);
+		for (int i = 0; i < SCRIBBLE_NUMBER ; i++)
+			if (m_scribbles[i].IsValid())
+				nScribbles++;
+
+		Segmentator seg(m_pImg, fe, m_scribbles, nScribbles);
 
 		//GraphHandler::init_graph(m_pImg->height, m_pImg->width, fe->GetColorChannels());
 

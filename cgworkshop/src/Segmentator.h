@@ -13,7 +13,7 @@
 class Segmentator 
 {
 public:
-	Segmentator(IplImage * Img, CFeatureExtraction *fe, ScribbleVector scribbles);
+	Segmentator(IplImage * Img, CFeatureExtraction *fe, ScribbleVector &scribbles, int nScribbles);
 	virtual ~Segmentator();
 
 public:
@@ -32,7 +32,9 @@ protected:
 
 private:
 
-	std::vector<CPointInt> m_points;
+	ScribbleVector	m_scribbles;
+	int				m_nScribbles;
+	
 	CFeatureExtraction *m_pFe;
 	IplImage * m_pImg;
 	IplImage* m_pSegImg;
