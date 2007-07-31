@@ -151,7 +151,7 @@ void CGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)
 //		printf("prob=%f\n", prob);
 	}
 
-	cvNormalize(pProbs, pProbs, 0.0001, 1, CV_MINMAX);
+	cvNormalize(pProbs, pProbs, 0.000001, 1, CV_MINMAX);
 	
 	cvReleaseMat(&covInv);
 	cvReleaseMat(&temp1);
