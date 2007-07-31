@@ -23,7 +23,7 @@ double getDist(CvMat * smoothness, int i, int j) {
 
 double calcDist(CvMat * smoothness, int i, int j, double beta) {
 	
-	double alpha = 15;
+	double alpha = 20.5;
 	return alpha*exp(-getDist(smoothness,i,j)/beta);
 }
 
@@ -136,3 +136,8 @@ void GraphHandler::do_MinCut(CvMat &result) {
 	printf("COUNTER1 %d COUNTER2 %d\n", counter1, counter2);
 }
 
+double GraphHandler::get_total_flow(CvMat * segmentation)
+{
+	// TODO: Compute total flow for the given segmentation.
+	return 1;	
+}

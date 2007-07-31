@@ -24,6 +24,8 @@ public:
 
 	void assign_weights(CvMat * Bu, CvMat * Fu);
 	
+	double get_total_flow(CvMat * segmentation);
+	
 
 public:
 	void do_MinCut(CvMat & result);
