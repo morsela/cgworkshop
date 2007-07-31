@@ -23,7 +23,7 @@ double getDist(CvMat * smoothness, int i, int j) {
 
 double calcDist(CvMat * smoothness, int i, int j, double beta) {
 	
-	double alpha = 10;
+	double alpha = 10.5;
 	return alpha*exp(-getDist(smoothness,i,j)/beta);
 }
 
@@ -69,7 +69,7 @@ double GraphHandler::calc_beta(int rows, int cols, CvMat* smoothness) {
 }
 
 
-void GraphHandler::init_graph(int rows, int cols, CvMat * smoothness) {
+void GraphHandler::init_graph(int rows, int cols, CvMat * smoothness, CvMat * pDoubleMask) {
 	
 	//create m_nodes
 	for (int i = 0; i <rows; i++) 
@@ -133,6 +133,6 @@ void GraphHandler::do_MinCut(CvMat &result) {
 
 			}
 			
-	printf("COUNTER1 %d COUNTER2 %d", counter1, counter2);
+	printf("COUNTER1 %d COUNTER2 %d\n", counter1, counter2);
 }
 
