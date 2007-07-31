@@ -149,11 +149,9 @@ void Segmentator::Segment()
 	for (i=0;i<nScribbles;i++)
 		pGMM[i]->Init(pChannels, pMasks[i], CvEM::COV_MAT_GENERIC);
 #endif
-	
-	CvMat ** pTWeights = new CvMat*[nScribbles];
-	
-	for (i=0;i<nScribbles;i++)
-		pTWeights[i] = cvCreateMat(m_pImg->height, m_pImg->width, CV_32F );
+
+	CvMat * Bu = cvCreateMat(m_pImg->height, m_pImg->width, CV_32F );
+	CvMat * Fu = cvCreateMat(m_pImg->height, m_pImg->width, CV_32F );
 
 	IplImage * outImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_8U, 1);
 	
@@ -184,90 +182,64 @@ void Segmentator::Segment()
 			pGMM[i]->GetAllProbabilities(pChannels, pConfMaps[i]);
 #endif
 
-/*
- * THIS IS BAD!!!!!
- * 
- * Would only work good (well) with 2 scribbles
- * 
- * In the graph for scribbles (i,j) we need:
- * 
- * - Point in scribble i:
- * 		- Weight 10000 in pTWeights[i]
- * 		- Weight 0 in pTWeights[j]
- * 
- * - Point in scribble j:
- * 		- Weight 10000 in pTWeights[j]
- * 		- Weight 0 in pTWeights[i]
- * 
- * - Point not in either scribbles:
- * 		- Weight -log(pConfMap[i](point)) in pTWeights[j]
- * 		- Weight -log(pConfMap[j](point)) in pTWeights[i]
- * 
-*/
-
-		printf("Setting weights 1 (ALL)\n");
-		// Set weights
-		for (int k = 0;k<nScribbles;k++)
-		{
-			printf("Setting weights for scribble %d\n",k);
-			for (int i=0; i<m_pImg->height; i++)
-			{
-				for (int j=0; j<m_pImg->width; j++)
-				{
-					if (k<bgScribble && (find(m_points.begin(), m_points.end(), CPointInt(j,i))!= m_points.end()))
-					{//inside scribble
-						cvmSet(pTWeights[k],i,j,10000);
-						cvmSet(pTWeights[bgScribble],i,j,0);
-							
-					}
-					else
-						cvmSet(pTWeights[k],i,j,-1*log(cvmGet(pConfMaps[k], i,j)));	
-				}
-			}
-		}
-		
-		printf("Setting weights 2 (Scribbled points)\n");
-		for (int k=0;k<bgScribble;k++)
-		{
-			printf("Setting weights for scribble %d\n",k);
-			for (int i=0; i<m_pImg->height; i++)
-			{
-				for (int j=0; j<m_pImg->width; j++)
-				{
-					if (find(m_points.begin(), m_points.end(), CPointInt(j,i))!= m_points.end())
-					{//inside scribble
-						cvmSet(pTWeights[k],i,j,0);
-						for (int l=0;l<nScribbles;l++)
-							if (l != k)
-								cvmSet(pTWeights[l],i,j,10000);
-							
-					}
-				}
-			}				
-		}
-		
 		printf("Performing alpha beta swap\n");
-		// Graph cuts
+		// Graph cuts - One for every pair of labels
+		// TODO: This should be in a loop, when the flow doesn't improve anymore, we're done.
 		for (int i=0;i<nScribbles;i++)
 		{
 			for (int j=i+1;j<nScribbles;j++)
 			{
-				printf("Running min-cut for labels (%d,%d)\n", i,j);
-				getDoubleMask(pDoubleMask, i,j);
+				int nScribble1 = i;
+				int nScribble2 = j;
+				
+				// A single graph cut
+				
+				printf("Setting weights for labels (%d,%d)\n", nScribble1,nScribble2);
+				for (int i=0; i<m_pImg->height; i++)
+				{
+					for (int j=0; j<m_pImg->width; j++)
+					{
+						// TODO: points for Scribble 1
+						if (find(m_points.begin(), m_points.end(), CPointInt(j,i))!= m_points.end())
+						{//inside scribble
+							cvmSet(Fu,i,j,10000);
+							cvmSet(Bu,i,j,0);
+								
+						}
+						/*
+						// TODO: points for Scribble 2
+						else if (find(m_points.begin(), m_points.end(), CPointInt(j,i))!= m_points.end())
+						{//inside scribble
+							cvmSet(Bu,i,j,10000);
+							cvmSet(Fu,i,j,0);
+								
+						}
+						*/
+												
+						else
+						{
+							cvmSet(Bu,i,j,-1*log(cvmGet(pConfMaps[nScribble1], i,j)));	
+							cvmSet(Fu,i,j,-1*log(cvmGet(pConfMaps[nScribble2], i,j)));	
+						}
+					}
+				}				
+				
+				printf("Running min-cut for labels (%d,%d)\n", nScribble1,nScribble2);
+				getDoubleMask(pDoubleMask, nScribble1,nScribble2);
 				
 				GraphHandler *graph = new GraphHandler();
 				graph->init_graph(m_pImg->height, m_pImg->width, m_pFe->GetColorChannels(), pDoubleMask);
-				graph->assign_weights(pTWeights[i], pTWeights[j]);
+				graph->assign_weights(Bu, Fu);
 				
 				graph->do_MinCut(*pPartialSeg);
 				
-				printf("Flow[%d,%d] is %lf\n" ,i,j,graph->getFlow());
+				printf("Flow[%d,%d] is %lf\n" ,nScribble1,nScribble2,graph->getFlow());
 				
 				delete graph;
 				
 				printf("Updating segmentation....\n");
 				// TODO: Check if the partial segmentation increases total graph flow.....
-				UpdateSegmentation(pPartialSeg, i,j, pDoubleMask);
+				UpdateSegmentation(pPartialSeg, nScribble1,nScribble2, pDoubleMask);
 			}
 		}
 
