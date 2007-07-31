@@ -35,15 +35,20 @@ public:
 
 	void Draw() const;
 
+	bool Find(CPointInt p);
+
 public: 
 
-	void SetID(int id)							{ m_nID = id; }
+	CPointInt & operator[](int i);
 
-	std::vector<CPointInt> GetScribblePoints()	{ return m_pImagePoints;}
+	void SetID(int id)							{ m_nID = id; }
 
 	int	GetScribbleSize() const				{ return m_nPoints; }
 
 	int GetID() const						{ return m_nID;};
+
+	bool IsValid()	const					{ return (m_nPoints > 0); }
+
 
 protected:
 
