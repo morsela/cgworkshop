@@ -28,28 +28,74 @@ Segmentator::~Segmentator()
 	cvReleaseImage(&m_pSegImg);
 }
 
-void Segmentator::getMask(CvMat * mask, int isBackground) 
+void Segmentator::getMask(CvMat * mask, int nScribble) 
 {
 	for (int i=0; i<m_pImg->height; i++)
 	{
 		for (int j=0; j<m_pImg->width; j++) 
 		{
 			int value = (int) cvmGet(this->m_Segmentation,i,j);
-			if (isBackground) 
-				value = 1-value;
-			mask->data.ptr[i*m_pImg->width+j]=value;
+			if (value == nScribble)
+				mask->data.ptr[i*m_pImg->width+j]=1;
+			else
+				mask->data.ptr[i*m_pImg->width+j]=0;
 		}
 	}
 }
 
+void Segmentator::getDoubleMask(CvMat * mask, int nScribble1, int nScribble2) 
+{
+	for (int i=0; i<m_pImg->height; i++)
+	{
+		for (int j=0; j<m_pImg->width; j++) 
+		{
+			int value = (int) cvmGet(this->m_Segmentation,i,j);
+			if ((value == nScribble1) || (value == nScribble2))
+				mask->data.ptr[i*m_pImg->width+j]=1;
+			else
+				mask->data.ptr[i*m_pImg->width+j]=0;
+		}
+	}
+}
+
+void Segmentator::UpdateSegmentation(CvMat * pPartialSeg, int nScribble1, int nScribble2, CvMat * pDoubleMask)
+{
+	for (int i=0; i<m_pImg->height; i++)
+	{
+		for (int j=0; j<m_pImg->width; j++) 
+		{
+			// Was included in the partial segmentation
+			if (pDoubleMask->data.ptr[i*m_pImg->width+j])
+			{
+				if (cvmGet(pPartialSeg, i,j) == 1)
+					cvmSet(m_Segmentation, i,j, nScribble1);
+				else
+					cvmSet(m_Segmentation, i,j, nScribble2);
+			}
+		}
+	}	
+}
+
 void Segmentator::Segment() 
 {
+	// NEW!!!
+	// TODO: make this a parameter
+	int nScribbles = 2;
+	
+	int bgScribble = nScribbles-1;
+	
+	int i,j;
+	
 #ifdef NEW_GMM
-	CkGMM * f_gmm = new CkGMM(5,1,0.01);
-	CkGMM * b_gmm = new CkGMM(5,1,0.01);	
+	CkGMM ** pGMM = new CkGMM*[nScribbles];
+	
+	for (i=0;i<nScribbles;i++)
+		pGMM[i] = new CkGMM(5,1,0.01);	
 #else	
-	CGMM * f_gmm = new CGMM();
-	CGMM * b_gmm = new CGMM();
+	CGMM ** pGMM = new CGMM*[nScribbles];
+	
+	for (i=0;i<nScribbles;i++)
+		pGMM[i] = new CGMM();
 #endif
 
 	CvMat * pChannels = cvCreateMat(m_pFe->GetPrincipalChannels()->rows,m_pFe->GetPrincipalChannels()->cols,m_pFe->GetPrincipalChannels()->type);
@@ -61,150 +107,180 @@ void Segmentator::Segment()
 	printf("PChannels matrix l2 norm = %lf\n", l2_norm);
 	cvConvertScale(m_pFe->GetPrincipalChannels(), pChannels, 0.02);
 
-	CvMat * f_mask = cvCreateMat( 1, pChannels->rows, CV_8UC1 );
-	CvMat * b_mask = cvCreateMat( 1, pChannels->rows, CV_8UC1 );
+	CvMat * pPartialSeg = cvCreateMat(m_pImg->height,m_pImg->width, CV_64FC1 );
+
+	CvMat ** pMasks = new CvMat*[nScribbles];
+	
+	for (i=0;i<nScribbles;i++)
+		pMasks[i] = cvCreateMat( 1, pChannels->rows, CV_8UC1 );
+	
+	CvMat * pDoubleMask = cvCreateMat( 1, pChannels->rows, CV_8UC1 );
 	
 	cvSetZero( m_Segmentation );
-	getMask(b_mask,1);
 	
-	
-	cvSetZero( f_mask );
-	//get initial foreground mask
-	for (int i = 0; i < (int)m_points.size();i++)
+	// Set initial bg mask to 1
+	cvSet( pMasks[bgScribble] , cvScalarAll(1));
+
+	//get initial mask for each of the FG scribbles
+
+	for (j=0;j<bgScribble;j++)
 	{
-		CPointInt pI = m_points[i];
-		int x = pI.x;
-		int y = pI.y;
-		//printf("%d, %d\n", x,y);
-		f_mask->data.ptr[y*m_pImg->width+x]=1;
-		b_mask->data.ptr[y*m_pImg->width+x]=0;
+		cvSetZero( pMasks[j] );
+		// TODO: Get point vector for scribble j
+		for (int i = 0; i < (int)m_points.size();i++)
+		{
+			CPointInt pI = m_points[i];
+			int x = pI.x;
+			int y = pI.y;
+
+			// Set '1' in scribble mask, '0' in bg mask
+			pMasks[j]->data.ptr[y*m_pImg->width+x]=1;
+			pMasks[bgScribble]->data.ptr[y*m_pImg->width+x]=0;
+		}
 	}
 			
 	//calculate beta
 	GraphHandler::calc_beta(m_pImg->height, m_pImg->width, m_pFe->GetColorChannels());
 	//init GMMs
 #ifdef NEW_GMM
-	f_gmm->Init(pChannels, f_mask);
-	b_gmm->Init(pChannels, b_mask);
+	for (i=0;i<nScribbles;i++)
+		pGMM[i]->Init(pChannels, pMasks[i]);
 #else
-	f_gmm->Init(pChannels, f_mask, CvEM::COV_MAT_GENERIC);
-	b_gmm->Init(pChannels, b_mask, CvEM::COV_MAT_GENERIC);
+	for (i=0;i<nScribbles;i++)
+		pGMM[i]->Init(pChannels, pMasks[i], CvEM::COV_MAT_GENERIC);
 #endif
 	
-	//Sink (Background)
-	CvMat * Bu = cvCreateMat(m_pImg->height, m_pImg->width, CV_32F );
-	//Source (Foreground)
-	CvMat * Fu = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
+	CvMat ** pTWeights = new CvMat*[nScribbles];
+	
+	for (i=0;i<nScribbles;i++)
+		pTWeights[i] = cvCreateMat(m_pImg->height, m_pImg->width, CV_32F );
+
 	IplImage * outImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_8U, 1);
 	
-	CvMat * conf_map = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
-
-#ifdef NEW_GMM	
-	CvMat * conf_map_fg = new CvMat;
-	cvInitMatHeader(conf_map_fg, m_pImg->height, m_pImg->width, CV_32F, f_gmm->GetProbabilities()->data.fl);
+	CvMat ** pConfMaps = new CvMat*[nScribbles];
 	
-	CvMat * conf_map_bg = new CvMat;
-	cvInitMatHeader(conf_map_bg, m_pImg->height, m_pImg->width, CV_32F, b_gmm->GetProbabilities()->data.fl);
+#ifdef NEW_GMM	
+	for (i=0;i<nScribbles;i++)
+	{
+		pConfMaps[i] = new CvMat;
+		cvInitMatHeader(pConfMaps[i], m_pImg->height, m_pImg->width, CV_32F, f_gmm->GetProbabilities()->data.fl);
+	}
+
 #else	
-	CvMat * conf_map_fg = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
-	CvMat * conf_map_bg = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
+	for (i=0;i<nScribbles;i++)
+		pConfMaps[i] = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
 #endif	
 	char title[50];
 
 	double CurFlow =0, PrevFlow = 0;
 	for (int n=0; n < MAX_ITER; n++) {
 
-		GraphHandler *graph = new GraphHandler();
+		//GraphHandler *graph = new GraphHandler();
 		
 		// Get probabilites
 #ifdef NEW_GMM	
 #else
-		f_gmm->GetAllProbabilities(pChannels, conf_map_fg);
-		b_gmm->GetAllProbabilities(pChannels, conf_map_bg);
+		for (int i=0;i<nScribbles;i++)
+			pGMM[i]->GetAllProbabilities(pChannels, pConfMaps[i]);
 #endif
-		
+		printf("Setting weights 1 (ALL)\n");
 		// Set weights
-		for (int i=0; i<m_pImg->height; i++)
+		for (int k = 0;k<nScribbles;k++)
 		{
-			for (int j=0; j<m_pImg->width; j++)
+			printf("Setting weights for scribble %d\n",k);
+			for (int i=0; i<m_pImg->height; i++)
 			{
-				if (find(m_points.begin(), m_points.end(), CPointInt(j,i))!= m_points.end())
-				{//inside scribble
-					cvmSet(Fu,i,j,10000);
-					cvmSet(Bu,i,j,0);
-				
-				}
-				else
+				for (int j=0; j<m_pImg->width; j++)
 				{
-					//calcweights
-					cvmSet(Fu,i,j,-1*log(cvmGet(conf_map_bg, i,j)));
-					cvmSet(Bu,i,j,-1*log(cvmGet(conf_map_fg, i,j)));
+					if (k<bgScribble && (find(m_points.begin(), m_points.end(), CPointInt(j,i))!= m_points.end()))
+					{//inside scribble
+						cvmSet(pTWeights[k],i,j,10000);
+						cvmSet(pTWeights[bgScribble],i,j,0);
+							
+					}
+					else
+						cvmSet(pTWeights[k],i,j,-1*log(cvmGet(pConfMaps[k], i,j)));	
 				}
 			}
 		}
 		
-#ifdef DISP_CONF_MAPS
-		// Display FG conf map
-		//cvConvertScale(conf_map_fg, outImg,255,0); 
-		strcpy(title, "fg-conf-map");
-		cvNamedWindow( title, 1 );
-		cvShowImage( title, conf_map_fg );
-		cvWaitKey(0);
-		cvDestroyWindow(title);	
+		printf("Setting weights 2 (Scribbled points)\n");
+		for (int k=0;k<bgScribble;k++)
+		{
+			printf("Setting weights for scribble %d\n",k);
+			for (int i=0; i<m_pImg->height; i++)
+			{
+				for (int j=0; j<m_pImg->width; j++)
+				{
+					if (find(m_points.begin(), m_points.end(), CPointInt(j,i))!= m_points.end())
+					{//inside scribble
+						cvmSet(pTWeights[k],i,j,0);
+						for (int l=0;l<nScribbles;l++)
+							if (l != k)
+								cvmSet(pTWeights[l],i,j,10000);
+							
+					}
+				}
+			}				
+		}
 		
-		// Display BG conf map
-		//cvConvertScale(conf_map_bg, outImg,255,0); 
-		strcpy(title, "bg-conf-map");
-		cvNamedWindow( title, 1 );
-		cvShowImage( title, conf_map_bg );
-		cvWaitKey(0);
-		cvDestroyWindow(title);	
-#endif
-
-		// Graph cut
-		graph->init_graph(m_pImg->height, m_pImg->width, m_pFe->GetColorChannels());
-		graph->assign_weights(Bu, Fu);
-		
-		graph->do_MinCut(*m_Segmentation);
-		
-		PrevFlow = CurFlow;
-		CurFlow = graph->getFlow();
-		//if (abs((CurFlow-PrevFlow)/CurFlow)<TOLLERANCE)
-		//	break;
-
-		printf("Flow is %lf\n" ,graph->getFlow());
+		printf("Performing alpha beta swap\n");
+		// Graph cuts
+		for (int i=0;i<nScribbles;i++)
+		{
+			for (int j=i+1;j<nScribbles;j++)
+			{
+				printf("Running min-cut for labels (%d,%d)\n", i,j);
+				getDoubleMask(pDoubleMask, i,j);
+				
+				GraphHandler *graph = new GraphHandler();
+				graph->init_graph(m_pImg->height, m_pImg->width, m_pFe->GetColorChannels(), pDoubleMask);
+				graph->assign_weights(pTWeights[i], pTWeights[j]);
+				
+				graph->do_MinCut(*pPartialSeg);
+				
+				printf("Flow[%d,%d] is %lf\n" ,i,j,graph->getFlow());
+				
+				delete graph;
+				
+				printf("Updating segmentation....\n");
+				// TODO: Check if the partial segmentation increases total graph flow.....
+				UpdateSegmentation(pPartialSeg, i,j, pDoubleMask);
+			}
+		}
 
 #ifdef DISP_SEGMENTATION
 		// Display segmentation
-		cvConvertScale(m_Segmentation, outImg,255,0); 
+		cvConvertScale(m_Segmentation, outImg,255/(nScribbles-1),0); 
 		strcpy(title, "Segmentation");
 		cvNamedWindow( title, 1 );
 		cvShowImage( title, outImg );
 		cvWaitKey(0);
 		cvDestroyWindow(title);	
 		
-		
+		/*
 		IplImage * img = GetSegmentedImage();
 		strcpy(title, "Segmentation");
 		cvNamedWindow( title, 1 );
 		cvShowImage( title, img );
 		cvWaitKey(0);
 		cvDestroyWindow(title);				
+		*/
 #endif
 
 		// Update GMM
-		getMask(f_mask,0);
-		getMask(b_mask,1);
+		for (int i=0;i<nScribbles;i++)
+			getMask(pMasks[i],i);
 		
 #ifdef NEW_GMM	
-		f_gmm->NextStep(f_mask);
-		b_gmm->NextStep(b_mask);
+		for (int i=0;i<nScribbles;i++)
+			pGMM[i]->NextStep(pMasks[i]);
 #else
-		f_gmm->NextStep(pChannels, f_mask, CvEM::COV_MAT_DIAGONAL);
-		b_gmm->NextStep(pChannels, b_mask, CvEM::COV_MAT_DIAGONAL);	
+		for (int i=0;i<nScribbles;i++)
+			pGMM[i]->NextStep(pChannels, pMasks[i], CvEM::COV_MAT_DIAGONAL);
 #endif
 			
-		delete graph;
+		//delete graph;
 	}
 
 }

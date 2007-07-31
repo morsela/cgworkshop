@@ -18,7 +18,7 @@ public:
 
 public:
 
-	void init_graph(int height, int width, CvMat *smoothness);
+	void init_graph(int height, int width, CvMat *smoothness, CvMat * pDoubleMask);
 
 	double static calc_beta(int height, int width, CvMat* smoothness);
 

@@ -25,7 +25,10 @@ public:
 
 protected:
 	
-	void getMask(CvMat *mask, int isBackground);
+	void getMask(CvMat * mask, int nScribble);
+	void getDoubleMask(CvMat * mask, int nScribble1, int nScribble2);
+	void UpdateSegmentation(CvMat * pPartialSeg, int nScribble1, int nScribble2, CvMat * pDoubleMask);
+	
 
 private:
 
