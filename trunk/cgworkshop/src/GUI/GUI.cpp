@@ -31,7 +31,7 @@ void CGUI::Render()
 	// Make the texture the current one
 	glBindTexture(GL_TEXTURE_2D, m_textures[0]);
 	
-	// render the left image
+	// render the image
 	glBegin(GL_QUADS);
 	{
 		glTexCoord2f( 0.0, 1.0 );
@@ -45,15 +45,19 @@ void CGUI::Render()
 	}
 	glEnd();
 
-	// render the left vectors
-	if ( !m_scribbles.empty() )
+	const CvScalar colors[] = {{{0,0,1.0f}},{{0,1.0f,0}},{{0,1.0f,1.0f}},{{1.0f,1.0f,0}}};
+	// render the scribbles
+	if (!m_scribbles.empty())
 	{
 		glPointSize(0.5);
-		// as points
-		glBegin( GL_POINTS);
+
+		glBegin(GL_POINTS);
 		{
 			for ( int i = 0; i < m_scribbles.size(); i ++)
+			{
+				glColor3f(colors[i].val[0],colors[i].val[1],colors[i].val[2]);
 				m_scribbles[i].Draw();
+			}
 		}
 		glEnd();
 
@@ -104,13 +108,10 @@ void CGUI::Reshape(int x , int y)
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-#include "ml.h"
-
 void CGUI::KeysAction( unsigned char key, int x, int y )
 {
 	switch( key )
 	{
-
 	case 'q':
 		exit(0);
 		break;
@@ -125,65 +126,6 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 
 	case 'c':
 		m_scribbles.clear();
-		break;
-
-	case '.':
-		{
-		
-/*		const CvScalar colors[] = {{{0,0,255}},{{0,255,0}},{{0,255,255}},{{255,255,0}}};
-		CvEM em_model;
-		CvEMParams params;
-
-		CFeatureExtraction * fe;
-
-		fe = new CFeatureExtraction(m_pImg);
-		fe->Run();
-
-		float _sample[2];
-    CvMat sample = cvMat( 1, 2, CV_32FC1, _sample );
-	
-		CvMat* labels = cvCreateMat( m_pImg->width * m_pImg->height, 1, CV_32SC1 );
-		IplImage* img = cvCreateImage( cvSize( 500, 500 ), 8, 3 );
-		
-		  // initialize model's parameters
-		params.covs      = NULL;
-		params.means     = NULL;
-		params.weights   = NULL;
-		params.probs     = NULL;
-		params.nclusters = 5;
-		params.cov_mat_type       = CvEM::COV_MAT_SPHERICAL;
-		params.start_step         = CvEM::START_AUTO_STEP;
-		params.term_crit.max_iter = 10;
-		params.term_crit.epsilon  = 0.1;
-		params.term_crit.type     = CV_TERMCRIT_ITER|CV_TERMCRIT_EPS;
-
-		CvMat * pChannels = fe->GetTextureChannels();
-		// cluster the data
-		em_model.train( pChannels, 0, params, labels );
-
-		// classify every image pixel
-		cvZero( img );
-		for( int i = 0; i < img->height; i++ )
-		{
-			for( int j = 0; j < img->width; j++ )
-			{
-				CvPoint pt = cvPoint(j, i);
-				pChannels->data.fl[0] = (float)j;
-				pChannels->data.fl[1] = (float)i;
-				int response = cvRound(em_model.predict( &sample, NULL ));
-				CvScalar c = colors[response];
-
-				cvCircle( img, pt, 1, cvScalar(c.val[0]*0.75,c.val[1]*0.75,c.val[2]*0.75), CV_FILLED );
-			}
-		}
-
-
-		cvNamedWindow( "EM-clustering result", 1 );
-		cvShowImage( "EM-clustering result", img );
-		cvWaitKey(0);
-
-*/
-		}
 		break;
 
 	case 'r':
@@ -223,6 +165,9 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 	default:
 		break;
 	}
+
+	if (key >= '0' || key <= '9')
+		m_nCurScribble = key - 48;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -240,18 +185,12 @@ void CGUI::MouseAction(int button, int state, int x, int y)
 			// pressed the left button
 		if ( state == GLUT_DOWN )
 		{
-			//FIXME: id should not be constant
-			if (m_scribbles.size() == 0)
-			{
-				int id = 1;
-				CScribble scribble(id);
-
-				m_scribbles.push_back( scribble );
+			if (m_nCurScribble < SCRIBBLE_NUMBER && m_nCurScribble >= 0)
+			{	
+				AddScribblePoints(x,y);
+				
+				m_fScribbling = true;
 			}
-		
-			AddScribblePoints(x,y);
-			
-			m_fScribbling = true;
 		}
 
 		break;
@@ -297,8 +236,8 @@ void CGUI::AddScribblePoints(int x, int y)
 			CPointFloat pF = CPointFloat( m_orthoBBox[0] * ( 1 - 2 * (float)i / GetWidth() ),
 										m_orthoBBox[3] * ( 1 - 2 * (float)j / GetHeight() ));
 
-			m_scribbles.back().AddImagePoint (pI);
-			m_scribbles.back().AddObjectPoint(pF);
+			m_scribbles[m_nCurScribble].AddImagePoint (pI);
+			m_scribbles[m_nCurScribble].AddObjectPoint(pF);
 		}
 	}
 }
@@ -316,6 +255,11 @@ int CGUI::Setup(char * pszImagePath, char *pScribbleFile /* = NULL */)
 
 	if (pScribbleFile)
 		m_loader.Setup(pScribbleFile);
+
+	m_nCurScribble = 0;
+	m_scribbles.resize(SCRIBBLE_NUMBER);
+	for (int i = 0; i < SCRIBBLE_NUMBER; i++)
+		m_scribbles[i].SetID(i);
 
 	return 1;
 }
