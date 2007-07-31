@@ -185,6 +185,18 @@ void Segmentator::Segment()
 			pGMM[i]->GetAllProbabilities(pChannels, pConfMaps[i]);
 #endif
 
+#ifdef DISP_CONF_MAPS
+		// Display FG conf map
+		for (int i=0;i<nScribbles;i++)
+		{
+			sprintf(title, "pConfMap[%d]", i);
+			cvNamedWindow( title, 1 );
+			cvShowImage( title,  pConfMaps[i]);
+			cvWaitKey(0);
+			cvDestroyWindow(title);	
+		}
+#endif
+
 		printf("Performing alpha beta swap\n");
 		
 		double totalFlow = 0;
