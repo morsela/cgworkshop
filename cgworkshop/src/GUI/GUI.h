@@ -8,7 +8,7 @@
 #include "TypeDefs.h"
 #include "Loader.h"
 
-#define SCRIBBLE_NUMBER	4
+#define SCRIBBLE_NUMBER	6
 
 class CGUI
 {
