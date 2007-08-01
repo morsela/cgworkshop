@@ -60,8 +60,7 @@ void myInitOpenGL()
 
 	glEnable( GL_TEXTURE_2D );
 
-	glLineWidth(3);
-	glPointSize(5);
+	glPointSize(0.5);
 	glClearColor(1.0, 1.0f, 1.0f, 1.0);
 }
 
