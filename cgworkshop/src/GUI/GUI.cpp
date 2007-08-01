@@ -28,6 +28,7 @@ void CGUI::Render()
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity();
 
+
 	// Make the texture the current one
 	glBindTexture(GL_TEXTURE_2D, m_textures[0]);
 	
@@ -48,10 +49,11 @@ void CGUI::Render()
 	const CvScalar colors[] = {{{0,0,1.0f}},{{0,1.0f,0}},{{0,1.0f,1.0f}},{{1.0f,1.0f,0}},{{0,0,1.0f}},{{0.5f,0.5f,1.0f}}
 	,{{0.5f,0.5f,0.5f}},{{0.5f,1.0f,0.5f}},{{1.0f,0.5f,1.0f}},{{1.0f,0.2f,0.7f}}};
 	// render the scribbles
+
+	glDisable( GL_TEXTURE_2D );
+
 	if (!m_scribbles.empty())
 	{
-		glPointSize(0.5);
-
 		glBegin(GL_POINTS);
 		{
 			for ( int i = 0; i < m_scribbles.size(); i ++)
@@ -63,6 +65,8 @@ void CGUI::Render()
 		glEnd();
 
 	}
+
+	glEnable( GL_TEXTURE_2D );
 
 	// reset the color
 	glColor3f( 1,1,1 );
@@ -142,6 +146,8 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 		for (int i = 0; i < SCRIBBLE_NUMBER ; i++)
 			if (m_scribbles[i].IsValid())
 				nScribbles++;
+
+		printf("nScribbles=%d\n", nScribbles);
 
 		Segmentator seg(m_pImg, fe, m_scribbles, nScribbles);
 
@@ -281,7 +287,6 @@ void CGUI::LoadTextures()
 
 void loadTexture( const IplImage *pImage, unsigned int &id )
 {
-
 	//if the image is upside down
 	if( pImage->origin == IPL_ORIGIN_TL)
 	{
