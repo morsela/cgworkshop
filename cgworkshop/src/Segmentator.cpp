@@ -17,7 +17,7 @@ Segmentator::Segmentator(IplImage * Img, CFeatureExtraction *fe, ScribbleVector 
 {
 	m_scribbles = scribbles;
 	//FIXME: it is not logical to assume that the bg is a scribble
-	m_nScribbles = nScribbles + 1;
+	m_nScribbles = nScribbles;
 
 	m_pFe = fe;
 	m_Segmentation = cvCreateMat(m_pImg->height,m_pImg->width, CV_64FC1 );
@@ -83,7 +83,7 @@ void Segmentator::UpdateSegmentation(CvMat * pPartialSeg, int nScribble1, int nS
 void Segmentator::Segment() 
 {
 	int bgScribble = m_nScribbles - 1;
-
+	printf("Segmenting with %d scribbles\n", m_nScribbles);
 	int i,j;
 
 #ifdef NEW_GMM
@@ -119,11 +119,11 @@ void Segmentator::Segment()
 	cvSetZero( m_Segmentation );
 
 	// Set initial bg mask to 1
-	cvSet( pMasks[bgScribble] , cvScalarAll(1));
+	//cvSet( pMasks[bgScribble] , cvScalarAll(1));
 
 	//get initial mask for each of the FG scribbles
 
-	for (j=0;j<bgScribble;j++)
+	for (j=0;j<m_nScribbles;j++)
 	{
 		cvSetZero( pMasks[j] );
 		// TODO: Get point vector for scribble j
@@ -135,7 +135,7 @@ void Segmentator::Segment()
 
 			// Set '1' in scribble mask, '0' in bg mask
 			pMasks[j]->data.ptr[y*m_pImg->width+x]=1;
-			pMasks[bgScribble]->data.ptr[y*m_pImg->width+x]=0;
+			//pMasks[bgScribble]->data.ptr[y*m_pImg->width+x]=0;
 		}
 	}
 
