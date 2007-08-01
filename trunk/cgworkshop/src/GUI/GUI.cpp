@@ -45,7 +45,7 @@ void CGUI::Render()
 	}
 	glEnd();
 
-	const CvScalar colors[] = {{{0,0,1.0f}},{{0,1.0f,0}},{{0,1.0f,1.0f}},{{1.0f,1.0f,0}}};
+	const CvScalar colors[] = {{{0,0,1.0f}},{{0,1.0f,0}},{{0,1.0f,1.0f}},{{1.0f,1.0f,0}},{{0,0,1.0f}},{{0.5f,0.5f,1.0f}}};
 	// render the scribbles
 	if (!m_scribbles.empty())
 	{
