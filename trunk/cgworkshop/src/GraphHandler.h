@@ -22,13 +22,13 @@ public:
 
 	double static calc_beta(int height, int width, CvMat* smoothness);
 
-	void assign_weights(CvMat * Bu, CvMat * Fu);
+	void assign_weights(CvMat * Bu, CvMat * Fu, CvMat * pDoubleMask);
 	
 	double get_total_flow(CvMat * segmentation);
 	
 
 public:
-	void do_MinCut(CvMat & result);
+	void do_MinCut(CvMat & result, CvMat * pDoubleMask);
 
 public:
 	Graph::flowtype getFlow() const {return m_flow;};
@@ -37,6 +37,7 @@ public:
 
 private:
 
+	int m_width, m_height;
 
 	Graph *m_igraph;
 	double static beta;

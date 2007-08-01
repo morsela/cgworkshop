@@ -227,15 +227,14 @@ void Segmentator::Segment()
 								cvmSet(Bu,i,j,0);
 
 							}
-							/*
-							// TODO: points for Scribble 2
-							else if (find(m_points.begin(), m_points.end(), CPointInt(j,i))!= m_points.end())
+
+							if (m_scribbles[nScribble2].Find(CPointInt(j,i)))
+							//if (find(m_points.begin(), m_points.end(), CPointInt(j,i))!= m_points.end())
 							{//inside scribble
-							cvmSet(Bu,i,j,10000);
-							cvmSet(Fu,i,j,0);
+								cvmSet(Bu,i,j,10000);
+								cvmSet(Fu,i,j,0);
 
 							}
-							*/
 
 							else
 							{
@@ -248,11 +247,13 @@ void Segmentator::Segment()
 					printf("Running min-cut for labels (%d,%d)\n", nScribble1,nScribble2);
 					getDoubleMask(pDoubleMask, nScribble1,nScribble2);
 
+					printf("Init graph\n");
 					GraphHandler *graph = new GraphHandler();
 					graph->init_graph(m_pImg->height, m_pImg->width, m_pFe->GetColorChannels(), pDoubleMask);
-					graph->assign_weights(Bu, Fu);
+					graph->assign_weights(Bu, Fu, pDoubleMask);
 
-					graph->do_MinCut(*pPartialSeg);
+					printf("Min cut\n");
+					graph->do_MinCut(*pPartialSeg, pDoubleMask);
 
 					printf("Flow[%d,%d] is %lf\n" ,nScribble1,nScribble2,graph->getFlow());
 
@@ -261,16 +262,16 @@ void Segmentator::Segment()
 					// If it does, keep it, else don't
 
 					double newFlow = graph->get_total_flow(pPartialSeg);
-					if (newFlow > totalFlow)
-					{
+					//if (newFlow > totalFlow)
+					//{
 						printf("Segmentation improved! updating...\n");
 						cvConvertScale(pPartialSeg, m_Segmentation, 1);
 						totalFlow = newFlow;
-						flowIncreased = 1;
-					}
-					else {
-						printf("No improvements.... discarding...\n");
-					}
+						//flowIncreased = 1;
+					//}
+					//else {
+					//	printf("No improvements.... discarding...\n");
+					//}
 
 					delete graph;
 				}

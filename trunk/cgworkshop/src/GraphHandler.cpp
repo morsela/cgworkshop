@@ -71,25 +71,41 @@ double GraphHandler::calc_beta(int rows, int cols, CvMat* smoothness) {
 
 void GraphHandler::init_graph(int rows, int cols, CvMat * smoothness, CvMat * pDoubleMask) {
 	
+	m_width = cols;
+	
+	m_height = rows;
+	
 	//create m_nodes
-	for (int i = 0; i <rows; i++) 
+	printf("Creating nodes\n");
+	for (int i = 0; i <rows; i++)
+	{ 
 		for (int j = 0; j < cols; j++)
-			m_nodes[i][j] = m_igraph->add_node();
+		{
+			if (pDoubleMask->data.ptr[i*m_width+j] == 0)
+				continue;			
 
+			m_nodes[i][j] = m_igraph->add_node();
+		}
+	}
+	
+	printf("Adding edges\n");
 	for(int i = 0; i < rows; i ++)
 	{
 		for (int j = 0; j < cols; j ++) 
 		{
-			if (j<cols-1)	
+			if (pDoubleMask->data.ptr[i*m_width+j] == 0)
+				continue;
+				
+			if (j<cols-1 && pDoubleMask->data.ptr[(i)*m_width+(j+1)])	
 				m_igraph->add_edge(m_nodes[i][j], m_nodes[i+0][j+1], calcDist(smoothness, i*cols+j, (i+0)*cols+(j+1), beta));				
 
-			if (i<rows-1)
+			if (i<rows-1  && pDoubleMask->data.ptr[(i+1)*m_width+(j)])	
 				m_igraph->add_edge(m_nodes[i][j], m_nodes[i+1][j+0], calcDist(smoothness, i*cols+j, (i+1)*cols+(j+0), beta));				
 
-			if ((i<rows-1) && (j<cols-1))
+			if (((i<rows-1) && (j<cols-1)) &&  pDoubleMask->data.ptr[(i+1)*m_width+(j+1)])
 				m_igraph->add_edge(m_nodes[i][j], m_nodes[i+1][j+1], calcDist(smoothness, i*cols+j, (i+1)*cols+(j+1), beta));
 								
-			if ((i>0) && (j<cols-1))
+			if (((i>0) && (j<cols-1)) &&  pDoubleMask->data.ptr[(i-1)*m_width+(j+1)])
 				m_igraph->add_edge(m_nodes[i][j], m_nodes[i-1][j+1], calcDist(smoothness, i*cols+j, (i-1)*cols+(j+1), beta));
 
 		}
@@ -99,10 +115,14 @@ void GraphHandler::init_graph(int rows, int cols, CvMat * smoothness, CvMat * pD
 
 
 
-void GraphHandler::assign_weights(CvMat *Bu, CvMat *Fu) {
-
+void GraphHandler::assign_weights(CvMat *Bu, CvMat *Fu, CvMat * pDoubleMask) {
+	printf("Assigning weights\n");
 	for (int i=0; i<Bu->rows; i++)
 		for (int j=0; j<Bu->cols; j++) {
+			
+			if (pDoubleMask->data.ptr[i*m_width+j] == 0)
+				continue;
+			
 			//add the Sink E1 term
 			m_igraph->set_tweights(m_nodes[i][j], 
 										cvmGet(Fu,i,j),
@@ -113,7 +133,7 @@ void GraphHandler::assign_weights(CvMat *Bu, CvMat *Fu) {
 
 }
 
-void GraphHandler::do_MinCut(CvMat &result) {
+void GraphHandler::do_MinCut(CvMat &result, CvMat * pDoubleMask) {
 
 	m_flow = m_igraph->maxflow();
 	int counter1 = 0;
@@ -121,7 +141,12 @@ void GraphHandler::do_MinCut(CvMat &result) {
 
 
 	for(int i=0; i<result.rows; i++)
+	{
 		for (int j=0; j<result.cols; j++)
+		{
+			if (pDoubleMask->data.ptr[i*m_width+j] == 0)
+				continue;		
+		
 			//we can push it all into one line...
 			if (m_igraph->what_segment(m_nodes[i][j])==Graph::SINK){
 				counter1++;
@@ -132,7 +157,8 @@ void GraphHandler::do_MinCut(CvMat &result) {
 				counter2++;
 
 			}
-			
+		}
+	}		
 	printf("COUNTER1 %d COUNTER2 %d\n", counter1, counter2);
 }
 
