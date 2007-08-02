@@ -16,7 +16,7 @@ CGMM::CGMM():m_model(NULL)
 void CGMM::Init(CvMat * pDataSet)
 {
 //	Init(pDataSet, 0);	
-}
+} 
 
 void CGMM::Init(CvMat * pDataSet , CvMat * pActiveMask, int covType)
 {
@@ -151,7 +151,7 @@ void CGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)
 //		printf("prob=%f\n", prob);
 	}
 
-	cvNormalize(pProbs, pProbs, 0.000001, 1, CV_MINMAX);
+	cvNormalize(pProbs, pProbs, 0.01, 1, CV_MINMAX);
 	
 	cvReleaseMat(&covInv);
 	cvReleaseMat(&temp1);

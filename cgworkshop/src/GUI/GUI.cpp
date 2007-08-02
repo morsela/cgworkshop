@@ -28,7 +28,6 @@ void CGUI::Render()
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity();
 
-
 	// Make the texture the current one
 	glBindTexture(GL_TEXTURE_2D, m_textures[0]);
 	
@@ -156,19 +155,23 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
  		seg.Segment();
 
 		// display
-		IplImage * outImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_8U, 1);
-		cvConvertScale(seg.getSegmentation(),outImg,255,0); 	
+		//IplImage * outImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_8U, 1);
+		//cvConvertScale(seg.getSegmentation(),outImg,255,0); 	
 		
 		char title[50];
 		strcpy(title, "Segmentation");
 		cvNamedWindow( title, 1 );
 		//cvShowImage( title, outImg );
-		cvShowImage( title, seg.GetSegmentedImage() );
-		cvWaitKey(0);
-		cvDestroyWindow(title);	
 		
-		cvSaveImage("test.bmp",outImg);
-		cvReleaseImage(&outImg);
+		for (int i=0;i<nScribbles;i++)
+		{
+			cvNamedWindow( title, 1 );
+			cvShowImage( title, seg.GetSegmentedImage(i) );
+			cvWaitKey(0);
+			cvDestroyWindow(title);	
+		}
+		//cvSaveImage("test.bmp",outImg);
+		//cvReleaseImage(&outImg);
 
 		delete fe;
 

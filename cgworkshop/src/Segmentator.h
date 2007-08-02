@@ -7,7 +7,7 @@
 #include "fe/FeatureExtraction.h"
 #include "GUI/TypeDefs.h"
 
-#define MAX_ITER 10
+#define MAX_ITER 5
 #define TOLLERANCE 0.05
 
 class Segmentator 
@@ -19,16 +19,15 @@ public:
 public:
 
 	void Segment();
-	CvMat * getSegmentation() {return m_Segmentation;}
+	CvMat * getSegmentation(int scribble) {return m_Segmentations[scribble];}
 
-	IplImage * GetSegmentedImage();
+	IplImage * GetSegmentedImage(int scribble);
 
 protected:
 	
-	void getMask(CvMat * mask, int nScribble);
-	void getDoubleMask(CvMat * mask, int nScribble1, int nScribble2);
-	void UpdateSegmentation(CvMat * pPartialSeg, int nScribble1, int nScribble2, CvMat * pDoubleMask);
+	void SegmentOne(int scribble);
 	
+	void getMask(CvMat * segmentation, CvMat * mask, int isBackground);
 
 private:
 
@@ -38,7 +37,7 @@ private:
 	CFeatureExtraction *m_pFe;
 	IplImage * m_pImg;
 	IplImage* m_pSegImg;
-	CvMat * m_Segmentation;
+	CvMat ** m_Segmentations;
 	
 };
 
