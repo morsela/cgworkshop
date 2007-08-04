@@ -9,9 +9,9 @@
 
 using namespace std;
 
-//#define DISP_SEGMENTATION
+#define DISP_SEGMENTATION
 
-//#define DISP_CONF_MAPS
+#define DISP_CONF_MAPS
 
 //#define NEW_GMM
 
@@ -155,6 +155,11 @@ void Segmentator::SegmentOne(int scribble)
 					cvmSet(Bu,i,j,0);
 				
 				}
+				
+				// TODO:
+				// Else if belongs to one of the other scribbles
+				// Set weight 10000 to BU!
+				
 				else
 				{
 					//calcweights
@@ -205,7 +210,7 @@ void Segmentator::SegmentOne(int scribble)
 		cvDestroyWindow(title);	
 		
 		
-		IplImage * img = GetSegmentedImage();
+		IplImage * img = GetSegmentedImage(scribble);
 		strcpy(title, "Segmentation");
 		cvNamedWindow( title, 1 );
 		cvShowImage( title, img );
