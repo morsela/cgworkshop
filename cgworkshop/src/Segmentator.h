@@ -41,6 +41,7 @@ private:
 	IplImage * m_pImg;
 	IplImage* m_pSegImg;
 	CvMat ** m_Segmentations;
+	CvMat ** m_Probabilities;
 	
 };
 

@@ -28,6 +28,11 @@ Segmentator::Segmentator(IplImage * Img, CFeatureExtraction *fe, ScribbleVector 
 	int i;
 	for (i=0;i<m_nScribbles;i++)
 		m_Segmentations[i] = cvCreateMat(m_pImg->height,m_pImg->width, CV_64FC1 );
+
+	m_Probabilities = new CvMat*[m_nScribbles];
+	
+	for (i=0;i<m_nScribbles;i++)
+		m_Probabilities[i] = cvCreateMat(m_pImg->height,m_pImg->width, CV_32FC1 );
 		
 	m_pSegImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height),m_pImg->depth,m_pImg->nChannels);
 }
@@ -252,6 +257,9 @@ void Segmentator::SegmentOne(int scribble)
 			
 		delete graph;
 	}
+	
+	// Save the last FG confidence map
+	cvConvert(conf_map_fg, m_Probabilities[scribble]);
 
 }
 
