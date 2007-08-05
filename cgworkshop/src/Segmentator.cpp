@@ -40,6 +40,11 @@ Segmentator::Segmentator(IplImage * Img, CFeatureExtraction *fe, ScribbleVector 
 Segmentator::~Segmentator()
 {
 	cvReleaseImage(&m_pSegImg);
+	for (int i=0;i<m_nScribbles;i++)
+		cvReleaseMat(&m_Segmentations[i]),
+		cvReleaseMat(&m_Probabilities[i]);
+
+		
 }
 
 void Segmentator::getMask(CvMat * segmentation, CvMat * mask, int isBackground) 
