@@ -9,9 +9,9 @@
 
 using namespace std;
 
-#define DISP_SEGMENTATION
+//#define DISP_SEGMENTATION
 
-#define DISP_CONF_MAPS
+//#define DISP_CONF_MAPS
 
 //#define NEW_GMM
 
@@ -291,3 +291,52 @@ IplImage * Segmentator::GetSegmentedImage(int scribble)
 	return m_pSegImg;
 }
 
+// TODO:
+/* Phase 2 - (Soft?) Colorization
+ * 
+ * Two options, I guess:
+ * 
+ * 1. 
+ * 	a. Segmentation for each scribble
+ * 	b. Assign color per pixel according to the segmentation
+ * 	c. Deal with overlaps (Higher probability wins?)
+ * 	d. Deal with pixels not in any segmentation
+ * 	e. Seems like the logical choice (Easy to see why it would work)
+ * 	f. Has some issues...... Doesn't sound smooth.
+ * 
+ * 2.
+ * 	a. Segmentation for each pixel _BUT_ only refer to the probabilities
+ * 	b. Color each pixel according to a weighted average:
+ * 
+ * 		p(0) * c(0) + ... + p(n) * c(n)
+ * 		-------------------------------
+ * 		p(0) + p(1) + ... + P(n-1) + p(n)
+ * 
+ * 		Where p(i) the probability the pixel belongs to object i, c(i) the color of scribble (i)
+ * 	c. Overlaps are handled
+ * 	d. Pixels not in any segmentation are also handled (Would get some mixture of all the scribbles)
+ *  e. A 'smoother' way to assign colors?
+ * 	f. At the cost of ignoring the smoothness term (Which is ironic, really)?
+ * 
+ * 3.
+ * 	Maybe somehow a mixture of the first two options?
+ * 
+ * 4.
+ * 	Be creative?
+ * 
+ */
+ 
+void Segmentator::AssignColors()
+{
+  	// TODO:	
+}
+ 
+ 
+void Segmentator::Colorize()
+{
+  	// TODO:	
+  	
+  	// Segment();
+  	// AssignColors();
+  	// ?
+}

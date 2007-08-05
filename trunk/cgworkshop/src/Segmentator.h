@@ -18,6 +18,7 @@ public:
 
 public:
 
+	void Colorize();
 	void Segment();
 	CvMat * getSegmentation(int scribble) {return m_Segmentations[scribble];}
 
@@ -31,6 +32,7 @@ protected:
 
 	bool IsInScribble(int i, int j, int scribble);
 	bool IsInScribble(int i, int j);
+	void AssignColors();
 
 private:
 
