@@ -29,6 +29,9 @@ protected:
 	
 	void getMask(CvMat * segmentation, CvMat * mask, int isBackground);
 
+	bool IsInScribble(int i, int j, int scribble);
+	bool IsInScribble(int i, int j);
+
 private:
 
 	ScribbleVector	m_scribbles;
