@@ -59,6 +59,23 @@ void Segmentator::Segment()
 		SegmentOne(i);
 }
 
+bool Segmentator::IsInScribble(int i, int j, int scribble)
+{
+	return m_scribbles[scribble].Find(CPointInt(j,i));
+}
+
+bool Segmentator::IsInScribble(int i, int j)
+{
+	int scribble;
+	for (scribble=0;scribble<m_nScribbles;scribble++)
+	{
+		if (IsInScribble(i,j,scribble))
+			return true;
+	}
+	
+	return false;
+}
+
 void Segmentator::SegmentOne(int scribble) 
 {
 	
@@ -149,16 +166,19 @@ void Segmentator::SegmentOne(int scribble)
 		{
 			for (int j=0; j<m_pImg->width; j++)
 			{
-				if (m_scribbles[scribble].Find(CPointInt(j,i)))	
-				{//inside scribble
+				if (IsInScribble(i,j,scribble))
+				{//inside the current scribble
 					cvmSet(Fu,i,j,10000);
 					cvmSet(Bu,i,j,0);
 				
 				}
 				
-				// TODO:
-				// Else if belongs to one of the other scribbles
-				// Set weight 10000 to BU!
+				else if (IsInScribble(i,j))	
+				{//inside one of the other scribbles
+					cvmSet(Fu,i,j,0);
+					cvmSet(Bu,i,j,10000);
+				
+				}
 				
 				else
 				{
