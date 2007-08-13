@@ -1,7 +1,7 @@
 #include "Segmentator.h"
 
 #include <algorithm>
-
+#include <limits>
 #include "GMM/GMM.h"
 #include "GMM/kGMM.h"
 
@@ -172,13 +172,14 @@ void Segmentator::SegmentOne(int scribble)
 #endif
 		
 		// Set weights
+		numeric_limits<double> limits;
 		for (int i=0; i<m_pImg->height; i++)
 		{
 			for (int j=0; j<m_pImg->width; j++)
 			{
 				if (IsInScribble(i,j,scribble))
 				{//inside the current scribble
-					cvmSet(Fu,i,j,10000);
+					cvmSet(Fu,i,j,limits.infinity());
 					cvmSet(Bu,i,j,0);
 				
 				}
@@ -186,7 +187,7 @@ void Segmentator::SegmentOne(int scribble)
 				else if (IsInScribble(i,j))	
 				{//inside one of the other scribbles
 					cvmSet(Fu,i,j,0);
-					cvmSet(Bu,i,j,10000);
+					cvmSet(Bu,i,j,limits.infinity());
 				
 				}
 				
@@ -308,6 +309,8 @@ IplImage * Segmentator::GetSegmentedImage(int scribble)
  * 	d. Deal with pixels not in any segmentation
  * 	e. Seems like the logical choice (Easy to see why it would work)
  * 	f. Has some issues...... Doesn't sound smooth.
+ *  g. We can enforce spatial locality. --> creativity!
+ *	h. should we save the bg conf maps for our calculations? --> creativity!
  * 
  * 2.
  * 	a. Segmentation for each pixel _BUT_ only refer to the probabilities
