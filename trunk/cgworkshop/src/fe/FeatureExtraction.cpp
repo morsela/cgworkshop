@@ -198,7 +198,7 @@ bool CFeatureExtraction::GetColorChannels(CvMat * pChannels, CvMat * pColorChann
 	
 	// Convert to LAB color space
 	IplImage *pLabImg = cvCreateImage(cvSize(m_pSrcImg->width,m_pSrcImg->height), IPL_DEPTH_32F, nSize);
-	cvCvtColor(m_pSrcImgFloat,pLabImg,CV_RGB2Lab);	
+	cvCvtColor(m_pSrcImgFloat,pLabImg,CV_BGR2Lab);	
 
 	// Put the 32F lab image data in a matrix header
 	CvMat srcMat;
