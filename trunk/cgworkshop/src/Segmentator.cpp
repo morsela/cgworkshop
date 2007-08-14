@@ -34,6 +34,9 @@ Segmentator::Segmentator(IplImage * Img, CFeatureExtraction *fe, ScribbleVector 
 	for (i=0;i<m_nScribbles;i++)
 		m_Probabilities[i] = cvCreateMat(m_pImg->height,m_pImg->width, CV_32FC1 );
 		
+	m_FinalSeg = cvCreateMat(m_pImg->height,m_pImg->width, CV_64FC1 );
+	cvSetZero( m_FinalSeg );
+
 	m_pSegImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height),m_pImg->depth,m_pImg->nChannels);
 }
 
@@ -329,14 +332,49 @@ IplImage * Segmentator::GetSegmentedImage(int scribble)
  * 3.
  * 	Maybe somehow a mixture of the first two options?
  * 
- * 4.
+ *
+ * 4. We can use 'a graph cut approach' to our problem: for each overlapping segment we can build a graph:
+ *		Two terminal nodes - for each of the two segments
+ *		Each of the pixels in that segments have nodes, adjacent nodes has the 'regular' smoothness term
+ *		And each node has an edge to each of the terminals weighed according to fg gmms
+ *		An minimal cut for this graph corresponds each pixel to a single segment. 
+ *		The biggest problem I can think of is it should work for when we have only two segments to decide from.
+ * 5.
  * 	Be creative?
  * 
  */
  
 void Segmentator::AssignColors()
 {
-  	// TODO:	
+	for (int n=0; n<m_nScribbles; n++) 
+	{
+		for (int i=0; i<m_FinalSeg->rows; i++)
+			for (int j=0; j<m_FinalSeg->cols; j++) {
+				int isInNSegment = cvmGet(m_Segmentations[n],i,j);
+				int finalSegment = cvmGet(m_FinalSeg,i,j);
+				
+				if (!finalSegment && isInNSegment)//no overlapping
+					finalSegment =  n ;
+				else 
+					if (finalSegment && isInNSegment)//overlapping
+						finalSegment = decideSegment(i,j, n, finalSegment);
+				cvmSet(m_FinalSeg,i,j,finalSegment);
+
+			}
+	}
+}
+
+int Segmentator::decideSegment(int i, int j, int seg1, int seg2) {
+
+
+	double prob1 = cvmGet(m_Probabilities[seg1],i,j);
+	double prob2 = cvmGet(m_Probabilities[seg2],i,j);
+
+	if (prob1 > prob2)
+		return seg1;
+	else
+		return seg2;
+
 }
  
  
