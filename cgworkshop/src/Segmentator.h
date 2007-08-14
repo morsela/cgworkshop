@@ -33,6 +33,7 @@ protected:
 	bool IsInScribble(int i, int j, int scribble);
 	bool IsInScribble(int i, int j);
 	void AssignColors();
+	int decideSegment(int i,int j, int seg1, int seg2);
 
 private:
 
@@ -43,6 +44,7 @@ private:
 	IplImage * m_pImg;
 	IplImage* m_pSegImg;
 	CvMat ** m_Segmentations;
+	CvMat * m_FinalSeg;
 	CvMat ** m_Probabilities;
 	
 };
