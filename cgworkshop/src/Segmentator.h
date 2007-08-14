@@ -23,6 +23,7 @@ public:
 	CvMat * getSegmentation(int scribble) {return m_Segmentations[scribble];}
 
 	IplImage * GetSegmentedImage(int scribble);
+	//IplImage * GetSegmentedImage();
 
 protected:
 	
