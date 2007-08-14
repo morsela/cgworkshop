@@ -295,11 +295,32 @@ IplImage * Segmentator::GetSegmentedImage(int scribble)
 				pData[y*step+x*3+2] = 0;
 			}
 		}
+	
 	}
 
 	return m_pSegImg;
 }
 
+/*IplImage * Segmentator::GetSegmentedImage()
+{
+	int step = m_pImg->widthStep;
+	cvCvtColor(m_pImg, m_pSegImg, CV_RGB2YCrCb);
+
+	uchar * pData  = (uchar *)m_pSegImg->imageData;
+
+	for (int y = 0; y < m_pImg->height; y++)
+	{
+		for (int x = 0; x < m_pImg->width; x++)
+		{
+			int value = (int) cvmGet(this->m_FinalSeg,y,x);
+			
+			pData[y*step+x*3+1] = m_scribbles[value].getU();
+			pData[y*step+x*3+2] = m_scribbles[value].getV();
+		}
+	}
+
+	return m_pSegImg;
+}*/
 // TODO:
 /* Phase 2 - (Soft?) Colorization
  * 
@@ -342,6 +363,7 @@ IplImage * Segmentator::GetSegmentedImage(int scribble)
  * 5.
  * 	Be creative?
  * 
+ * 6. Adjust GUI to the new multi-scribble-thingy - make sure loading/saving scribbles still works.
  */
  
 void Segmentator::AssignColors()
@@ -352,6 +374,7 @@ void Segmentator::AssignColors()
 			for (int j=0; j<m_FinalSeg->cols; j++) {
 				int isInNSegment = cvmGet(m_Segmentations[n],i,j);
 				int finalSegment = cvmGet(m_FinalSeg,i,j);
+				//finalSegment = 0 --> no segment assigned!! I'm guessing thats wrong?
 				
 				if (!finalSegment && isInNSegment)//no overlapping
 					finalSegment =  n ;
