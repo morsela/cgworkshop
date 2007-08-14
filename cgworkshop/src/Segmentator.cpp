@@ -304,7 +304,7 @@ IplImage * Segmentator::GetSegmentedImage(int scribble)
 /*IplImage * Segmentator::GetSegmentedImage()
 {
 	int step = m_pImg->widthStep;
-	cvCvtColor(m_pImg, m_pSegImg, CV_RGB2YCrCb);
+	cvCvtColor(m_pImg, m_pSegImg, CV_BGR2YCrCb);
 
 	uchar * pData  = (uchar *)m_pSegImg->imageData;
 
