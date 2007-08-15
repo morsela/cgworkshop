@@ -9,6 +9,7 @@
 
 #define MAX_ITER 5
 #define TOLLERANCE 0.05
+#define BACKGROUND -1
 
 class Segmentator 
 {
