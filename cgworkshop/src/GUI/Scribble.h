@@ -36,6 +36,8 @@ public:
 	void Draw() const;
 
 	bool Find(CPointInt p);
+	
+	void SetColor(const CvScalar * color);
 
 public: 
 
@@ -48,6 +50,8 @@ public:
 	int GetID() const						{ return m_nID;};
 
 	bool IsValid()	const					{ return (m_nPoints > 0); }
+	
+	CvScalar * GetColor()					{ return &m_color; }
 
 
 protected:
@@ -59,6 +63,8 @@ protected:
 	int							m_nPoints;
 
 	int							m_nID;
+	
+	CvScalar					m_color;
 
 
 };

@@ -13,6 +13,8 @@ CScribble::CScribble()
 
 	m_nPoints	= 0;
 	m_nID		= -1;
+	
+	m_color = cvScalar(0.5, 0.5, 0.5);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -64,6 +66,15 @@ void CScribble::AddObjectPoint(float x, float y)
 {
 	CPointFloat p(x,y);
 	AddObjectPoint(p);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
+
+void CScribble::SetColor(const CvScalar * color)
+{
+	m_color.val[0] = color->val[0];
+	m_color.val[1] = color->val[1];
+	m_color.val[2] = color->val[2];
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
