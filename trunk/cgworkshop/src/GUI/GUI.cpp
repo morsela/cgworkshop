@@ -12,6 +12,11 @@
 #include "../GMM/GMM.h"
 #include "../GraphHandler.h"
 #include "../Segmentator.h"
+
+
+static const CvScalar s_colors[] = {{{0,0,1.0f}},{{0,1.0f,0}},{{0,1.0f,1.0f}},{{1.0f,1.0f,0}},{{0,0,1.0f}},{{0.5f,0.5f,1.0f}}
+	,{{0.5f,0.5f,0.5f}},{{0.5f,1.0f,0.5f}},{{1.0f,0.5f,1.0f}},{{1.0f,0.2f,0.7f}}};
+
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 
@@ -45,11 +50,9 @@ void CGUI::Render()
 	}
 	glEnd();
 
-	const CvScalar colors[] = {{{0,0,1.0f}},{{0,1.0f,0}},{{0,1.0f,1.0f}},{{1.0f,1.0f,0}},{{0,0,1.0f}},{{0.5f,0.5f,1.0f}}
-	,{{0.5f,0.5f,0.5f}},{{0.5f,1.0f,0.5f}},{{1.0f,0.5f,1.0f}},{{1.0f,0.2f,0.7f}}};
-	// render the scribbles
-
 	glDisable( GL_TEXTURE_2D );
+
+	CvScalar * pColor;
 
 	if (!m_scribbles.empty())
 	{
@@ -57,7 +60,8 @@ void CGUI::Render()
 		{
 			for ( int i = 0; i < m_scribbles.size(); i ++)
 			{
-				glColor3f(colors[i].val[0],colors[i].val[1],colors[i].val[2]);
+				pColor = m_scribbles[i].GetColor();
+				glColor3f(pColor->val[0],pColor->val[1],pColor->val[2]);
 				m_scribbles[i].Draw();
 			}
 		}
@@ -274,8 +278,11 @@ int CGUI::Setup(char * pszImagePath, char *pScribbleFile /* = NULL */)
 	m_nCurScribble = 0;
 	m_scribbles.resize(SCRIBBLE_NUMBER);
 	for (int i = 0; i < SCRIBBLE_NUMBER; i++)
+	{
 		m_scribbles[i].SetID(i);
-
+		m_scribbles[i].SetColor(&s_colors[i]);
+		
+	}
 	return 1;
 }
 
