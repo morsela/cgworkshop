@@ -35,7 +35,8 @@ Segmentator::Segmentator(IplImage * Img, CFeatureExtraction *fe, ScribbleVector 
 		m_Probabilities[i] = cvCreateMat(m_pImg->height,m_pImg->width, CV_32FC1 );
 		
 	m_FinalSeg = cvCreateMat(m_pImg->height,m_pImg->width, CV_64FC1 );
-	cvSetZero( m_FinalSeg );
+	
+	cvSet(m_FinalSeg, cvScalar(-1));//initial value stands for background
 
 	m_pSegImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height),m_pImg->depth,m_pImg->nChannels);
 }
@@ -301,7 +302,7 @@ IplImage * Segmentator::GetSegmentedImage(int scribble)
 	return m_pSegImg;
 }
 
-/*IplImage * Segmentator::GetSegmentedImage()
+IplImage * Segmentator::GetSegmentedImage()
 {
 	int step = m_pImg->widthStep;
 	cvCvtColor(m_pImg, m_pSegImg, CV_BGR2YCrCb);
@@ -314,13 +315,20 @@ IplImage * Segmentator::GetSegmentedImage(int scribble)
 		{
 			int value = (int) cvmGet(this->m_FinalSeg,y,x);
 			
-			pData[y*step+x*3+1] = m_scribbles[value].getU();
-			pData[y*step+x*3+2] = m_scribbles[value].getV();
+			if (value ==-1)//background is currently without any color
+				continue;
+			
+			CvScalar * color = m_scribbles[value].GetColor();
+			CvScalar YCCColor;
+			cvCvtColor(color, &YCCColor, CV_BGR2YCrCb);
+			//get the color of the scribble
+			pData[y*step+x*3+1] = YCCColor.val[1];
+			pData[y*step+x*3+2] = YCCColor.val[2];
 		}
 	}
 
 	return m_pSegImg;
-}*/
+}
 // TODO:
 /* Phase 2 - (Soft?) Colorization
  * 
@@ -376,10 +384,10 @@ void Segmentator::AssignColors()
 				int finalSegment = cvmGet(m_FinalSeg,i,j);
 				//finalSegment = 0 --> no segment assigned!! I'm guessing thats wrong?
 				
-				if (!finalSegment && isInNSegment)//no overlapping
+				if (finalSegment==-1 && isInNSegment)//no overlapping
 					finalSegment =  n ;
 				else 
-					if (finalSegment && isInNSegment)//overlapping
+					if (finalSegment!=-1 && isInNSegment)//overlapping
 						finalSegment = decideSegment(i,j, n, finalSegment);
 				cvmSet(m_FinalSeg,i,j,finalSegment);
 
