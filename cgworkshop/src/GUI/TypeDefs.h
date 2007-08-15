@@ -5,6 +5,8 @@
 
 #include "Scribble.h"
 
+#define SCRIBBLE_NUMBER	10
+
 typedef std::vector< CScribble > ScribbleVector;
 
 

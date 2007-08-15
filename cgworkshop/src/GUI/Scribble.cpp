@@ -8,10 +8,7 @@ using namespace std;
 
 CScribble::CScribble()
 {
-	m_pObjectPoints.clear();
-	m_pImagePoints.clear();
-
-	m_nPoints	= 0;
+	Reset();
 	m_nID		= -1;
 	
 	m_color = cvScalar(0.5, 0.5, 0.5);
@@ -21,10 +18,7 @@ CScribble::CScribble()
 
 CScribble::CScribble(int nID)
 {
-	m_pObjectPoints.clear();
-	m_pImagePoints.clear();
-
-	m_nPoints	= 0;
+	Reset();
 	m_nID		= nID;
 }
 
@@ -85,6 +79,8 @@ bool CScribble::Load(ifstream &ifs)
 	CPointFloat pF;
 	CPointInt	pI;
 	char buffer[256];
+	int fRead = 0;
+	int nID, nPoints;
 
 	//clear all scribble points
 	m_pObjectPoints.clear();
@@ -94,8 +90,21 @@ bool CScribble::Load(ifstream &ifs)
 		return false;
 
 	ifs.getline(buffer, 255);
-	sscanf(buffer, "<ID=%d> <PointsNum=%d>", &m_nID, &m_nPoints);
+	sscanf(buffer, "<ID=%d> <PointsNum=%d>", &nID, &nPoints);
+	if (nID != m_nID)
+	{
+		printf("nID=%d", nID);
+		//not the correct scribble
+		ifs.seekg(-1*strlen(buffer),ios_base::cur);
+		return false;
+	}
+	m_nPoints = nPoints;
 	ifs.getline(buffer, 255);
+
+	fRead = sscanf(buffer, "<Color=(%lf,%lf,%lf)>", &m_color.val[0], &m_color.val[1], &m_color.val[2]);
+	//As we crave to support backward compatibility - if no color information, carry on
+	if (fRead)
+		ifs.getline(buffer, 255);
 	sscanf(buffer, "<ObjectPoints>");
 
 	for (i = 0; i < m_nPoints; i++)
@@ -142,12 +151,17 @@ bool CScribble::Save(char * pszFilename)
 	CPointFloat pF;
 	CPointInt	pI;
 
+	//There's no point in saving an empty scribble
+	if (m_nPoints == 0)
+		return true;
+
 	ofs.open(pszFilename, ios::app | ios::out);
 	if (!ofs.is_open())
 		return false;
 
 	ofs << "<ID=" << m_nID << "> ";
 	ofs << "<PointsNum=" << m_nPoints << ">\n";
+	ofs << "<Color=(" << m_color.val[0] << "," << m_color.val[1] << "," << m_color.val[2] << ")>\n";
 
 	ofs << "<ObjectPoints>\n";
 
@@ -203,6 +217,16 @@ CPointInt & CScribble::operator[](int i)
 bool CScribble::Find(CPointInt p)	
 { 
 	return find(m_pImagePoints.begin(), m_pImagePoints.end(), p)!= m_pImagePoints.end(); 
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
+
+void CScribble::Reset()
+{
+	m_pObjectPoints.clear();
+	m_pImagePoints.clear();
+
+	m_nPoints	= 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////

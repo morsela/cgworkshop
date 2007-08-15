@@ -24,19 +24,19 @@ void CLoader::Load(ScribbleVector & scribbles)
 	if (!ifs.is_open())
 		return;
 
-	scribbles.clear();
 
 	//load all the scribbles from the file
-	while (true)
+	for (int i = 0; i < SCRIBBLE_NUMBER; i++)
 	{
-		bool fLoad = scribble.Load(ifs);
+		scribbles[i].Reset();
+		bool fLoad = scribbles[i].Load(ifs);
 		if (ifs.eof() || !fLoad)
-			break;
-
-		scribbles.push_back(scribble);
+			continue;
 	}
 
 	ifs.close();
+
+	printf("Load operation succeeded");
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -55,6 +55,8 @@ void CLoader::Save(ScribbleVector & scribbles)
 	//save all scribbles
 	for (unsigned int i = 0; i < scribbles.size(); i++)
 		scribbles[i].Save(m_pScribbleFile);
+
+	printf("Save operation succeeded");
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
