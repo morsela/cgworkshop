@@ -36,7 +36,7 @@ Segmentator::Segmentator(IplImage * Img, CFeatureExtraction *fe, ScribbleVector 
 		
 	m_FinalSeg = cvCreateMat(m_pImg->height,m_pImg->width, CV_64FC1 );
 	
-	cvSet(m_FinalSeg, cvScalar(-1));//initial value stands for background
+	cvSet(m_FinalSeg, cvScalar(BACKGROUND));//initial value stands for background
 
 	m_pSegImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height),m_pImg->depth,m_pImg->nChannels);
 }
@@ -315,7 +315,7 @@ IplImage * Segmentator::GetSegmentedImage()
 		{
 			int value = (int) cvmGet(this->m_FinalSeg,y,x);
 			
-			if (value ==-1)//background is currently without any color
+			if (value ==BACKGROUND)//background is currently without any color
 				continue;
 			
 			CvScalar * color = m_scribbles[value].GetColor();
@@ -382,12 +382,12 @@ void Segmentator::AssignColors()
 			for (int j=0; j<m_FinalSeg->cols; j++) {
 				int isInNSegment = cvmGet(m_Segmentations[n],i,j);
 				int finalSegment = cvmGet(m_FinalSeg,i,j);
-				//finalSegment = 0 --> no segment assigned!! I'm guessing thats wrong?
 				
-				if (finalSegment==-1 && isInNSegment)//no overlapping
+				
+				if (finalSegment==BACKGROUND && isInNSegment!=BACKGROUND)//no overlapping
 					finalSegment =  n ;
 				else 
-					if (finalSegment!=-1 && isInNSegment)//overlapping
+					if (finalSegment!=BACKGROUND && isInNSegment!=BACKGROUND)//overlapping
 						finalSegment = decideSegment(i,j, n, finalSegment);
 				cvmSet(m_FinalSeg,i,j,finalSegment);
 
