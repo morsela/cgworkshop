@@ -276,28 +276,11 @@ void Segmentator::SegmentOne(int scribble)
 
 IplImage * Segmentator::GetSegmentedImage(int scribble)
 {
-	int step = m_pImg->widthStep;
-	//memcpy((uchar *)m_pSegImg->imageData,m_pImg->imageData, m_pImg->imageSize);
+	cvCvtColor(m_pImg, m_pSegImg, CV_BGR2YCrCb);
 
-	IplImage * ycbcrImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_32F, 3);
-	IplImage * pScribbleColorMat = cvCreateImage(cvSize(1,1), IPL_DEPTH_32F, 3);
+	uchar * pData  = (uchar *)m_pSegImg->imageData;
 	
-	// Convert the input image to ycbcr
-	cvConvert(m_pImg,ycbcrImg);
-	cvCvtColor(ycbcrImg,ycbcrImg,CV_BGR2YCrCb);
-
-	// Get scribble color
-	CvScalar * pScribbleColor = m_scribbles[scribble].GetColor();
-	CvScalar scribbleColorYUV, pixelColor;
-	
-	// Convert to YCrCb (one luma (intensity) channel, two chroma (~color) channels
-	//cvCvtColor(pScribbleColor,&scribbleColorYUV,CV_BGR2YCrCb);
-	printf("Scribble color=%f,%f,%f\n", pScribbleColor->val[0], pScribbleColor->val[1], pScribbleColor->val[2]);
-	cvSet2D(pScribbleColorMat, 0,0,*pScribbleColor);
-	cvScale(pScribbleColorMat, pScribbleColorMat, 128);
-	cvCvtColor(pScribbleColorMat,pScribbleColorMat,CV_BGR2YCrCb);
-	scribbleColorYUV = cvGet2D(pScribbleColorMat,0,0);
-	printf("YUV Scribble color=%f,%f,%f\n", scribbleColorYUV.val[0], scribbleColorYUV.val[1], scribbleColorYUV.val[2]);
+	CvScalar * color = m_scribbles[scribble].GetColor();
 	
 	for (int y = 0; y < m_pImg->height; y++)
 	{
@@ -305,43 +288,44 @@ IplImage * Segmentator::GetSegmentedImage(int scribble)
 		{
 			int value = (int) cvmGet(this->m_Segmentations[scribble],y,x);
 			
-			pixelColor = cvGet2D(ycbcrImg,y,x);
 			if (value == 1)
 			{
-				// Give it the scribble's color
-				pixelColor.val[1]=scribbleColorYUV.val[1];
-				pixelColor.val[2]=scribbleColorYUV.val[2];
-
+				RecolorPixel(pData, y,x, color);
 			}
 			else
 			{
-				// Black and white it.
-				pixelColor.val[1]=0;
-				pixelColor.val[2]=0;
-				
-				// To the moon.
-				pixelColor.val[0] = 0;
+				// Do nothing for now.
 			}
-			
-			cvSet2D(ycbcrImg,y,x,pixelColor);
 			 			
 		}
 	
 	}
-
 	
-	cvCvtColor(ycbcrImg,ycbcrImg,CV_YCrCb2RGB);
-	cvConvert(ycbcrImg,m_pSegImg);
-
-	cvReleaseImage(&ycbcrImg);
-	cvReleaseImage(&pScribbleColorMat);
-
+	cvCvtColor(m_pSegImg, m_pSegImg, CV_YCrCb2BGR);
 	return m_pSegImg;
+}
+
+void Segmentator::RecolorPixel(uchar * pData, int y, int x, CvScalar * pColor)
+{
+	int step = m_pImg->widthStep;
+	
+	char delta = 128;
+	
+	// calculate Y from BGR
+	// Y = 0.299*R + 0.587*G + 0.114*B 
+	char luma = 255 * (0.299*pColor->val[2] + 0.587*pColor->val[1] + 0.114*pColor->val[0]);
+	
+	// calculate Cr from BGR
+	// Cr = (R-Y)*0.713 + delta
+	pData[y*step+x*3+1] = (255*pColor->val[2] - luma)*0.713 + delta;
+	
+	// calculate Cb from BGR
+	// Cb = (B-Y)*0.564 + delta 
+	pData[y*step+x*3+2] = (255*pColor->val[0] - luma)*0.564 + delta;	
 }
 
 IplImage * Segmentator::GetSegmentedImage()
 {
-	int step = m_pImg->widthStep;
 	cvCvtColor(m_pImg, m_pSegImg, CV_BGR2YCrCb);
 
 	uchar * pData  = (uchar *)m_pSegImg->imageData;
@@ -356,14 +340,12 @@ IplImage * Segmentator::GetSegmentedImage()
 				continue;
 			
 			CvScalar * color = m_scribbles[value].GetColor();
-			CvScalar YCCColor;
-			cvCvtColor(color, &YCCColor, CV_BGR2YCrCb);
-			//get the color of the scribble
-			pData[y*step+x*3+1] = YCCColor.val[1];
-			pData[y*step+x*3+2] = YCCColor.val[2];
+			
+			RecolorPixel(pData, y,x, color);
 		}
 	}
 
+	cvCvtColor(m_pSegImg, m_pSegImg, CV_YCrCb2BGR);
 	return m_pSegImg;
 }
 // TODO:
