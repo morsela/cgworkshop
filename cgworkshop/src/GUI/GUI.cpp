@@ -126,6 +126,14 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 
 	case 'l':
 		m_loader.Load(m_scribbles);
+		
+		// FIXME: Remove this, save scribble colors in file, then load it
+		for (int i = 0; i < m_scribbles.size(); i++)
+		{
+			m_scribbles[i].SetID(i);
+			m_scribbles[i].SetColor(&s_colors[i]);
+		
+		}		
 		break;
 
 	case 's':
