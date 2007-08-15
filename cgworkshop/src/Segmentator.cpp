@@ -313,15 +313,17 @@ void Segmentator::RecolorPixel(uchar * pData, int y, int x, CvScalar * pColor)
 	
 	// calculate Y from BGR
 	// Y = 0.299*R + 0.587*G + 0.114*B 
-	char luma = 255 * (0.299*pColor->val[2] + 0.587*pColor->val[1] + 0.114*pColor->val[0]);
-	
+	uchar luma = 255 * (0.299*pColor->val[0] + 0.587*pColor->val[1] + 0.114*pColor->val[2]);
+
 	// calculate Cr from BGR
 	// Cr = (R-Y)*0.713 + delta
-	pData[y*step+x*3+1] = (255*pColor->val[2] - luma)*0.713 + delta;
+	uchar cr = floor((255*pColor->val[0] - luma)*0.713) + delta;
+	pData[y*step+x*3+1] = cr;
 	
 	// calculate Cb from BGR
 	// Cb = (B-Y)*0.564 + delta 
-	pData[y*step+x*3+2] = (255*pColor->val[0] - luma)*0.564 + delta;	
+	uchar cb = floor((255*pColor->val[2] - luma)*0.564) + delta;	
+	pData[y*step+x*3+2] = cb;
 }
 
 IplImage * Segmentator::GetSegmentedImage()
