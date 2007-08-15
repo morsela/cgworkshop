@@ -36,6 +36,8 @@ protected:
 	bool IsInScribble(int i, int j);
 	void AssignColors();
 	int decideSegment(int i,int j, int seg1, int seg2);
+	
+	void RecolorPixel(uchar * pData, int y, int x, CvScalar * pColor);
 
 private:
 
