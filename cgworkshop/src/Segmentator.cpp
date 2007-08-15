@@ -9,7 +9,7 @@
 
 using namespace std;
 
-//#define DISP_SEGMENTATION
+#define DISP_SEGMENTATION
 
 //#define DISP_CONF_MAPS
 
@@ -45,9 +45,10 @@ Segmentator::~Segmentator()
 {
 	cvReleaseImage(&m_pSegImg);
 	for (int i=0;i<m_nScribbles;i++)
+	{
 		cvReleaseMat(&m_Segmentations[i]),
 		cvReleaseMat(&m_Probabilities[i]);
-
+	}
 		
 }
 
@@ -276,28 +277,64 @@ void Segmentator::SegmentOne(int scribble)
 IplImage * Segmentator::GetSegmentedImage(int scribble)
 {
 	int step = m_pImg->widthStep;
-	memcpy((uchar *)m_pSegImg->imageData,m_pImg->imageData, m_pImg->imageSize);
+	//memcpy((uchar *)m_pSegImg->imageData,m_pImg->imageData, m_pImg->imageSize);
 
-	uchar * pData  = (uchar *)m_pSegImg->imageData;
+	IplImage * ycbcrImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_32F, 3);
+	IplImage * pScribbleColorMat = cvCreateImage(cvSize(1,1), IPL_DEPTH_32F, 3);
+	
+	// Convert the input image to ycbcr
+	cvConvert(m_pImg,ycbcrImg);
+	cvCvtColor(ycbcrImg,ycbcrImg,CV_BGR2YCrCb);
 
+	// Get scribble color
+	CvScalar * pScribbleColor = m_scribbles[scribble].GetColor();
+	CvScalar scribbleColorYUV, pixelColor;
+	
+	// Convert to YCrCb (one luma (intensity) channel, two chroma (~color) channels
+	//cvCvtColor(pScribbleColor,&scribbleColorYUV,CV_BGR2YCrCb);
+	printf("Scribble color=%f,%f,%f\n", pScribbleColor->val[0], pScribbleColor->val[1], pScribbleColor->val[2]);
+	cvSet2D(pScribbleColorMat, 0,0,*pScribbleColor);
+	cvScale(pScribbleColorMat, pScribbleColorMat, 128);
+	cvCvtColor(pScribbleColorMat,pScribbleColorMat,CV_BGR2YCrCb);
+	scribbleColorYUV = cvGet2D(pScribbleColorMat,0,0);
+	printf("YUV Scribble color=%f,%f,%f\n", scribbleColorYUV.val[0], scribbleColorYUV.val[1], scribbleColorYUV.val[2]);
+	
 	for (int y = 0; y < m_pImg->height; y++)
 	{
 		for (int x = 0; x < m_pImg->width; x++)
 		{
 			int value = (int) cvmGet(this->m_Segmentations[scribble],y,x);
-
+			
+			pixelColor = cvGet2D(ycbcrImg,y,x);
 			if (value == 1)
-				//make segmented foreground image yellow
-				pData[y*step+x*3] = 0;
+			{
+				// Give it the scribble's color
+				pixelColor.val[1]=scribbleColorYUV.val[1];
+				pixelColor.val[2]=scribbleColorYUV.val[2];
+
+			}
 			else
 			{
-				pData[y*step+x*3+1] = 0;
-				//make segmented background image blue
-				pData[y*step+x*3+2] = 0;
+				// Black and white it.
+				pixelColor.val[1]=0;
+				pixelColor.val[2]=0;
+				
+				// To the moon.
+				pixelColor.val[0] = 0;
 			}
+			
+			cvSet2D(ycbcrImg,y,x,pixelColor);
+			 			
 		}
 	
 	}
+
+	
+	cvCvtColor(ycbcrImg,ycbcrImg,CV_YCrCb2RGB);
+	cvConvert(ycbcrImg,m_pSegImg);
+
+	cvReleaseImage(&ycbcrImg);
+	cvReleaseImage(&pScribbleColorMat);
 
 	return m_pSegImg;
 }
