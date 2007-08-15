@@ -21,6 +21,8 @@ public:
 
 public:
 
+	void Reset();
+
 	void AddObjectPoint(CPointFloat & point);
 
 	void AddObjectPoint(float x, float y);

@@ -26,6 +26,8 @@ void loadTexture( const IplImage *image, unsigned int &id );
 
 void CGUI::Render()
 {
+	CvScalar * pColor;
+
 	// clear the buffers
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -52,22 +54,16 @@ void CGUI::Render()
 
 	glDisable( GL_TEXTURE_2D );
 
-	CvScalar * pColor;
-
-	if (!m_scribbles.empty())
+	glBegin(GL_POINTS);
 	{
-		glBegin(GL_POINTS);
+		for ( int i = 0; i < m_scribbles.size(); i ++)
 		{
-			for ( int i = 0; i < m_scribbles.size(); i ++)
-			{
-				pColor = m_scribbles[i].GetColor();
-				glColor3f(pColor->val[0],pColor->val[1],pColor->val[2]);
-				m_scribbles[i].Draw();
-			}
+			pColor = m_scribbles[i].GetColor();
+			glColor3f(pColor->val[0],pColor->val[1],pColor->val[2]);
+			m_scribbles[i].Draw();
 		}
-		glEnd();
-
 	}
+	glEnd();
 
 	glEnable( GL_TEXTURE_2D );
 
@@ -126,14 +122,6 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 
 	case 'l':
 		m_loader.Load(m_scribbles);
-		
-		// FIXME: Remove this, save scribble colors in file, then load it
-		for (int i = 0; i < m_scribbles.size(); i++)
-		{
-			m_scribbles[i].SetID(i);
-			m_scribbles[i].SetColor(&s_colors[i]);
-		
-		}		
 		break;
 
 	case 's':
@@ -193,7 +181,7 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 		break;
 	}
 
-	if (key >= '0' || key <= '9')
+	if (key >= '0' && key <= '9')
 		m_nCurScribble = key - 48;
 }
 
@@ -289,7 +277,6 @@ int CGUI::Setup(char * pszImagePath, char *pScribbleFile /* = NULL */)
 	{
 		m_scribbles[i].SetID(i);
 		m_scribbles[i].SetColor(&s_colors[i]);
-		
 	}
 	return 1;
 }
