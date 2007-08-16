@@ -9,9 +9,9 @@
 
 using namespace std;
 
-//#define DISP_SEGMENTATION
+#define DISP_SEGMENTATION
 
-//#define DISP_CONF_MAPS
+// #define DISP_CONF_MAPS
 
 //#define NEW_GMM
 
@@ -112,7 +112,7 @@ void Segmentator::SegmentOne(int scribble)
 	printf("PChannels matrix c norm = %lf\n", c_norm);
 	printf("PChannels matrix l1 norm = %lf\n", l1_norm);
 	printf("PChannels matrix l2 norm = %lf\n", l2_norm);
-	cvConvertScale(m_pFe->GetPrincipalChannels(), pChannels, 0.02);
+	cvConvertScale(m_pFe->GetPrincipalChannels(), pChannels, 1);
 
 	CvMat * f_mask = cvCreateMat( 1, pChannels->rows, CV_8UC1 );
 	CvMat * b_mask = cvCreateMat( 1, pChannels->rows, CV_8UC1 );
@@ -350,6 +350,15 @@ IplImage * Segmentator::GetSegmentedImage()
 	cvCvtColor(m_pSegImg, m_pSegImg, CV_YCrCb2BGR);
 	return m_pSegImg;
 }
+
+ /*
+  * Probability average thingy - not tested!
+IplImage * Segmentator::GetSegmentedImage()
+{
+	return m_pSegImg;
+}
+*/
+
 // TODO:
 /* Phase 2 - (Soft?) Colorization
  * 
@@ -395,7 +404,7 @@ IplImage * Segmentator::GetSegmentedImage()
  * 6. Adjust GUI to the new multi-scribble-thingy - make sure loading/saving scribbles still works.
  */
  
-void Segmentator::AssignColors()
+ void Segmentator::AssignColors()
 {
 	for (int n=0; n<m_nScribbles; n++) 
 	{
@@ -415,7 +424,60 @@ void Segmentator::AssignColors()
 			}
 	}
 }
+ /*
+  * Probability average thingy - not tested!
+void Segmentator::AssignColors()
+{
+	
+	cvCvtColor(m_pImg, m_pSegImg, CV_BGR2YCrCb);
 
+	uchar * pData  = (uchar *)m_pSegImg->imageData;
+
+	double probCount;
+	CvScalar avgColor, * pScribbleColor;
+	for (int y = 0; y < m_pImg->height; y++)
+	{
+		for (int x = 0; x < m_pImg->width; x++)
+		{
+			probCount = 0;
+			
+			avgColor.val[0] = 0;
+			avgColor.val[1] = 0;
+			avgColor.val[2] = 0;
+			
+			// Go over all segmentation, average out colors
+			for (int n=0; n<m_nScribbles; n++) 
+			{
+				if (cvmGet(m_Segmentations[n],y,x))
+				{
+					double prob = cvmGet(m_Probabilities[n],y,x);
+					
+					pScribbleColor = m_scribbles[n].GetColor();
+					
+					avgColor.val[0] += prob * pScribbleColor->val[0];
+					avgColor.val[1] += prob * pScribbleColor->val[1];
+					avgColor.val[2] += prob * pScribbleColor->val[2];
+					
+					probCount += prob;
+				}
+			}
+			
+			if (probCount > 0)
+			{
+				avgColor.val[0] /= probCount;
+				avgColor.val[1] /= probCount;
+				avgColor.val[2] /= probCount;
+			}
+
+			else // Classified as background in all segmentations
+				continue;
+
+			RecolorPixel(pData, y,x, &avgColor);
+		}
+	}
+
+}
+*/
 int Segmentator::decideSegment(int i, int j, int seg1, int seg2) {
 
 
