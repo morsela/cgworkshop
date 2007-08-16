@@ -1,8 +1,6 @@
 #include "GMM.h"
 #define MY_PI 3.141592
 
-#define EXPIREMENTAL_PROBABILITY_CALCULATION
-
 #define SMALL_EPS 0.1
 
 CGMM::CGMM():m_model(NULL)
@@ -108,8 +106,8 @@ void CGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)
 	int i;
 	CvMat vector;
 	
-	CvMat * covInv, * temp1, * temp2;
-	covInv = cvCreateMat( m_nDims, m_nDims, CV_32FC1 );
+	CvMat * temp1, * temp2;
+
 	temp1 = cvCreateMat( 1, m_nDims, CV_32FC1 );
 	temp2 = cvCreateMat( 1, m_nDims, CV_32FC1 );
 	
@@ -119,14 +117,11 @@ void CGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)
 	for (i=0;i<pDataSet->rows;i++)
 	{
 		cvInitMatHeader(&vector, 1, pDataSet->cols, CV_32FC1, &pData[i*pDataSet->cols]);
-		double prob = GetProbability(&vector);
-	
-#ifdef EXPIREMENTAL_PROBABILITY_CALCULATION
-		double max = 0;
-		prob = 0;
+		double prob = 0;// = GetProbability(&vector);
+
 		{
 			int i;
-				int j;
+			int j;
 			for (i=0;i<m_nClusters;i++)
 			{
 				if (cvmGet(pWeights, 0,i) == 0)
@@ -145,15 +140,17 @@ void CGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)
 				
 			}
 		}
-#endif
 
 		pProbs->data.fl[i] = prob;
+	
 //		printf("prob=%f\n", prob);
 	}
 
-	cvNormalize(pProbs, pProbs, 0.01, 1, CV_MINMAX);
+
+	//printf("Prob matrix norm=%lf\n", cvNorm(pProbs,0,CV_C));
+	//cvConvertScale(pProbs, pProbs, 1./cvNorm(pProbs,0,CV_C), 0);
+	//cvNormalize(pProbs, pProbs, 0.01, 1, CV_MINMAX);
 	
-	cvReleaseMat(&covInv);
 	cvReleaseMat(&temp1);
 	cvReleaseMat(&temp2);
 }
