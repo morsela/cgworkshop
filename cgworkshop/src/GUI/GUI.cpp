@@ -152,7 +152,7 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 
 		//GraphHandler::init_graph(m_pImg->height, m_pImg->width, fe->GetColorChannels());
 
- 		seg.Segment();
+ 		seg.Colorize();
 
 		// display
 		//IplImage * outImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_8U, 1);
@@ -170,6 +170,10 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 			cvWaitKey(0);
 			cvDestroyWindow(title);	
 		}
+			cvNamedWindow( title, 1 );
+			cvShowImage( title, seg.GetSegmentedImage() );
+			cvWaitKey(0);
+			cvDestroyWindow(title);			
 		//cvSaveImage("test.bmp",outImg);
 		//cvReleaseImage(&outImg);
 
