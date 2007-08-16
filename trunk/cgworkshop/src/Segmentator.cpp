@@ -35,7 +35,7 @@ Segmentator::Segmentator(IplImage * Img, CFeatureExtraction *fe, ScribbleVector 
 		m_Probabilities[i] = cvCreateMat(m_pImg->height,m_pImg->width, CV_32FC1 );
 		
 	m_FinalSeg = cvCreateMat(m_pImg->height,m_pImg->width, CV_64FC1 );
-	
+	m_Background = cvCreateMat(m_pImg->height,m_pImg->width, CV_64FC1 );
 	cvSet(m_FinalSeg, cvScalar(BACKGROUND));//initial value stands for background
 
 	m_pSegImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height),m_pImg->depth,m_pImg->nChannels);
@@ -49,7 +49,7 @@ Segmentator::~Segmentator()
 		cvReleaseMat(&m_Segmentations[i]),
 		cvReleaseMat(&m_Probabilities[i]);
 	}
-		
+	cvReleaseMat(&m_Background);
 }
 
 void Segmentator::getMask(CvMat * segmentation, CvMat * mask, int isBackground) 
@@ -112,7 +112,7 @@ void Segmentator::SegmentOne(int scribble)
 	printf("PChannels matrix c norm = %lf\n", c_norm);
 	printf("PChannels matrix l1 norm = %lf\n", l1_norm);
 	printf("PChannels matrix l2 norm = %lf\n", l2_norm);
-	cvConvertScale(m_pFe->GetPrincipalChannels(), pChannels, 1);
+	cvConvertScale(m_pFe->GetPrincipalChannels(), pChannels, 0.1);
 
 	CvMat * f_mask = cvCreateMat( 1, pChannels->rows, CV_8UC1 );
 	CvMat * b_mask = cvCreateMat( 1, pChannels->rows, CV_8UC1 );
@@ -263,7 +263,7 @@ void Segmentator::SegmentOne(int scribble)
 		b_gmm->NextStep(b_mask);
 #else
 		f_gmm->NextStep(pChannels, f_mask, CvEM::COV_MAT_DIAGONAL);
-		b_gmm->NextStep(pChannels, b_mask, CvEM::COV_MAT_DIAGONAL);	
+		b_gmm->NextStep(pChannels, b_mask, CvEM::COV_MAT_GENERIC);	
 #endif
 			
 		delete graph;
@@ -338,12 +338,19 @@ IplImage * Segmentator::GetSegmentedImage()
 		{
 			int value = (int) cvmGet(this->m_FinalSeg,y,x);
 			
+			
 			if (value ==BACKGROUND)//background is currently without any color
-				continue;
+			{
+				CvScalar color = {0,0,0};
+				RecolorPixel(pData, y,x, &color);
+			}
 			
-			CvScalar * color = m_scribbles[value].GetColor();
+			else
+			{
+				CvScalar * pColor = m_scribbles[value].GetColor();
+				RecolorPixel(pData, y,x, pColor);
+			}
 			
-			RecolorPixel(pData, y,x, color);
 		}
 	}
 
@@ -405,23 +412,54 @@ IplImage * Segmentator::GetSegmentedImage()
  */
  
  void Segmentator::AssignColors()
-{
+{	
+	cvSetZero( m_Background );
+	for (int y = 0; y < m_pImg->height; y++)
+	{
+		for (int x = 0; x < m_pImg->width; x++)
+		{
+			int nCount = 0;
+			// Go over all segmentation, average out colors
+			for (int n=0; n<m_nScribbles; n++) 
+			{
+				if (cvmGet(m_Segmentations[n],y,x))
+				{
+					nCount++;
+				}
+			}
+			
+			// Classified as background in all segmentations
+			if (nCount == 0)
+			{
+				cvmSet(m_Background, y, x, 1);
+			}
+
+			else
+				cvmSet(m_Background, y, x, 0);
+		}
+	}
+	
+	
 	for (int n=0; n<m_nScribbles; n++) 
 	{
 		for (int i=0; i<m_FinalSeg->rows; i++)
+		{
 			for (int j=0; j<m_FinalSeg->cols; j++) {
 				int isInNSegment = cvmGet(m_Segmentations[n],i,j);
 				int finalSegment = cvmGet(m_FinalSeg,i,j);
 				
+				int isBg = cvmGet(m_Background, i,j);
 				
-				if (finalSegment==BACKGROUND && isInNSegment)//no overlapping
+				if (finalSegment==BACKGROUND && (isInNSegment || isBg)) //no overlapping
 					finalSegment =  n ;
-				else if (isInNSegment)//overlapping
+				else if (isInNSegment || isBg)//overlapping
 					finalSegment = decideSegment(i,j, n, finalSegment);
+					
 					
 				cvmSet(m_FinalSeg,i,j,finalSegment);
 
 			}
+		}
 	}
 }
  /*
