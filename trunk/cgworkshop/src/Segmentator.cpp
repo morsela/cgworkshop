@@ -9,9 +9,9 @@
 
 using namespace std;
 
-#define DISP_SEGMENTATION
+//#define DISP_SEGMENTATION
 
-// #define DISP_CONF_MAPS
+//#define DISP_CONF_MAPS
 
 //#define NEW_GMM
 
