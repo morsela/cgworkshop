@@ -9,7 +9,7 @@
 
 using namespace std;
 
-#define DISP_SEGMENTATION
+//#define DISP_SEGMENTATION
 
 //#define DISP_CONF_MAPS
 
@@ -405,11 +405,11 @@ void Segmentator::AssignColors()
 				int finalSegment = cvmGet(m_FinalSeg,i,j);
 				
 				
-				if (finalSegment==BACKGROUND && isInNSegment!=BACKGROUND)//no overlapping
+				if (finalSegment==BACKGROUND && isInNSegment)//no overlapping
 					finalSegment =  n ;
-				else 
-					if (finalSegment!=BACKGROUND && isInNSegment!=BACKGROUND)//overlapping
-						finalSegment = decideSegment(i,j, n, finalSegment);
+				else if (isInNSegment)//overlapping
+					finalSegment = decideSegment(i,j, n, finalSegment);
+					
 				cvmSet(m_FinalSeg,i,j,finalSegment);
 
 			}
@@ -434,7 +434,7 @@ void Segmentator::Colorize()
 {
   	// TODO:	
   	
-  	// Segment();
-  	// AssignColors();
+  	Segment();
+  	AssignColors();
   	// ?
 }
