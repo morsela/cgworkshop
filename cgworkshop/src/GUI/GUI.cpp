@@ -129,7 +129,8 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 		break;
 
 	case 'c':
-		m_scribbles.clear();
+		for (int i = 0; i < m_scribbles.size(); i++)
+			m_scribbles[i].Reset();
 		break;
 
 	case 'r':
@@ -142,7 +143,7 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 		fe->Run();
 
 
-		for (int i = 0; i < SCRIBBLE_NUMBER ; i++)
+		for (int i = 0; i < m_scribbles.size() ; i++)
 			if (m_scribbles[i].IsValid())
 				nScribbles++;
 
