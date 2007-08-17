@@ -68,6 +68,8 @@ void myInitOpenGL()
 
 int main( int argc, char **argv)
 {
+	bool fOk = true;
+
 	if ( argc < 2 )
 	{
 		printf("Usage: image_path [scribble_file]\n");
@@ -75,9 +77,15 @@ int main( int argc, char **argv)
 	}
 
 	if (argc == 3)
-		CGUI::GetInstance()->Setup(argv[1], argv[2]);
+		fOk = CGUI::GetInstance()->Setup(argv[1], argv[2]);
 	else
-		CGUI::GetInstance()->Setup(argv[1]);
+		fOk = CGUI::GetInstance()->Setup(argv[1]);
+
+	if (!fOk)
+	{
+		printf("Invalid image file\n");
+		return (-1);
+	}
 
 	// specify parameters for the window
 	glutInitDisplayMode( GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH );

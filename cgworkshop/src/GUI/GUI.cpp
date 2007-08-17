@@ -260,12 +260,12 @@ void CGUI::AddScribblePoints(int x, int y)
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-int CGUI::Setup(char * pszImagePath, char *pScribbleFile /* = NULL */)
+bool CGUI::Setup(char * pszImagePath, char *pScribbleFile /* = NULL */)
 {
 	// Load the input image
 	m_pImg = cvLoadImage(pszImagePath,1);
 	if (m_pImg == NULL)
-		return -1;
+		return false;
 	
 	SetWindowSize(m_pImg->width, m_pImg->height);
 
@@ -279,7 +279,7 @@ int CGUI::Setup(char * pszImagePath, char *pScribbleFile /* = NULL */)
 		m_scribbles[i].SetID(i);
 		m_scribbles[i].SetColor(&s_colors[i]);
 	}
-	return 1;
+	return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////

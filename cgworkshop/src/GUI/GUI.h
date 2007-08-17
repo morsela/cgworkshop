@@ -16,7 +16,7 @@ public:
 	CGUI() { m_fScribbling = false; }
 	virtual ~CGUI() {}
 
-	int Setup(char * pszImagePath, char * pScribbleFile = NULL);
+	bool Setup(char * pszImagePath, char * pScribbleFile = NULL);
 
 	static CGUI * GetInstance() { static CGUI inst; return &inst; }
 
