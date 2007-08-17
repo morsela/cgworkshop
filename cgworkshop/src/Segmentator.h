@@ -7,14 +7,14 @@
 #include "fe/FeatureExtraction.h"
 #include "GUI/TypeDefs.h"
 
-#define MAX_ITER 5
-#define TOLLERANCE 0.05
+#define MAX_ITER 8
+#define TOLLERANCE 0.005
 #define BACKGROUND -1
 
 class Segmentator 
 {
 public:
-	Segmentator(IplImage * Img, CFeatureExtraction *fe, ScribbleVector &scribbles, int nScribbles);
+	Segmentator(IplImage * Img, ScribbleVector &scribbles, int nScribbles);
 	virtual ~Segmentator();
 
 public:
