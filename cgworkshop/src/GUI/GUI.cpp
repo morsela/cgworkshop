@@ -157,20 +157,24 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 		strcpy(title, "Segmentation");
 		cvNamedWindow( title, 1 );
 		//cvShowImage( title, outImg );
-		
+		char name[10] = "testi.bmp";
 		for (int i=0;i<nScribbles;i++)
 		{
 			cvNamedWindow( title, 1 );
 			cvShowImage( title, seg.GetSegmentedImage(i) );
 			cvWaitKey(0);
 			cvDestroyWindow(title);	
+			
+			name[4] = i+ '0';
+			cvSaveImage(name,seg.GetSegmentedImage(i));
 		}
 			cvNamedWindow( title, 1 );
 			cvShowImage( title, seg.GetSegmentedImage() );
 			cvWaitKey(0);
-			cvDestroyWindow(title);			
-		//cvSaveImage("test.bmp",outImg);
-		//cvReleaseImage(&outImg);
+			cvDestroyWindow(title);
+			name[4]='f';
+			cvSaveImage(name,seg.GetSegmentedImage());
+		
 
 		}
 		break;		
