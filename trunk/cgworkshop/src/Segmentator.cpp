@@ -235,7 +235,7 @@ void Segmentator::SegmentOne(int scribble)
 		
 		PrevFlow = CurFlow;
 		CurFlow = graph->getFlow();
-		if (abs((CurFlow-PrevFlow)/CurFlow)<TOLLERANCE)
+		if (fabs((CurFlow-PrevFlow)/CurFlow)<TOLLERANCE)
 			break;
 
 		printf("Flow is %lf\n" ,graph->getFlow());
