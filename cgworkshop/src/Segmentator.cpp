@@ -418,32 +418,38 @@ IplImage * Segmentator::GetSegmentedImage()
  void Segmentator::AssignColors()
 {	
 	cvSetZero( m_Background );
-	for (int y = 0; y < m_pImg->height; y++)
+	
+	// Keep track of pixels not in any segmentation
+	// Not relevant for only one scribble....
+	if (m_nScribbles > 1)
 	{
-		for (int x = 0; x < m_pImg->width; x++)
+		for (int y = 0; y < m_pImg->height; y++)
 		{
-			int nCount = 0;
-			// Go over all segmentation, average out colors
-			for (int n=0; n<m_nScribbles; n++) 
+			for (int x = 0; x < m_pImg->width; x++)
 			{
-				if (cvmGet(m_Segmentations[n],y,x))
+				int nCount = 0;
+				// Go over all segmentation, average out colors
+				for (int n=0; n<m_nScribbles; n++) 
 				{
-					nCount++;
+					if (cvmGet(m_Segmentations[n],y,x))
+					{
+						nCount++;
+					}
 				}
+				
+				// Classified as background in all segmentations
+				if (nCount == 0)
+				{
+					cvmSet(m_Background, y, x, 1);
+				}
+	
+				else
+					cvmSet(m_Background, y, x, 0);
 			}
-			
-			// Classified as background in all segmentations
-			if (nCount == 0)
-			{
-				cvmSet(m_Background, y, x, 1);
-			}
-
-			else
-				cvmSet(m_Background, y, x, 0);
 		}
 	}
 	
-	
+	// Choose a segmentation for each of the scribbles
 	for (int n=0; n<m_nScribbles; n++) 
 	{
 		for (int i=0; i<m_FinalSeg->rows; i++)
@@ -452,6 +458,7 @@ IplImage * Segmentator::GetSegmentedImage()
 				int isInNSegment = cvmGet(m_Segmentations[n],i,j);
 				int finalSegment = cvmGet(m_FinalSeg,i,j);
 				
+				// BG pixels would be assigned the closest segmentation (probability wise)
 				int isBg = cvmGet(m_Background, i,j);
 				
 				if (finalSegment==BACKGROUND && (isInNSegment || isBg)) //no overlapping
