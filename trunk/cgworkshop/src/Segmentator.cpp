@@ -15,14 +15,12 @@ using namespace std;
 
 //#define NEW_GMM
 
-Segmentator::Segmentator(IplImage * Img, CFeatureExtraction *fe, ScribbleVector & scribbles, int nScribbles) :m_pImg(Img)
+Segmentator::Segmentator(IplImage * Img, ScribbleVector & scribbles, int nScribbles) :m_pImg(Img)
 {
 	m_scribbles = scribbles;
 	//FIXME: it is not logical to assume that the bg is a scribble
 	m_nScribbles = nScribbles;
 
-	m_pFe = fe;
-	
 	m_Segmentations = new CvMat*[m_nScribbles];
 	
 	int i;
@@ -43,6 +41,8 @@ Segmentator::Segmentator(IplImage * Img, CFeatureExtraction *fe, ScribbleVector 
 
 Segmentator::~Segmentator()
 {
+	delete m_pFe;
+
 	cvReleaseImage(&m_pSegImg);
 	for (int i=0;i<m_nScribbles;i++)
 	{
@@ -50,6 +50,7 @@ Segmentator::~Segmentator()
 		cvReleaseMat(&m_Probabilities[i]);
 	}
 	cvReleaseMat(&m_Background);
+
 }
 
 void Segmentator::getMask(CvMat * segmentation, CvMat * mask, int isBackground) 
@@ -68,6 +69,9 @@ void Segmentator::getMask(CvMat * segmentation, CvMat * mask, int isBackground)
 
 void Segmentator::Segment()
 {
+	m_pFe = new CFeatureExtraction(m_pImg);
+	m_pFe->Run();
+
 	printf("Segment\n");
 	int i;
 	for (i=0;i<m_nScribbles;i++)
@@ -231,8 +235,8 @@ void Segmentator::SegmentOne(int scribble)
 		
 		PrevFlow = CurFlow;
 		CurFlow = graph->getFlow();
-		//if (abs((CurFlow-PrevFlow)/CurFlow)<TOLLERANCE)
-		//	break;
+		if (abs((CurFlow-PrevFlow)/CurFlow)<TOLLERANCE)
+			break;
 
 		printf("Flow is %lf\n" ,graph->getFlow());
 

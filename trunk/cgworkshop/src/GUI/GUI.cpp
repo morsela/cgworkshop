@@ -136,22 +136,16 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 	case 'r':
 		{
 
-			int nScribbles = 0;
-		CFeatureExtraction * fe;
+		int nScribbles = 0;
 
-		fe = new CFeatureExtraction(m_pImg);
-		fe->Run();
-
-
+		//Why do we need this?
 		for (int i = 0; i < m_scribbles.size() ; i++)
 			if (m_scribbles[i].IsValid())
 				nScribbles++;
 
 		printf("nScribbles=%d\n", nScribbles);
 
-		Segmentator seg(m_pImg, fe, m_scribbles, nScribbles);
-
-		//GraphHandler::init_graph(m_pImg->height, m_pImg->width, fe->GetColorChannels());
+		Segmentator seg(m_pImg, m_scribbles, nScribbles);
 
  		seg.Colorize();
 
@@ -177,8 +171,6 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 			cvDestroyWindow(title);			
 		//cvSaveImage("test.bmp",outImg);
 		//cvReleaseImage(&outImg);
-
-		delete fe;
 
 		}
 		break;		
