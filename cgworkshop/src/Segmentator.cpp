@@ -460,9 +460,34 @@ void Segmentator::AssignColorAvgColor(int i, int j, CvScalar * color)
 	}
 	
 	// Assigned to multiple segmentations
+	// Average out colors of all assigned scribbles
 	else {
 		
-		// TODO: What to do......	
+		double probCount = 0;
+		
+		color->val[0] = 0;
+		color->val[1] = 0;
+		color->val[2] = 0;	
+			
+		for (int n=0; n<m_nScribbles; n++) 
+		{
+			
+			if (cvmGet(m_Segmentations[n],i,j))
+			{
+				double prob = cvmGet(m_Probabilities[n],i,j);
+				
+				color->val[0] += m_scribbles[n].GetColor()->val[0] * prob;
+				color->val[1] += m_scribbles[n].GetColor()->val[1] * prob;
+				color->val[2] += m_scribbles[n].GetColor()->val[2] * prob;
+				
+				probCount += prob;
+			}
+		}
+			
+		color->val[0] /= probCount;
+		color->val[1] /= probCount;
+		color->val[2] /= probCount;
+	
 	}
 
 	
@@ -520,6 +545,7 @@ void Segmentator::AssignColors()
 		for (int j=0; j<m_FinalSeg->cols; j++) 
 		{
 			AssignColor(i,j,&color,ONE_SEG_PER_PIXEL_METHOD);
+			//AssignColor(i,j,&color,AVG_COLOR_METHOD);
 			RecolorPixel(pData, i,j, &color);
 
 		}
