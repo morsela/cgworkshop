@@ -33,23 +33,25 @@ Segmentator::Segmentator(IplImage * Img, ScribbleVector & scribbles, int nScribb
 		m_Probabilities[i] = cvCreateMat(m_pImg->height,m_pImg->width, CV_32FC1 );
 		
 	m_FinalSeg = cvCreateMat(m_pImg->height,m_pImg->width, CV_64FC1 );
-	m_Background = cvCreateMat(m_pImg->height,m_pImg->width, CV_64FC1 );
+	m_SegmentCount = cvCreateMat(m_pImg->height,m_pImg->width, CV_64FC1 );
 	cvSet(m_FinalSeg, cvScalar(BACKGROUND));//initial value stands for background
 
 	m_pSegImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height),m_pImg->depth,m_pImg->nChannels);
+	m_pTempSegImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height),m_pImg->depth,m_pImg->nChannels);
 }
 
 Segmentator::~Segmentator()
 {
 	delete m_pFe;
 
+	cvReleaseImage(&m_pTempSegImg);
 	cvReleaseImage(&m_pSegImg);
 	for (int i=0;i<m_nScribbles;i++)
 	{
 		cvReleaseMat(&m_Segmentations[i]),
 		cvReleaseMat(&m_Probabilities[i]);
 	}
-	cvReleaseMat(&m_Background);
+	cvReleaseMat(&m_SegmentCount);
 
 }
 
@@ -280,9 +282,9 @@ void Segmentator::SegmentOne(int scribble)
 
 IplImage * Segmentator::GetSegmentedImage(int scribble)
 {
-	cvCvtColor(m_pImg, m_pSegImg, CV_BGR2YCrCb);
+	cvCvtColor(m_pImg, m_pTempSegImg, CV_BGR2YCrCb);
 
-	uchar * pData  = (uchar *)m_pSegImg->imageData;
+	uchar * pData  = (uchar *)m_pTempSegImg->imageData;
 	
 	CvScalar * color = m_scribbles[scribble].GetColor();
 	
@@ -305,8 +307,8 @@ IplImage * Segmentator::GetSegmentedImage(int scribble)
 	
 	}
 	
-	cvCvtColor(m_pSegImg, m_pSegImg, CV_YCrCb2BGR);
-	return m_pSegImg;
+	cvCvtColor(m_pTempSegImg, m_pTempSegImg, CV_YCrCb2BGR);
+	return m_pTempSegImg;
 }
 
 void Segmentator::RecolorPixel(uchar * pData, int y, int x, CvScalar * pColor)
@@ -332,43 +334,9 @@ void Segmentator::RecolorPixel(uchar * pData, int y, int x, CvScalar * pColor)
 
 IplImage * Segmentator::GetSegmentedImage()
 {
-	cvCvtColor(m_pImg, m_pSegImg, CV_BGR2YCrCb);
-
-	uchar * pData  = (uchar *)m_pSegImg->imageData;
-
-	for (int y = 0; y < m_pImg->height; y++)
-	{
-		for (int x = 0; x < m_pImg->width; x++)
-		{
-			int value = (int) cvmGet(this->m_FinalSeg,y,x);
-			
-			
-			if (value ==BACKGROUND)//background is currently without any color
-			{
-				CvScalar color = {0,0,0};
-				RecolorPixel(pData, y,x, &color);
-			}
-			
-			else
-			{
-				CvScalar * pColor = m_scribbles[value].GetColor();
-				RecolorPixel(pData, y,x, pColor);
-			}
-			
-		}
-	}
-
-	cvCvtColor(m_pSegImg, m_pSegImg, CV_YCrCb2BGR);
 	return m_pSegImg;
 }
 
- /*
-  * Probability average thingy - not tested!
-IplImage * Segmentator::GetSegmentedImage()
-{
-	return m_pSegImg;
-}
-*/
 
 // TODO:
 /* Phase 2 - (Soft?) Colorization
@@ -415,118 +383,151 @@ IplImage * Segmentator::GetSegmentedImage()
  * 6. Adjust GUI to the new multi-scribble-thingy - make sure loading/saving scribbles still works.
  */
  
- void Segmentator::AssignColors()
-{	
-	cvSetZero( m_Background );
-	
-	// Keep track of pixels not in any segmentation
-	// Not relevant for only one scribble....
-	if (m_nScribbles > 1)
-	{
-		for (int y = 0; y < m_pImg->height; y++)
-		{
-			for (int x = 0; x < m_pImg->width; x++)
-			{
-				int nCount = 0;
-				// Go over all segmentation, average out colors
-				for (int n=0; n<m_nScribbles; n++) 
-				{
-					if (cvmGet(m_Segmentations[n],y,x))
-					{
-						nCount++;
-					}
-				}
-				
-				// Classified as background in all segmentations
-				if (nCount == 0)
-				{
-					cvmSet(m_Background, y, x, 1);
-				}
-	
-				else
-					cvmSet(m_Background, y, x, 0);
-			}
-		}
-	}
-	
-	// Choose a segmentation for each of the scribbles
-	for (int n=0; n<m_nScribbles; n++) 
-	{
-		for (int i=0; i<m_FinalSeg->rows; i++)
-		{
-			for (int j=0; j<m_FinalSeg->cols; j++) {
-				int isInNSegment = cvmGet(m_Segmentations[n],i,j);
-				int finalSegment = cvmGet(m_FinalSeg,i,j);
-				
-				// BG pixels would be assigned the closest segmentation (probability wise)
-				int isBg = cvmGet(m_Background, i,j);
-				
-				if (finalSegment==BACKGROUND && (isInNSegment || isBg)) //no overlapping
-					finalSegment =  n ;
-				else if (isInNSegment || isBg)//overlapping
-					finalSegment = decideSegment(i,j, n, finalSegment);
-					
-					
-				cvmSet(m_FinalSeg,i,j,finalSegment);
 
-			}
-		}
-	}
-}
- /*
-  * Probability average thingy - not tested!
-void Segmentator::AssignColors()
+void Segmentator::AssignColorOneSeg(int i, int j, CvScalar * color) 
 {
+	int finalSegment = BACKGROUND;
+	for (int n=0; n<m_nScribbles; n++) 
+	{	
+		int isInNSegment = cvmGet(m_Segmentations[n],i,j);	
+		int isBg = (cvmGet(m_SegmentCount, i,j) == 0);
+		
+		// Keep one sided segmentation working...
+		if (m_nScribbles == 1)
+			isBg = 0;
+				
+		if (finalSegment==BACKGROUND && (isInNSegment || isBg)) //no overlapping
+			finalSegment =  n;
+		else if (isInNSegment || isBg)//overlapping
+			finalSegment = decideSegment(i,j, n, finalSegment);	
+	}
 	
-	cvCvtColor(m_pImg, m_pSegImg, CV_BGR2YCrCb);
+	if (finalSegment == BACKGROUND)
+	{
+		color->val[0] = 0;
+		color->val[1] = 0;
+		color->val[2] = 0;
+	}
+	else
+		memcpy(color->val, m_scribbles[finalSegment].GetColor()->val, sizeof(CvScalar));
+	
+}
 
-	uchar * pData  = (uchar *)m_pSegImg->imageData;
 
-	double probCount;
-	CvScalar avgColor, * pScribbleColor;
+void Segmentator::AssignColorAvgColor(int i, int j, CvScalar * color) 
+{
+	int segCount = cvmGet(m_SegmentCount, i,j);
+	
+	// Special case of one sided segmentation
+	// Color background pixels BW
+	if (segCount == 0 && m_nScribbles == 1)
+	{
+		color->val[0] = 0;
+		color->val[1] = 0;
+		color->val[2] = 0;
+	}
+	
+	// Didn't assign to anything, assign to most probable one
+	else if (segCount == 0)
+	{
+		double maxProb = 0;
+		int maxSeg = 0;
+		for (int n=0; n<m_nScribbles; n++) 
+		{
+			double prob = cvmGet(m_Probabilities[n],i,j);
+			if (prob > maxProb)
+			{
+				maxProb = prob;
+				maxSeg = n;
+			}
+		}
+		
+		memcpy(color->val, m_scribbles[maxSeg].GetColor()->val, sizeof(CvScalar));	
+	}
+	
+	// Only assigned to one segmentation
+	else if (segCount == 1)
+	{
+		// Find it
+		int n;
+		for (n=0; n<m_nScribbles; n++) 
+		{
+			if (cvmGet(m_Segmentations[n],i,j))
+				break;
+		}
+		
+		memcpy(color->val, m_scribbles[n].GetColor()->val, sizeof(CvScalar));	
+	}
+	
+	// Assigned to multiple segmentations
+	else {
+		
+		// TODO: What to do......	
+	}
+
+	
+}
+
+void Segmentator::AssignColor(int i, int j, CvScalar * color, int method) 
+{
+	switch (method)
+	{
+		case ONE_SEG_PER_PIXEL_METHOD:
+			AssignColorOneSeg(i,j,color);
+			break;
+		case AVG_COLOR_METHOD:
+			AssignColorAvgColor(i,j,color);
+			break;			
+		default:
+			AssignColorOneSeg(i,j,color);
+			break;
+	}			
+}
+
+void Segmentator::CountSegments()
+{
+	cvSetZero( m_SegmentCount );
+	
 	for (int y = 0; y < m_pImg->height; y++)
 	{
 		for (int x = 0; x < m_pImg->width; x++)
 		{
-			probCount = 0;
-			
-			avgColor.val[0] = 0;
-			avgColor.val[1] = 0;
-			avgColor.val[2] = 0;
-			
-			// Go over all segmentation, average out colors
+			int nCount = 0;
 			for (int n=0; n<m_nScribbles; n++) 
 			{
 				if (cvmGet(m_Segmentations[n],y,x))
 				{
-					double prob = cvmGet(m_Probabilities[n],y,x);
-					
-					pScribbleColor = m_scribbles[n].GetColor();
-					
-					avgColor.val[0] += prob * pScribbleColor->val[0];
-					avgColor.val[1] += prob * pScribbleColor->val[1];
-					avgColor.val[2] += prob * pScribbleColor->val[2];
-					
-					probCount += prob;
+					nCount++;
 				}
 			}
 			
-			if (probCount > 0)
-			{
-				avgColor.val[0] /= probCount;
-				avgColor.val[1] /= probCount;
-				avgColor.val[2] /= probCount;
-			}
+			cvmSet(m_SegmentCount, y, x, nCount);
+		}
+	}	
+}
 
-			else // Classified as background in all segmentations
-				continue;
+void Segmentator::AssignColors()
+{	
+	CountSegments();
 
-			RecolorPixel(pData, y,x, &avgColor);
+	cvCvtColor(m_pImg, m_pSegImg, CV_BGR2YCrCb);
+
+	uchar * pData  = (uchar *)m_pSegImg->imageData;
+	
+	CvScalar color;
+	for (int i=0; i<m_FinalSeg->rows; i++)
+	{
+		for (int j=0; j<m_FinalSeg->cols; j++) 
+		{
+			AssignColor(i,j,&color,ONE_SEG_PER_PIXEL_METHOD);
+			RecolorPixel(pData, i,j, &color);
+
 		}
 	}
 
+	cvCvtColor(m_pSegImg, m_pSegImg, CV_YCrCb2BGR);
 }
-*/
+
 int Segmentator::decideSegment(int i, int j, int seg1, int seg2) {
 
 

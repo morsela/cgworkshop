@@ -23,7 +23,7 @@ double getDist(CvMat * smoothness, int i, int j) {
 
 double calcDist(CvMat * smoothness, int i, int j, double beta) {
 	
-	double alpha = 35;
+	double alpha = 40;
 	return alpha*exp(-getDist(smoothness,i,j)/beta);
 }
 

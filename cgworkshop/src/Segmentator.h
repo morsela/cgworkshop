@@ -11,6 +11,9 @@
 #define TOLLERANCE 0.005
 #define BACKGROUND -1
 
+#define ONE_SEG_PER_PIXEL_METHOD 0
+#define AVG_COLOR_METHOD 1
+
 class Segmentator 
 {
 public:
@@ -38,6 +41,12 @@ protected:
 	int decideSegment(int i,int j, int seg1, int seg2);
 	
 	void RecolorPixel(uchar * pData, int y, int x, CvScalar * pColor);
+	
+	void CountSegments();
+	
+	void AssignColor(int i, int j, CvScalar * color, int method);
+	void AssignColorOneSeg(int i, int j, CvScalar * color);
+	void AssignColorAvgColor(int i, int j, CvScalar * color);
 
 private:
 
@@ -47,8 +56,9 @@ private:
 	CFeatureExtraction *m_pFe;
 	IplImage * m_pImg;
 	IplImage* m_pSegImg;
+	IplImage* m_pTempSegImg;
 	CvMat ** m_Segmentations;
-	CvMat * m_Background;
+	CvMat * m_SegmentCount;
 	CvMat * m_FinalSeg;
 	CvMat ** m_Probabilities;
 	
