@@ -68,6 +68,7 @@ void CFeatureExtraction::CalcHistogram(IplImage * pImg, CvMat * pHistogram)
 	int h = m_nHeight;
 	uchar * pData  = (uchar *)pImg->imageData;
 	
+	cvSetZero(pHistogram);
 	for (int y=0; y<h; y++)
 	{
 		for (int x=0;x<w; x++)

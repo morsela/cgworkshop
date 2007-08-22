@@ -234,11 +234,11 @@ void Segmentator::SegmentOne(int scribble)
 		graph->assign_weights(Bu, Fu);
 		
 		graph->do_MinCut(*m_Segmentations[scribble]);
-		this->CalcAverage(conf_map_bg, conf_map_fg, scribble);
+		
 		PrevFlow = CurFlow;
 		CurFlow = graph->getFlow();
 		if (fabs((CurFlow-PrevFlow)/CurFlow)<TOLLERANCE)
-			break;
+			n = MAX_ITER;
 
 		printf("Flow is %lf\n" ,graph->getFlow());
 
@@ -259,6 +259,8 @@ void Segmentator::SegmentOne(int scribble)
 		cvWaitKey(0);
 		cvDestroyWindow(title);				
 #endif
+
+		CalcAverage(conf_map_bg, conf_map_fg,scribble);
 
 		// Update GMM
 		getMask(m_Segmentations[scribble], f_mask,0);
@@ -322,7 +324,7 @@ double getDist1(CvMat * smoothness, int i, int j) {
 
 double calcDist1(CvMat * smoothness, int i, int j, double beta) {
 	
-	double alpha = 40;
+	double alpha = 1;
 	return alpha*exp(-getDist1(smoothness,i,j)/beta);
 }
 
@@ -352,8 +354,15 @@ void Segmentator::CalcAverage(CvMat * Bg, CvMat * Fg, int scribble) {
 				E1 += -log(cvmGet(Bg, i,j));
 		}
 
-	printf("E1 Average is %lf\n", E1);
-	printf("E2 Average is %lf\n", E2);
+
+		
+
+		}
+		
+		
+	printf("----------------\n");	
+	printf("E1=%lf, E2=%lf, E1/E2=%lf, E2/E1=%lf\n", E1, E2, E1/E2, E2/E1);
+	printf("----------------\n");
 
 
 }
@@ -456,8 +465,15 @@ void Segmentator::AssignColorOneSeg(int i, int j, CvScalar * color)
 		color->val[2] = 0;
 	}
 	else
+	{
 		memcpy(color->val, m_scribbles[finalSegment].GetColor()->val, sizeof(CvScalar));
-	
+		
+		double prob = cvmGet(m_Probabilities[finalSegment],i,j);	
+		
+		//color->val[0] *= prob;
+		//color->val[1] *= prob;
+		//color->val[2] *= prob;		
+	}
 }
 
 
@@ -580,7 +596,11 @@ void Segmentator::CountSegments()
 
 void Segmentator::AssignColors()
 {	
+	printf("Assigning colors......\n");
 	CountSegments();
+	
+	for (int n=0; n<m_nScribbles; n++) 
+		cvNormalize(m_Probabilities[n], m_Probabilities[n], 0, 1, CV_MINMAX);
 
 	cvCvtColor(m_pImg, m_pSegImg, CV_BGR2YCrCb);
 
