@@ -1,7 +1,7 @@
 #include <math.h>
 #include "kGMM.h"
 
-#define SMALL_EPS 0.01
+#define SMALL_EPS 0.1
 #define MY_PI 3.141592
 
 CkGMM::CkGMM(int clusters, int max_iterations, double accuracy)
@@ -44,7 +44,7 @@ void CkGMM::Init(CvMat * pDataSet, CvMat * pActiveMask)
     m_pDetVec = new double[m_nClusters];
     
     
-    m_ppCompData = new (CvMat*)[m_nSamplesCount];
+    m_ppCompData = new CvMat*[m_nSamplesCount];
     for (i=0;i<m_nSamplesCount;i++)
     	m_ppCompData[i] = new CvMat;
 
@@ -347,7 +347,7 @@ void CkGMM::ComputerProbabilities(CvMat * pActiveMask)
 
 		m_pLabelMat->data.ptr[i] = cluster;
 		
-		m_pProbabilityMat->data.fl[i] = prob;
+		m_pProbabilityMat->data.fl[i] = max;
 		//printf("Prob[%d]=%lf\n", m_pProbabilityMat->data.fl[i]);
 	}
 
@@ -355,7 +355,7 @@ void CkGMM::ComputerProbabilities(CvMat * pActiveMask)
 	cvReleaseMat(&temp1);
 	cvReleaseMat(&temp2);
 
-	cvNormalize(m_pProbabilityMat, m_pProbabilityMat, 0.01, 1, CV_MINMAX);
+	// cvNormalize(m_pProbabilityMat, m_pProbabilityMat, 0.01, 1, CV_MINMAX);
 
 	printf("CkGMM::ComputerProbabilities out\n");		
 }
