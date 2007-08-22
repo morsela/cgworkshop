@@ -11,7 +11,7 @@ using namespace std;
 class GraphHandler {
 
 public:
-
+	double static beta;
 	GraphHandler();
 	
 	~GraphHandler();
@@ -37,7 +37,7 @@ private:
 
 
 	Graph *m_igraph;
-	double static beta;
+	
 	Graph::flowtype m_flow;
 	map<int ,map< int, Graph::node_id> > m_nodes;
 

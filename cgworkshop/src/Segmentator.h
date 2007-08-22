@@ -32,7 +32,7 @@ public:
 protected:
 	
 	void SegmentOne(int scribble);
-	void CalcAverage();
+	void CalcAverage(CvMat * Bg, CvMat * Fg, int scribble);
 	
 	void getMask(CvMat * segmentation, CvMat * mask, int isBackground);
 

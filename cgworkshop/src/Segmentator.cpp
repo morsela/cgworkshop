@@ -311,7 +311,7 @@ IplImage * Segmentator::GetSegmentedImage(int scribble)
 	return m_pTempSegImg;
 }
 
-double getDist(CvMat * smoothness, int i, int j) {
+double getDist1(CvMat * smoothness, int i, int j) {
 	double result=0;
 	
 	for (int k = 0; k<3; k++)
@@ -320,7 +320,13 @@ double getDist(CvMat * smoothness, int i, int j) {
 	return result;
 }
 
-void Segmentator::CalcAverage(CvMat * Bg, CvMat * Fg int scribble) {
+double calcDist1(CvMat * smoothness, int i, int j, double beta) {
+	
+	double alpha = 40;
+	return alpha*exp(-getDist1(smoothness,i,j)/beta);
+}
+
+void Segmentator::CalcAverage(CvMat * Bg, CvMat * Fg, int scribble) {
 
 	double E1 =0.0, E2 = 0.0;
 
@@ -337,7 +343,7 @@ void Segmentator::CalcAverage(CvMat * Bg, CvMat * Fg int scribble) {
 					seg2 = cvmGet(Segmentation, i+di, j+dj);
 
 					if (seg1!=seg2)
-						E2 += getDist(m_pFe->GetColorChannels(), i*cols +j, (i+di)*cols +(j+dj));
+						E2 += calcDist1(m_pFe->GetColorChannels(), i*cols +j, (i+di)*cols +(j+dj), GraphHandler::beta);
 				}
 
 			if (seg1==0) //bg
