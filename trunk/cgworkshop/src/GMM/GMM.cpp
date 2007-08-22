@@ -121,7 +121,6 @@ void CGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)
 
 		{
 			int i;
-			int j;
 			for (i=0;i<m_nClusters;i++)
 			{
 				if (cvmGet(pWeights, 0,i) == 0)

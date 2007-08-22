@@ -18,7 +18,6 @@ void myRenderFunc()
 void myReshapeFunc(int x , int y )
 {
 	CGUI::GetInstance()->Reshape(x, y);
-	glutPostRedisplay();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -90,7 +89,7 @@ int main( int argc, char **argv)
 	// specify parameters for the window
 	glutInitDisplayMode( GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH );
 	glutInitWindowPosition( 100, 100 );
-	glutInitWindowSize( CGUI::GetInstance()->GetWidth(), CGUI::GetInstance()->GetHeight() );
+	glutInitWindowSize( CGUI::GetInstance()->GetWindowWidth(), CGUI::GetInstance()->GetWindowHeight() );
 	
 	// create the window
 	glutCreateWindow( "Let's scribble" );

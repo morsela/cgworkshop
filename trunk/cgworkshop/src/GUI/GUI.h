@@ -7,13 +7,13 @@
 
 #include "TypeDefs.h"
 #include "Loader.h"
+#include "ControlPanel.h"
 
 class CGUI
 {
 public:
 	
-	//TODO: move to cpp. you are lazy!
-	CGUI() { m_fScribbling = false; }
+	CGUI();
 	virtual ~CGUI() {}
 
 	bool Setup(char * pszImagePath, char * pScribbleFile = NULL);
@@ -24,11 +24,17 @@ public:
 
 public:
 
-	int GetWidth() const { return m_nWindowWidth; }
+	int GetWindowWidth() const { return m_nWindowWidth; }
 	
-	int GetHeight() const { return m_nWindowHeight; }
+	int GetWindowHeight() const { return m_nWindowHeight; }
 
 	void SetWindowSize(int x, int y) { m_nWindowWidth = x; m_nWindowHeight = y; }
+
+	int GetImageWidth() const { return m_nImageWidth; }
+
+	int GetImageHeight() const { return m_nImageHeight; }
+
+	void SetImageSize(int x, int y) { m_nImageWidth = x; m_nImageHeight = y; }
 
 	const IplImage * const GetImage() { return m_pImg; }
 
@@ -48,16 +54,26 @@ protected:
 	
 	void AddScribblePoints(int x, int y);
 
+	friend class CControlPanel;
+
 protected:
 	
+	CControlPanel		m_ctrlPanel;
+
 	IplImage *			m_pImg;
 
 	int					m_nWindowWidth;
 
 	int					m_nWindowHeight;
 
+	int					m_nImageWidth;
+
+	int					m_nImageHeight;
+
 	// the bounding box for the opengl orthogonal projection
 	float 				m_orthoBBox[4];
+
+	float 				m_orthoBBox2[4];
 
 	unsigned int		m_textures[1];
 
@@ -69,6 +85,8 @@ protected:
 	CLoader				m_loader;
 
 	int					m_nCurScribble;
+
+	int					m_nScribblesNum;
 
 };
 
