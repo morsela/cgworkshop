@@ -36,7 +36,7 @@ void CLoader::Load(ScribbleVector & scribbles)
 
 	ifs.close();
 
-	printf("Load operation succeeded");
+	printf("Load operation succeeded\n");
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -56,7 +56,7 @@ void CLoader::Save(ScribbleVector & scribbles)
 	for (unsigned int i = 0; i < scribbles.size(); i++)
 		scribbles[i].Save(m_pScribbleFile);
 
-	printf("Save operation succeeded");
+	printf("Save operation succeeded\n");
 }
 
 ///////////////////////////////////////////////////////////////////////////////////

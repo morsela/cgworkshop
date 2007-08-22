@@ -355,11 +355,6 @@ void Segmentator::CalcAverage(CvMat * Bg, CvMat * Fg, int scribble) {
 		}
 
 
-		
-
-		}
-		
-		
 	printf("----------------\n");	
 	printf("E1=%lf, E2=%lf, E1/E2=%lf, E2/E1=%lf\n", E1, E2, E1/E2, E2/E1);
 	printf("----------------\n");

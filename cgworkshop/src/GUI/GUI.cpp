@@ -13,14 +13,19 @@
 #include "../GraphHandler.h"
 #include "../Segmentator.h"
 
-
-static const CvScalar s_colors[] = {{{1.0f,0,0}},{{0,1.0f,0}},{{0,0,1.0f}},{{1.0f,1.0f,0}},{{0,1.0f,1.0f}},{{1.0f,0,1.0f}}
-	,{{1.0f,0,0.5f}},{{0.5f,0,1.0f}},{{0,0.5f,1.0f}},{{1.0f,0.5f,0}}};
-
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 
 void loadTexture( const IplImage *image, unsigned int &id );
+
+///////////////////////////////////////////////////////////////////////////////////
+
+CGUI::CGUI() 
+{ 
+	m_fScribbling		= false;
+	m_nCurScribble		= UNDEFINED;
+	m_nScribblesNum		= -1;
+}
 
 ///////////////////////////////////////////////////////////////////////////////////
 
@@ -46,9 +51,9 @@ void CGUI::Render()
 		glTexCoord2f( 0.0, 0.0 );
 		glVertex3f( m_orthoBBox[0], m_orthoBBox[1], 0);
 		glTexCoord2f( 1.0, 0.0 );
-		glVertex3f( m_orthoBBox[2], m_orthoBBox[1], 0);
+		glVertex3f( m_orthoBBox[2] - m_ctrlPanel.GetWidth(), m_orthoBBox[1], 0);
 		glTexCoord2f( 1.0, 1.0 );
-		glVertex3f( m_orthoBBox[2], m_orthoBBox[3], 0);
+		glVertex3f( m_orthoBBox[2] - m_ctrlPanel.GetWidth(), m_orthoBBox[3], 0);
 	}
 	glEnd();
 
@@ -56,14 +61,16 @@ void CGUI::Render()
 
 	glBegin(GL_POINTS);
 	{
-		for ( int i = 0; i < m_scribbles.size(); i ++)
+		for (unsigned int i = 0; i < m_scribbles.size(); i ++)
 		{
 			pColor = m_scribbles[i].GetColor();
 			glColor3f(pColor->val[0],pColor->val[1],pColor->val[2]);
 			m_scribbles[i].Draw();
 		}
 	}
-	glEnd();
+	glEnd();	
+
+	m_ctrlPanel.Draw();
 
 	glEnable( GL_TEXTURE_2D );
 
@@ -85,10 +92,8 @@ void CGUI::Reshape(int x , int y)
 		return;
 	}
 
-	SetWindowSize(x,y);
-
 	// define the viewport
-	glViewport( 0, 0, x, y );
+	glViewport( 0, 0, m_nWindowWidth, m_nWindowHeight );
 	
 	// initialize the projection matrix
 	glMatrixMode( GL_PROJECTION );
@@ -101,6 +106,8 @@ void CGUI::Reshape(int x , int y)
 	m_orthoBBox[1] = -(float)y * 0.5;				// MIN Y
 	m_orthoBBox[2] =  (float)x * 0.5 * ratio;		// MAX X
 	m_orthoBBox[3] =  (float)y * 0.5;				// MAX Y
+
+	m_ctrlPanel.Setup(m_orthoBBox[2] - m_ctrlPanel.GetWidth(), m_orthoBBox[3], m_nWindowHeight);
 
 	// the orthogonal projection
 	glOrtho( m_orthoBBox[0],	// left
@@ -129,8 +136,11 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 		break;
 
 	case 'c':
-		for (int i = 0; i < m_scribbles.size(); i++)
+		//m_ctrlPanel.Reset();
+		for (unsigned int i = 0; i < m_scribbles.size(); i++)
 			m_scribbles[i].Reset();
+		m_nScribblesNum		= -1;
+		m_nCurScribble		= UNDEFINED;
 		break;
 
 	case 'r':
@@ -139,7 +149,7 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 		int nScribbles = 0;
 
 		//Why do we need this?
-		for (int i = 0; i < m_scribbles.size() ; i++)
+		for (unsigned int i = 0; i < m_scribbles.size() ; i++)
 			if (m_scribbles[i].IsValid())
 				nScribbles++;
 
@@ -182,8 +192,8 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 		break;
 	}
 
-	if (key >= '0' && key <= '9')
-		m_nCurScribble = key - 48;
+	/*if (key >= '0' && key <= '9')
+		m_nCurScribble = key - 48;*/
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -201,11 +211,28 @@ void CGUI::MouseAction(int button, int state, int x, int y)
 			// pressed the left button
 		if ( state == GLUT_DOWN )
 		{
-			if (m_nCurScribble < SCRIBBLE_NUMBER && m_nCurScribble >= 0)
-			{	
-				AddScribblePoints(x,y);
-				
-				m_fScribbling = true;
+			//check if the left click was on the control panel side
+			if (m_orthoBBox[0] * ( 1 - 2 * (float)x / GetWindowWidth() ) > m_orthoBBox[2] - m_ctrlPanel.GetWidth())
+				m_ctrlPanel.Choose(m_orthoBBox[0] * ( 1 - 2 * (float)x / GetWindowWidth()),
+									m_orthoBBox[3] * ( 1 - 2 * (float)y / GetWindowHeight()));
+			else
+			{
+				CvScalar color;
+				int nCurScribble = m_ctrlPanel.GetChosenColor(color);
+				if (nCurScribble != UNDEFINED)
+				{
+					if (nCurScribble != m_nCurScribble)
+					{
+						m_nScribblesNum++;
+						printf("m_nScribblesNum=%d\n", m_nScribblesNum);
+						m_scribbles[m_nScribblesNum].SetID(nCurScribble);
+						m_scribbles[m_nScribblesNum].SetColor(&color);
+						m_nCurScribble = nCurScribble;
+					}
+					
+					AddScribblePoints(x,y);
+					m_fScribbling = true;
+				}
 			}
 		}
 
@@ -230,30 +257,39 @@ void CGUI::MouseMove(int x, int y)
 void CGUI::AddScribblePoints(int x, int y)
 {
 	int origY;
+	int nLineWidth;
 
 	int height = m_pImg->height;
 	int width  = m_pImg->width;
 
-	float ratio_x = (float) width / GetWidth();
-	float ratio_y = (float)	height / GetHeight();
+	float ratio_x = (float) GetImageWidth() / GetWindowWidth();
+	float ratio_y = (float)	GetImageHeight() / GetWindowHeight();
 
-	for (int i = x - 1; i <= x + 1; i++)
+	m_ctrlPanel.GetChosenLineWidth(nLineWidth);
+	nLineWidth = (nLineWidth - 1) / 2;
+	for (int i = x - nLineWidth; i <= x + nLineWidth; i++)
 	{
-		for (int j = y - 1; j <= y + 1; j++)
+		for (int j = y - nLineWidth; j <= y + nLineWidth; j++)
 		{
 			if( m_pImg->origin == IPL_ORIGIN_TL)
 				origY = j;
 			else
-				origY = GetHeight() - j;
+				origY = GetImageHeight() - j;
+
+			if (m_orthoBBox[0] * ( 1 - 2 * (float)i / GetWindowWidth() ) > m_orthoBBox[2] - m_ctrlPanel.GetWidth())
+			{
+				printf("Out of bounds.");
+				continue;
+			}
 
 			CPointInt pI = CPointInt( (int)(ratio_x * i), (int)(origY * ratio_y));
 
 			// the start of the vector
-			CPointFloat pF = CPointFloat( m_orthoBBox[0] * ( 1 - 2 * (float)i / GetWidth() ),
-										m_orthoBBox[3] * ( 1 - 2 * (float)j / GetHeight() ));
+			CPointFloat pF = CPointFloat( m_orthoBBox[0] * ( 1 - 2 * (float)i / GetWindowWidth() ),
+										m_orthoBBox[3] * ( 1 - 2 * (float)j / GetWindowHeight() ));
 
-			m_scribbles[m_nCurScribble].AddImagePoint (pI);
-			m_scribbles[m_nCurScribble].AddObjectPoint(pF);
+			m_scribbles[m_nScribblesNum].AddImagePoint (pI);
+			m_scribbles[m_nScribblesNum].AddObjectPoint(pF);
 		}
 	}
 }
@@ -267,12 +303,13 @@ bool CGUI::Setup(char * pszImagePath, char *pScribbleFile /* = NULL */)
 	if (m_pImg == NULL)
 		return false;
 	
-	SetWindowSize(m_pImg->width, m_pImg->height);
+	SetImageSize(m_pImg->width, m_pImg->height);
+	SetWindowSize(m_pImg->width + m_ctrlPanel.GetWidth(), m_pImg->height);
 
 	if (pScribbleFile)
 		m_loader.Setup(pScribbleFile);
 
-	m_nCurScribble = 0;
+	m_nCurScribble = UNDEFINED;
 	m_scribbles.resize(SCRIBBLE_NUMBER);
 	for (int i = 0; i < SCRIBBLE_NUMBER; i++)
 	{
