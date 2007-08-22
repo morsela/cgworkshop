@@ -234,7 +234,7 @@ void Segmentator::SegmentOne(int scribble)
 		graph->assign_weights(Bu, Fu);
 		
 		graph->do_MinCut(*m_Segmentations[scribble]);
-		
+		this->CalcAverage(conf_map_bg, conf_map_fg, scribble);
 		PrevFlow = CurFlow;
 		CurFlow = graph->getFlow();
 		if (fabs((CurFlow-PrevFlow)/CurFlow)<TOLLERANCE)
@@ -347,14 +347,13 @@ void Segmentator::CalcAverage(CvMat * Bg, CvMat * Fg, int scribble) {
 				}
 
 			if (seg1==0) //bg
-				E1 += cvmGet(Fg, i, j);
+				E1 += -log(cvmGet(Fg, i, j));
 			else //fg 
-				E1 += cvmGet(Bg, i,j);
-
-
-		
-
+				E1 += -log(cvmGet(Bg, i,j));
 		}
+
+	printf("E1 Average is %lf\n", E1);
+	printf("E2 Average is %lf\n", E2);
 
 
 }
