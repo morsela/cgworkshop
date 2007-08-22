@@ -311,6 +311,48 @@ IplImage * Segmentator::GetSegmentedImage(int scribble)
 	return m_pTempSegImg;
 }
 
+double getDist(CvMat * smoothness, int i, int j) {
+	double result=0;
+	
+	for (int k = 0; k<3; k++)
+			result += pow(cvmGet(smoothness, i, k) - cvmGet(smoothness, j, k),2);
+	
+	return result;
+}
+
+void Segmentator::CalcAverage(CvMat * Bg, CvMat * Fg int scribble) {
+
+	double E1 =0.0, E2 = 0.0;
+
+	CvMat * Segmentation = m_Segmentations[scribble];
+
+	int cols = Segmentation->cols, rows = Segmentation->rows;
+	for (int i=1; i<rows-1; i++)
+		for (int j=1; j<cols-1; j++) {
+
+			int seg1 = cvmGet(Segmentation, i, j);
+			int seg2;
+			for (int di=-1; di<=1; di++)
+				for (int dj=-1; dj<=1; dj++) {
+					seg2 = cvmGet(Segmentation, i+di, j+dj);
+
+					if (seg1!=seg2)
+						E2 += getDist(m_pFe->GetColorChannels(), i*cols +j, (i+di)*cols +(j+dj));
+				}
+
+			if (seg1==0) //bg
+				E1 += cvmGet(Fg, i, j);
+			else //fg 
+				E1 += cvmGet(Bg, i,j);
+
+
+		
+
+		}
+
+
+}
+
 void Segmentator::RecolorPixel(uchar * pData, int y, int x, CvScalar * pColor)
 {
 	int step = m_pImg->widthStep;

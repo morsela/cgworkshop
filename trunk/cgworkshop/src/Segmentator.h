@@ -7,8 +7,8 @@
 #include "fe/FeatureExtraction.h"
 #include "GUI/TypeDefs.h"
 
-#define MAX_ITER 8
-#define TOLLERANCE 0.005
+#define MAX_ITER 150
+#define TOLLERANCE 0.0000
 #define BACKGROUND -1
 
 #define ONE_SEG_PER_PIXEL_METHOD 0
@@ -32,6 +32,7 @@ public:
 protected:
 	
 	void SegmentOne(int scribble);
+	void CalcAverage();
 	
 	void getMask(CvMat * segmentation, CvMat * mask, int isBackground);
 
