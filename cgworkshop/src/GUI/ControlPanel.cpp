@@ -110,7 +110,9 @@ void CControlPanel::AddColorBox(int nID, CvScalar color)
 void CControlPanel::AddLineBox(int nID, int nLineWidth)
 {
 	CLineBox lineBox(nID, m_x + (m_x + m_width - m_x)/2 - LINE_BOX_WIDTH / 2,//m_x + MARGIN_SIZE, 
-		m_y - m_height/2 - BOX_MARGIN_SIZE * (m_nLineRow - 1) -  LINE_BOX_HEIGHT * (m_nLineRow - 1),
+		m_y - MARGIN_SIZE - BOX_MARGIN_SIZE * (m_nColorCol - 1) - COLOR_BOX_SIZE * (m_nColorCol - 1) - LINE_BOX_MARGIN
+		- BOX_MARGIN_SIZE * (m_nLineRow - 1) -  LINE_BOX_HEIGHT * (m_nLineRow - 1),
+		//m_y - m_height/2 - BOX_MARGIN_SIZE * (m_nLineRow - 1) -  LINE_BOX_HEIGHT * (m_nLineRow - 1),
 		LINE_BOX_WIDTH, LINE_BOX_HEIGHT, nLineWidth);
 
 	m_lineBoxes.push_back(lineBox);
@@ -128,6 +130,8 @@ void CControlPanel::Setup(float x, float y, int height)
 
 	for (int i = 0; i < SCRIBBLE_NUMBER; i++)
 		AddColorBox(i + COLOR_OFFSET,s_colors[i]);
+
+	m_nColorCol++;
 
 	for (int i = 0; i < LINE_WIDTH_NUMBER; i++)
 		AddLineBox(i + LINE_OFFSET, 2*i + 1);
