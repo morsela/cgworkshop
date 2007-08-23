@@ -99,7 +99,9 @@ protected:
 #define COLOR_BOX_SIZE	20
 
 #define LINE_BOX_WIDTH	40
-#define LINE_BOX_HEIGHT	20
+#define LINE_BOX_HEIGHT	15
+
+#define LINE_BOX_MARGIN	5
 
 static const CvScalar s_colors[] = {{{0,0,1.0f}},{{0,1.0f,0}},{{0,1.0f,1.0f}},{{1.0f,1.0f,0}},{{0,0,1.0f}},{{0.5f,0.5f,1.0f}}
 ,{{0.5f,0.5f,0.5f}},{{0.5f,1.0f,0.5f}},{{1.0f,0.5f,1.0f}},{{1.0f,0.2f,0.7f}}};
