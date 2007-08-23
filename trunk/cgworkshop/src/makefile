@@ -5,7 +5,7 @@ all: colorize
 
 gmm-objs:=GMM.o
 
-gui-objs:=GUI.o Loader.o Scribble.o main.o
+gui-objs:=GUI.o Loader.o Scribble.o ControlPanel.o main.o
 
 graph-objs:=Segmentator.o GraphHandler.o
 
