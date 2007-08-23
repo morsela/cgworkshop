@@ -92,8 +92,12 @@ void CGUI::Reshape(int x , int y)
 		return;
 	}
 
+	m_nWindowWidth = x;
+
+	m_nWindowHeight = y;
+
 	// define the viewport
-	glViewport( 0, 0, m_nWindowWidth, m_nWindowHeight );
+	glViewport( 0, 0, x, y );
 	
 	// initialize the projection matrix
 	glMatrixMode( GL_PROJECTION );
@@ -262,7 +266,7 @@ void CGUI::AddScribblePoints(int x, int y)
 	int height = m_pImg->height;
 	int width  = m_pImg->width;
 
-	float ratio_x = (float) GetImageWidth() / GetWindowWidth();
+	float ratio_x = (float) (m_ctrlPanel.GetWidth()/2 + GetImageWidth()) / GetWindowWidth();
 	float ratio_y = (float)	GetImageHeight() / GetWindowHeight();
 
 	m_ctrlPanel.GetChosenLineWidth(nLineWidth);
