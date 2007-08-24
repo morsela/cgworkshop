@@ -28,10 +28,13 @@ Segmentator::Segmentator(IplImage * Img, ScribbleVector & scribbles, int nScribb
 		m_Segmentations[i] = cvCreateMat(m_pImg->height,m_pImg->width, CV_64FC1 );
 
 	m_Probabilities = new CvMat*[m_nScribbles];
-	
+	m_BGProbabilities = new CvMat*[m_nScribbles];
+
 	for (i=0;i<m_nScribbles;i++)
 		m_Probabilities[i] = cvCreateMat(m_pImg->height,m_pImg->width, CV_32FC1 );
-		
+	for (i=0;i<m_nScribbles;i++)
+		m_BGProbabilities[i] = cvCreateMat(m_pImg->height,m_pImg->width, CV_32FC1 );
+
 	m_FinalSeg = cvCreateMat(m_pImg->height,m_pImg->width, CV_64FC1 );
 	m_SegmentCount = cvCreateMat(m_pImg->height,m_pImg->width, CV_64FC1 );
 	cvSet(m_FinalSeg, cvScalar(BACKGROUND));//initial value stands for background
@@ -279,6 +282,7 @@ void Segmentator::SegmentOne(int scribble)
 	
 	// Save the last FG confidence map
 	cvConvert(conf_map_fg, m_Probabilities[scribble]);
+	cvConvert(conf_map_bg, m_BGProbabilities[scribble]);
 
 }
 
@@ -313,20 +317,8 @@ IplImage * Segmentator::GetSegmentedImage(int scribble)
 	return m_pTempSegImg;
 }
 
-double getDist1(CvMat * smoothness, int i, int j) {
-	double result=0;
-	
-	for (int k = 0; k<3; k++)
-			result += pow(cvmGet(smoothness, i, k) - cvmGet(smoothness, j, k),2);
-	
-	return result;
-}
 
-double calcDist1(CvMat * smoothness, int i, int j, double beta) {
-	
-	double alpha = 1;
-	return alpha*exp(-getDist1(smoothness,i,j)/beta);
-}
+extern double calcDist(CvMat * smoothness, int i, int j, double beta);
 
 void Segmentator::CalcAverage(CvMat * Bg, CvMat * Fg, int scribble) {
 
@@ -345,7 +337,7 @@ void Segmentator::CalcAverage(CvMat * Bg, CvMat * Fg, int scribble) {
 					seg2 = cvmGet(Segmentation, i+di, j+dj);
 
 					if (seg1!=seg2)
-						E2 += calcDist1(m_pFe->GetColorChannels(), i*cols +j, (i+di)*cols +(j+dj), GraphHandler::beta);
+						E2 += calcDist(m_pFe->GetColorChannels(), i*cols +j, (i+di)*cols +(j+dj), GraphHandler::beta);
 				}
 
 			if (seg1==0) //bg
@@ -621,8 +613,11 @@ int Segmentator::decideSegment(int i, int j, int seg1, int seg2) {
 
 	double prob1 = cvmGet(m_Probabilities[seg1],i,j);
 	double prob2 = cvmGet(m_Probabilities[seg2],i,j);
+	double bgprob1 = cvmGet(m_BGProbabilities[seg1],i,j);
+	double bgprob2 = cvmGet(m_BGProbabilities[seg2],i,j);
+	
 
-	if (prob1 > prob2)
+	if (prob1*bgprob2 > prob2*bgprob1))
 		return seg1;
 	else
 		return seg2;
