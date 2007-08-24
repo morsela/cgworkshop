@@ -8,7 +8,7 @@
 #include "GUI/TypeDefs.h"
 
 #define MAX_ITER 10
-#define TOLLERANCE 0.005
+#define TOLLERANCE 0.0005
 #define BACKGROUND -1
 
 #define ONE_SEG_PER_PIXEL_METHOD 0
@@ -62,6 +62,7 @@ private:
 	CvMat * m_SegmentCount;
 	CvMat * m_FinalSeg;
 	CvMat ** m_Probabilities;
+	CvMat ** m_BGProbabilities;
 	
 };
 
