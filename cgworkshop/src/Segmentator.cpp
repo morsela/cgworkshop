@@ -617,7 +617,7 @@ int Segmentator::decideSegment(int i, int j, int seg1, int seg2) {
 	double bgprob2 = cvmGet(m_BGProbabilities[seg2],i,j);
 	
 
-	if (prob1*bgprob2 > prob2*bgprob1))
+	if (prob1*bgprob2 > prob2*bgprob1)
 		return seg1;
 	else
 		return seg2;
