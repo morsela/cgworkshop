@@ -115,14 +115,19 @@ void Segmentator::SegmentOne(int scribble)
 #endif
 
 	CvMat * pChannels = cvCreateMat(m_pFe->GetPrincipalChannels()->rows,m_pFe->GetPrincipalChannels()->cols,m_pFe->GetPrincipalChannels()->type);
+	CvMat * pColorChannels = cvCreateMat(m_pFe->GetColorChannels()->rows,m_pFe->GetColorChannels()->cols,m_pFe->GetColorChannels()->type);
+	
 	double c_norm = cvNorm(m_pFe->GetPrincipalChannels(), 0, CV_C, 0);
 	double l1_norm = cvNorm(m_pFe->GetPrincipalChannels(), 0, CV_L1, 0);
 	double l2_norm = cvNorm(m_pFe->GetPrincipalChannels(), 0, CV_L2, 0);
 	printf("PChannels matrix c norm = %lf\n", c_norm);
 	printf("PChannels matrix l1 norm = %lf\n", l1_norm);
 	printf("PChannels matrix l2 norm = %lf\n", l2_norm);
-	cvConvertScale(m_pFe->GetPrincipalChannels(), pChannels, 0.1);
-
+	cvConvertScale(m_pFe->GetPrincipalChannels(), pChannels, 1);
+	cvNormalize(pChannels, pChannels, 0, 50, CV_MINMAX);
+	cvConvertScale(m_pFe->GetColorChannels(), pColorChannels, 1);
+	cvNormalize(pColorChannels, pColorChannels, 0, 50, CV_MINMAX);
+	
 	CvMat * f_mask = cvCreateMat( 1, pChannels->rows, CV_8UC1 );
 	CvMat * b_mask = cvCreateMat( 1, pChannels->rows, CV_8UC1 );
 	
@@ -143,7 +148,7 @@ void Segmentator::SegmentOne(int scribble)
 	}
 			
 	//calculate beta
-	GraphHandler::calc_beta(m_pImg->height, m_pImg->width, m_pFe->GetColorChannels());
+	GraphHandler::calc_beta(m_pImg->height, m_pImg->width, pColorChannels);
 	//init GMMs
 #ifdef NEW_GMM
 	f_gmm->Init(pChannels, f_mask);
@@ -233,7 +238,7 @@ void Segmentator::SegmentOne(int scribble)
 #endif
 
 		// Graph cut
-		graph->init_graph(m_pImg->height, m_pImg->width, m_pFe->GetColorChannels());
+		graph->init_graph(m_pImg->height, m_pImg->width, pColorChannels);
 		graph->assign_weights(Bu, Fu);
 		
 		graph->do_MinCut(*m_Segmentations[scribble]);
@@ -273,7 +278,7 @@ void Segmentator::SegmentOne(int scribble)
 		f_gmm->NextStep(f_mask);
 		b_gmm->NextStep(b_mask);
 #else
-		f_gmm->NextStep(pChannels, f_mask, CvEM::COV_MAT_DIAGONAL);
+		f_gmm->NextStep(pChannels, f_mask, CvEM::COV_MAT_GENERIC);
 		b_gmm->NextStep(pChannels, b_mask, CvEM::COV_MAT_GENERIC);	
 #endif
 			
