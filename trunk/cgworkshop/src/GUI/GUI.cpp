@@ -132,8 +132,23 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 		break;
 
 	case 'l':
+		{
 		m_loader.Load(m_scribbles);
-		break;
+		
+		int nScribbles = 0;
+		for (unsigned int i = 0; i < m_scribbles.size() ; i++)
+			if (m_scribbles[i].IsValid())
+			{
+				printf("m_scribbles[i]=%d\n", i, nScribbles);
+				nScribbles++;
+			}
+
+		printf("nScribbles=%d\n", nScribbles);
+
+		m_nScribblesNum		= nScribbles;
+		m_nCurScribble		= UNDEFINED;
+		} break;
+		
 
 	case 's':
 		m_loader.Save(m_scribbles);

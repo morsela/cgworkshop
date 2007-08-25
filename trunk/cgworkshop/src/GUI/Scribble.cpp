@@ -90,14 +90,17 @@ bool CScribble::Load(ifstream &ifs)
 		return false;
 
 	ifs.getline(buffer, 255);
+	if (ifs.eof())
+		return false;
 	sscanf(buffer, "<ID=%d> <PointsNum=%d>", &nID, &nPoints);
-	if (nID != m_nID)
+	printf("ID=%d, nPoints=%d\n", nID, nPoints);
+	/*if (nID != m_nID)
 	{
 		printf("nID=%d", nID);
 		//not the correct scribble
 		ifs.seekg(-1*strlen(buffer),ios_base::cur);
 		return false;
-	}
+	}*/
 	m_nPoints = nPoints;
 	ifs.getline(buffer, 255);
 
@@ -138,6 +141,8 @@ bool CScribble::Load(ifstream &ifs)
 
 	//remove the last \n
 	ifs.getline(buffer, 255);
+	if (ifs.eof())
+		return false;
 
 	return true;
 }
