@@ -145,7 +145,7 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 
 		printf("nScribbles=%d\n", nScribbles);
 
-		m_nScribblesNum		= nScribbles;
+		m_nScribblesNum		= nScribbles - 1;
 		m_nCurScribble		= UNDEFINED;
 		} break;
 		
