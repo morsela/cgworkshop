@@ -1,6 +1,7 @@
 #include "GraphHandler.h"
 
 double GraphHandler::beta = 0;
+extern double alpha;
 
 GraphHandler::GraphHandler()  {
 
@@ -23,7 +24,6 @@ double getDist(CvMat * smoothness, int i, int j) {
 
 double calcDist(CvMat * smoothness, int i, int j, double beta) {
 	
-	double alpha = 27;
 	return alpha*exp(-getDist(smoothness,i,j)/beta);
 }
 
