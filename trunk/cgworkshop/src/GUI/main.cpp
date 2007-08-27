@@ -1,6 +1,7 @@
 #include "GUI.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <GL/glut.h>
 
@@ -65,6 +66,7 @@ void myInitOpenGL()
 
 ///////////////////////////////////////////////////////////////////////////////////
 
+double alpha = 27.0;
 int main( int argc, char **argv)
 {
 	bool fOk = true;
@@ -75,7 +77,11 @@ int main( int argc, char **argv)
 		return -1;
 	}
 
-	if (argc == 3)
+	for (int i=1; i<argc; i++)
+		if (strtod(argv[i],NULL)>0) 
+			alpha = strtod(argv[i],NULL);
+
+	if (argc >= 3 && strtod(argv[2],NULL)==0.0)  //if its not a alpha
 		fOk = CGUI::GetInstance()->Setup(argv[1], argv[2]);
 	else
 		fOk = CGUI::GetInstance()->Setup(argv[1]);
