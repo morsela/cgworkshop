@@ -106,45 +106,44 @@ void CGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)
 	int i;
 	CvMat vector;
 	
-	CvMat * temp1, * temp2;
+	CvMat * temp1, * temp2, * temp3, * temp4;
 
 	temp1 = cvCreateMat( 1, m_nDims, CV_32FC1 );
 	temp2 = cvCreateMat( 1, m_nDims, CV_32FC1 );
-	
+	temp3 = cvCreateMat( m_nDims, 1, CV_32FC1 );
+	temp4 = cvCreateMat( 1, 1, CV_32FC1 );
 	CvMat * mean = cvCreateMat( 1, m_nDims, CV_32FC1 );
 	
 	float * pData = pDataSet->data.fl;
-	for (i=0;i<pDataSet->rows;i++)
-	{
-		cvInitMatHeader(&vector, 1, pDataSet->cols, CV_32FC1, &pData[i*pDataSet->cols]);
-		double prob = 0;// = GetProbability(&vector);
-
-		{
-			int i;
-			for (i=0;i<m_nClusters;i++)
-			{
-				if (cvmGet(pWeights, 0,i) == 0)
-					continue;
-
-				cvGetRow(pMeans, mean, i);			
-				cvSub(&vector, mean, temp1);			
-				cvMatMul(temp1, pCovsInv[i], temp2);
-				
-				double hez = -0.5 * cvDotProduct(temp1, temp2);
-				//printf("Hez[%d]=%lf\n", i, hez);
-				
-				double pi = exp(hez)*(pWeights->data.fl[i]/sqrt(pDet[i]));
-				prob += pi;
-
-				
-			}
-		}
-
-		pProbs->data.fl[i] = prob;
 	
-//		printf("prob=%f\n", prob);
+	cvSetZero(pProbs);
+	
+	int k;
+	for (k=0;k<m_nClusters;k++)
+	{
+		if (cvmGet(pWeights, 0,k) == 0)
+			continue;
+			
+		cvGetRow(pMeans, mean, k);			
+		CvMat * covInv = pCovsInv[k];
+		
+		double term1 = 	(pWeights->data.fl[k]/sqrt(pDet[k]));
+		
+		for (i=0;i<pDataSet->rows;i++)
+		{
+			cvInitMatHeader(&vector, 1, pDataSet->cols, CV_32FC1, &pData[i*pDataSet->cols]);
+			cvSub(&vector, mean, temp1);
+			cvTranspose(temp1, temp3);
+			cvMatMul(temp1, covInv, temp2);	
+			
+			cvMatMul(temp2, temp3, temp4);	
+			
+			double hez = -0.5 * temp4->data.fl[0];
+			double pi = exp(hez)*term1;
+			
+			pProbs->data.fl[i] += pi;
+		}
 	}
-
 
 	//printf("Prob matrix norm=%lf\n", cvNorm(pProbs,0,CV_C));
 	//cvConvertScale(pProbs, pProbs, 1./cvNorm(pProbs,0,CV_C), 0);
@@ -152,4 +151,6 @@ void CGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)
 	
 	cvReleaseMat(&temp1);
 	cvReleaseMat(&temp2);
+	cvReleaseMat(&temp3);
+	cvReleaseMat(&temp4);
 }
