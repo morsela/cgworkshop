@@ -123,9 +123,9 @@ void Segmentator::SegmentOne(int scribble)
 	printf("PChannels matrix c norm = %lf\n", c_norm);
 	printf("PChannels matrix l1 norm = %lf\n", l1_norm);
 	printf("PChannels matrix l2 norm = %lf\n", l2_norm);
-	cvConvertScale(m_pFe->GetPrincipalChannels(), pChannels, 0.25);
+	cvConvertScale(m_pFe->GetPrincipalChannels(), pChannels, 1);
 	//cvNormalize(pChannels, pChannels, 0, 50, CV_MINMAX);
-	cvConvertScale(m_pFe->GetColorChannels(), pColorChannels, 0.25);
+	cvConvertScale(m_pFe->GetColorChannels(), pColorChannels, 1);
 	//cvNormalize(pColorChannels, pColorChannels, 0, 50, CV_MINMAX);
 	
 	CvMat * f_mask = cvCreateMat( 1, pChannels->rows, CV_8UC1 );
@@ -213,8 +213,8 @@ void Segmentator::SegmentOne(int scribble)
 				else
 				{
 					//calcweights
-					cvmSet(Fu,i,j,-1*log(cvmGet(conf_map_bg, i,j)));
-					cvmSet(Bu,i,j,-1*log(cvmGet(conf_map_fg, i,j)));
+					cvmSet(Fu,i,j,cvmGet(conf_map_bg, i,j));
+					cvmSet(Bu,i,j,cvmGet(conf_map_fg, i,j));
 				}
 			}
 		}
@@ -346,9 +346,9 @@ void Segmentator::CalcAverage(CvMat * Bg, CvMat * Fg, int scribble) {
 				}
 
 			if (seg1==0) //bg
-				E1 += -log(cvmGet(Fg, i, j));
+				E1 += (cvmGet(Fg, i, j));
 			else //fg 
-				E1 += -log(cvmGet(Bg, i,j));
+				E1 += (cvmGet(Bg, i,j));
 		}
 
 
@@ -621,11 +621,18 @@ int Segmentator::decideSegment(int i, int j, int seg1, int seg2) {
 	double bgprob1 = cvmGet(m_BGProbabilities[seg1],i,j);
 	double bgprob2 = cvmGet(m_BGProbabilities[seg2],i,j);
 	
-	if (bgprob1 > prob1 && bgprob2 > prob2) //No segment should 'win'.
+	// Disabled for now, -log and all
+/*	
+	if (bgprob1 < prob1 && bgprob2 < prob2) //No segment should 'win'.
 			return BACKGROUND; 
 	
 	if (prob1*bgprob2 > prob2*bgprob1)
 		return seg1;
+		*/
+	
+	if (prob1 < prob2)
+		return seg1;	
+		
 	else
 		return seg2;
 
