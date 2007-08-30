@@ -8,7 +8,7 @@
 #include "GUI/TypeDefs.h"
 
 #define MAX_ITER 10
-#define TOLLERANCE 0.01
+#define TOLLERANCE 0.005
 #define BACKGROUND -1
 
 #define ONE_SEG_PER_PIXEL_METHOD 0

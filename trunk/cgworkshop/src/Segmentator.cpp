@@ -491,6 +491,18 @@ void Segmentator::RGB2YUV(CvScalar * pRGB, CvScalar * pYUV)
 void Segmentator::AssignColorAvgColor(int i, int j, CvScalar * color) 
 {
 	int segCount = cvmGet(m_SegmentCount, i,j);
+	
+	if (0 && segCount == 1)
+	{
+		for (int n=0; n<m_nScribbles; n++) 
+		{
+			if (cvmGet(m_Segmentations[n],i,j))
+			{
+					RGB2YUV(m_scribbles[n].GetColor(), color);
+					return;
+			}
+		}
+	}
 
 	// Assigned to multiple segmentations
 	// Average out colors of all assigned scribbles
@@ -505,21 +517,28 @@ void Segmentator::AssignColorAvgColor(int i, int j, CvScalar * color)
 		val[2] = 0;	
 		
 		double maxProb = 0;
+		double minProb = 1000;
 		double sumProb = 0;
 		for (int n=0; n<m_nScribbles; n++) 
 		{
 			double prob = (cvmGet(m_Probabilities[n],i,j));
+			if (prob < minProb)
+				minProb = prob;			
 			if (prob > maxProb)
 				maxProb = prob;
 				
-			sumProb  += 	prob;
+			sumProb += prob;
 		}
 			
 		for (int n=0; n<m_nScribbles; n++) 
 		{
 
-			//double prob = maxProb-(cvmGet(m_Probabilities[n],i,j));
-			double prob = sumProb-(cvmGet(m_Probabilities[n],i,j));
+			double prob = maxProb-(cvmGet(m_Probabilities[n],i,j))+minProb;
+			//double prob = sumProb-(cvmGet(m_Probabilities[n],i,j));
+			
+			// Give more weight to selected scribbles
+			if (cvmGet(m_Segmentations[n],i,j))
+				prob *= m_nScribbles;
 			
 			//printf("Prob[%d]=%lf\n", n,prob);
 			RGB2YUV(m_scribbles[n].GetColor(), &scrYUV);
