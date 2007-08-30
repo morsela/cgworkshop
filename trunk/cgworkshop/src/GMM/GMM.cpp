@@ -79,7 +79,7 @@ void CGMM::OneStep(CvMat * pDataSet, CvMat * pActiveMask)
 			cvmSet(pCovs[i], j, j, cvmGet(pCovs[i], j,j)+SMALL_EPS);
 
 		pDet[i] = cvInvert(pCovs[i], pCovsInv[i]);	
-    	printf("Det(%d)=%lf\n", i, cvDet(pCovs[i]));
+    	printf("Det(%d)=%lf\n", i, pDet[i]);
     }
 
 	cvConvert(m_model->get_means(), pMeans);	
@@ -118,7 +118,9 @@ void CGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)
 	
 	cvSetZero(pProbs);
 	
+	// Calcualte (max) -log likelyhood
 	int k;
+	int init = 0;
 	for (k=0;k<m_nClusters;k++)
 	{
 		if (cvmGet(pWeights, 0,k) == 0)
@@ -127,7 +129,7 @@ void CGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)
 		cvGetRow(pMeans, mean, k);			
 		CvMat * covInv = pCovsInv[k];
 		
-		double term1 = 	(pWeights->data.fl[k]/sqrt(pDet[k]));
+		double term1 = 0.5*log(pDet[k])-log(pWeights->data.fl[k]);
 		
 		for (i=0;i<pDataSet->rows;i++)
 		{
@@ -138,11 +140,15 @@ void CGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)
 			
 			cvMatMul(temp2, temp3, temp4);	
 			
-			double hez = -0.5 * temp4->data.fl[0];
-			double pi = exp(hez)*term1;
+			double hez = 0.5 * temp4->data.fl[0];
+			double pi = term1 + hez;
 			
-			pProbs->data.fl[i] += pi;
+			if (!init || pProbs->data.fl[i] > pi)
+				pProbs->data.fl[i] = pi;
+				
 		}
+		
+		init = 1;
 	}
 
 	//printf("Prob matrix norm=%lf\n", cvNorm(pProbs,0,CV_C));
