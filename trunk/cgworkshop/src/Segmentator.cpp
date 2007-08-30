@@ -184,33 +184,34 @@ void Segmentator::SegmentOne(int scribble)
 		GraphHandler *graph = new GraphHandler();
 		
 		// Get probabilites
+		printf("+GMM\n");
 #ifdef NEW_GMM	
 #else
 		f_gmm->GetAllProbabilities(pChannels, conf_map_fg);
 		b_gmm->GetAllProbabilities(pChannels, conf_map_bg);
 #endif
-		
+		printf("-GMM\n");
 		// Set weights
-		numeric_limits<double> limits;
+		
+		printf("+Weights\n");
+		
+		cvSetZero( Fu );
+		cvSetZero( Bu );
+		for (int i = 0; i < (int)(m_scribbles[scribble].GetScribbleSize());i++)
+		{
+			CPointInt pI = m_scribbles[scribble][i];
+			int x = pI.x;
+			int y = pI.y;
+			
+			cvmSet(Fu,y,x,10000);
+			cvmSet(Bu,y,x,0);
+		}
+				
 		for (int i=0; i<m_pImg->height; i++)
 		{
 			for (int j=0; j<m_pImg->width; j++)
 			{
-				if (IsInScribble(i,j,scribble))
-				{//inside the current scribble
-					cvmSet(Fu,i,j,limits.infinity());
-					cvmSet(Bu,i,j,0);
-				
-				}
-				
-				else if (IsInScribble(i,j))	
-				{//inside one of the other scribbles
-					cvmSet(Fu,i,j,0);
-					cvmSet(Bu,i,j,limits.infinity());
-				
-				}
-				
-				else
+				if (cvmGet(Fu, i, j) == 0)
 				{
 					//calcweights
 					cvmSet(Fu,i,j,cvmGet(conf_map_bg, i,j));
@@ -219,6 +220,7 @@ void Segmentator::SegmentOne(int scribble)
 			}
 		}
 		
+		printf("-Weights\n");
 #ifdef DISP_CONF_MAPS
 		// Display FG conf map
 		//cvConvertScale(conf_map_fg, outImg,255,0); 
@@ -236,12 +238,14 @@ void Segmentator::SegmentOne(int scribble)
 		cvWaitKey(0);
 		cvDestroyWindow(title);	
 #endif
-
+		printf("+Graph cut\n");
 		// Graph cut
 		graph->init_graph(m_pImg->height, m_pImg->width, pColorChannels);
 		graph->assign_weights(Bu, Fu);
 		
 		graph->do_MinCut(*m_Segmentations[scribble]);
+		
+		printf("-Graph cut\n");
 		
 		PrevFlow = CurFlow;
 		CurFlow = graph->getFlow();
@@ -274,6 +278,7 @@ void Segmentator::SegmentOne(int scribble)
 		getMask(m_Segmentations[scribble], f_mask,0);
 		getMask(m_Segmentations[scribble], b_mask,1);
 		
+		printf("+GMM Step\n");
 #ifdef NEW_GMM	
 		f_gmm->NextStep(f_mask);
 		b_gmm->NextStep(b_mask);
@@ -281,7 +286,7 @@ void Segmentator::SegmentOne(int scribble)
 		f_gmm->NextStep(pChannels, f_mask, CvEM::COV_MAT_GENERIC);
 		b_gmm->NextStep(pChannels, b_mask, CvEM::COV_MAT_GENERIC);	
 #endif
-			
+		printf("-GMM Step\n");
 		delete graph;
 	}
 	
@@ -362,22 +367,10 @@ void Segmentator::CalcAverage(CvMat * Bg, CvMat * Fg, int scribble) {
 void Segmentator::RecolorPixel(uchar * pData, int y, int x, CvScalar * pColor)
 {
 	int step = m_pImg->widthStep;
-	
-	char delta = 128;
-	
-	// calculate Y from BGR
-	// Y = 0.299*R + 0.587*G + 0.114*B 
-	uchar luma = 255 * (0.299*pColor->val[0] + 0.587*pColor->val[1] + 0.114*pColor->val[2]);
 
-	// calculate Cr from BGR
-	// Cr = (R-Y)*0.713 + delta
-	uchar cr = floor((255*pColor->val[0] - luma)*0.713) + delta;
-	pData[y*step+x*3+1] = cr;
-	
-	// calculate Cb from BGR
-	// Cb = (B-Y)*0.564 + delta 
-	uchar cb = floor((255*pColor->val[2] - luma)*0.564) + delta;	
-	pData[y*step+x*3+2] = cb;
+	// Only take UV components
+	pData[y*step+x*3+1] = (uchar)pColor->val[1];
+	pData[y*step+x*3+2] = (uchar)pColor->val[2];
 }
 
 IplImage * Segmentator::GetSegmentedImage()
@@ -434,7 +427,10 @@ IplImage * Segmentator::GetSegmentedImage()
 
 void Segmentator::AssignColorOneSeg(int i, int j, CvScalar * color) 
 {
+	CvScalar scrYUV;
+	
 	int finalSegment = BACKGROUND;
+	
 	for (int n=0; n<m_nScribbles; n++) 
 	{	
 		int isInNSegment = cvmGet(m_Segmentations[n],i,j);	
@@ -455,10 +451,14 @@ void Segmentator::AssignColorOneSeg(int i, int j, CvScalar * color)
 		color->val[0] = 0;
 		color->val[1] = 0;
 		color->val[2] = 0;
+		
+		RGB2YUV(color, &scrYUV);
+		memcpy(color->val, scrYUV.val, sizeof(CvScalar));		
 	}
 	else
 	{
-		memcpy(color->val, m_scribbles[finalSegment].GetColor()->val, sizeof(CvScalar));
+		RGB2YUV(m_scribbles[finalSegment].GetColor(), &scrYUV);
+		memcpy(color->val, scrYUV.val, sizeof(CvScalar));
 		
 		double prob = cvmGet(m_Probabilities[finalSegment],i,j);	
 		
@@ -468,80 +468,76 @@ void Segmentator::AssignColorOneSeg(int i, int j, CvScalar * color)
 	}
 }
 
+void Segmentator::RGB2YUV(CvScalar * pRGB, CvScalar * pYUV)
+{
+	char delta = 128;
+	
+	// calculate Y from BGR
+	// Y = 0.299*R + 0.587*G + 0.114*B 
+	uchar luma = 255 * (0.299*pRGB->val[0] + 0.587*pRGB->val[1] + 0.114*pRGB->val[2]);
+	pYUV->val[0] = luma;
+
+	// calculate Cr from BGR
+	// Cr = (R-Y)*0.713 + delta
+	uchar cr = floor((255*pRGB->val[0] - luma)*0.713) + delta;
+	pYUV->val[1] = cr;
+	
+	// calculate Cb from BGR
+	// Cb = (B-Y)*0.564 + delta 
+	uchar cb = floor((255*pRGB->val[2] - luma)*0.564) + delta;	
+	pYUV->val[2] = cb;
+}
 
 void Segmentator::AssignColorAvgColor(int i, int j, CvScalar * color) 
 {
 	int segCount = cvmGet(m_SegmentCount, i,j);
-	
-	// Special case of one sided segmentation
-	// Color background pixels BW
-	if (segCount == 0 && m_nScribbles == 1)
-	{
-		color->val[0] = 0;
-		color->val[1] = 0;
-		color->val[2] = 0;
-	}
-	
-	// Didn't assign to anything, assign to most probable one
-	else if (segCount == 0)
-	{
-		double maxProb = 0;
-		int maxSeg = 0;
-		for (int n=0; n<m_nScribbles; n++) 
-		{
-			double prob = cvmGet(m_Probabilities[n],i,j);
-			if (prob > maxProb)
-			{
-				maxProb = prob;
-				maxSeg = n;
-			}
-		}
-		
-		memcpy(color->val, m_scribbles[maxSeg].GetColor()->val, sizeof(CvScalar));	
-	}
-	
-	// Only assigned to one segmentation
-	else if (segCount == 1)
-	{
-		// Find it
-		int n;
-		for (n=0; n<m_nScribbles; n++) 
-		{
-			if (cvmGet(m_Segmentations[n],i,j))
-				break;
-		}
-		
-		memcpy(color->val, m_scribbles[n].GetColor()->val, sizeof(CvScalar));	
-	}
-	
+
 	// Assigned to multiple segmentations
 	// Average out colors of all assigned scribbles
-	else {
+	CvScalar scrYUV;
+	double val[3];
+	{
 		
 		double probCount = 0;
 		
-		color->val[0] = 0;
-		color->val[1] = 0;
-		color->val[2] = 0;	
+		val[0] = 0;
+		val[1] = 0;
+		val[2] = 0;	
+		
+		double maxProb = 0;
+		double sumProb = 0;
+		for (int n=0; n<m_nScribbles; n++) 
+		{
+			double prob = (cvmGet(m_Probabilities[n],i,j));
+			if (prob > maxProb)
+				maxProb = prob;
+				
+			sumProb  += 	prob;
+		}
 			
 		for (int n=0; n<m_nScribbles; n++) 
 		{
+
+			//double prob = maxProb-(cvmGet(m_Probabilities[n],i,j));
+			double prob = sumProb-(cvmGet(m_Probabilities[n],i,j));
 			
-			if (cvmGet(m_Segmentations[n],i,j))
-			{
-				double prob = cvmGet(m_Probabilities[n],i,j);
+			//printf("Prob[%d]=%lf\n", n,prob);
+			RGB2YUV(m_scribbles[n].GetColor(), &scrYUV);
+			
+			val[0] += scrYUV.val[0] * prob;
+			val[1] += scrYUV.val[1] * prob;
+			val[2] += scrYUV.val[2] * prob;
 				
-				color->val[0] += m_scribbles[n].GetColor()->val[0] * prob;
-				color->val[1] += m_scribbles[n].GetColor()->val[1] * prob;
-				color->val[2] += m_scribbles[n].GetColor()->val[2] * prob;
-				
-				probCount += prob;
-			}
+			probCount += prob;
 		}
 			
-		color->val[0] /= probCount;
-		color->val[1] /= probCount;
-		color->val[2] /= probCount;
+		val[0] /= probCount;
+		val[1] /= probCount;
+		val[2] /= probCount;
+		
+		color->val[0] = val[0];
+		color->val[1] = val[1];
+		color->val[2] = val[2];
 	
 	}
 
