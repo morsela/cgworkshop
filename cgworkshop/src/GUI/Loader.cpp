@@ -30,7 +30,6 @@ void CLoader::Load(ScribbleVector & scribbles)
 	{
 		scribbles[i].Reset();
 		bool fLoad = scribbles[i].Load(ifs);
-		printf("i=%d fLoad=%d, ifs.eof()=%d\n",i, fLoad, ifs.eof());
 		if (ifs.eof() || !fLoad)
 			break;
 	}

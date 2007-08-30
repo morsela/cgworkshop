@@ -93,7 +93,6 @@ bool CScribble::Load(ifstream &ifs)
 	if (ifs.eof())
 		return false;
 	sscanf(buffer, "<ID=%d> <PointsNum=%d>", &nID, &nPoints);
-	printf("ID=%d, nPoints=%d\n", nID, nPoints);
 	/*if (nID != m_nID)
 	{
 		printf("nID=%d", nID);

@@ -12,6 +12,9 @@
 class CGUI
 {
 public:
+
+	static void ThreadRunSegmentation( void *p );
+public:
 	
 	CGUI();
 	virtual ~CGUI() {}
@@ -52,12 +55,16 @@ public:
 
 protected:
 	
+	void RunSegmentation();
+
 	void AddScribblePoints(int x, int y);
 
 	friend class CControlPanel;
 
 protected:
 	
+	bool				s_fRunning;
+
 	CControlPanel		m_ctrlPanel;
 
 	IplImage *			m_pImg;
