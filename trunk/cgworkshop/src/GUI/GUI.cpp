@@ -13,6 +13,10 @@
 #include "../GraphHandler.h"
 #include "../Segmentator.h"
 
+#ifdef WIN32
+#include <process.h>
+#endif
+
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 
@@ -25,6 +29,7 @@ CGUI::CGUI()
 	m_fScribbling		= false;
 	m_nCurScribble		= UNDEFINED;
 	m_nScribblesNum		= -1;
+	s_fRunning			= false;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -128,6 +133,7 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 	switch( key )
 	{
 	case 'q':
+		//all threads are terminated when calling exit
 		exit(0);
 		break;
 
@@ -138,10 +144,7 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 		int nScribbles = 0;
 		for (unsigned int i = 0; i < m_scribbles.size() ; i++)
 			if (m_scribbles[i].IsValid())
-			{
-				printf("m_scribbles[i]=%d\n", i, nScribbles);
 				nScribbles++;
-			}
 
 		printf("nScribbles=%d\n", nScribbles);
 
@@ -164,55 +167,82 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 
 	case 'r':
 		{
+			if (s_fRunning)
+			{
+				printf("Segmentation is already taking place\n");
+				return;
+			}
 
-		int nScribbles = 0;
+			s_fRunning = true;
 
-		//Why do we need this?
-		for (unsigned int i = 0; i < m_scribbles.size() ; i++)
-			if (m_scribbles[i].IsValid())
-				nScribbles++;
+#ifdef WIN32
+			_beginthread(ThreadRunSegmentation, 0, this);
+#else
+			RunSegmentation();
+#endif
+		} break;	
 
-		printf("nScribbles=%d\n", nScribbles);
-
-		Segmentator seg(m_pImg, m_scribbles, nScribbles);
-
- 		seg.Colorize();
-
-		// display
-		//IplImage * outImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_8U, 1);
-		//cvConvertScale(seg.getSegmentation(),outImg,255,0); 	
-		
-		char title[50];
-		strcpy(title, "Segmentation");
-		cvNamedWindow( title, 1 );
-		//cvShowImage( title, outImg );
-		char name[10] = "testi.bmp";
-		for (int i=0;i<nScribbles;i++)
-		{
-			cvNamedWindow( title, 1 );
-			cvShowImage( title, seg.GetSegmentedImage(i) );
-			cvWaitKey(0);
-			cvDestroyWindow(title);	
-			
-			name[4] = i+ '0';
-			cvSaveImage(name,seg.GetSegmentedImage(i));
-		}
-			cvNamedWindow( title, 1 );
-			cvShowImage( title, seg.GetSegmentedImage() );
-			cvWaitKey(0);
-			cvDestroyWindow(title);
-			name[4]='f';
-			cvSaveImage(name,seg.GetSegmentedImage());
-		
-
-		}
-		break;		
 	default:
 		break;
 	}
+}
 
-	/*if (key >= '0' && key <= '9')
-		m_nCurScribble = key - 48;*/
+///////////////////////////////////////////////////////////////////////////////////
+
+void CGUI::ThreadRunSegmentation( void *p )
+{
+	CGUI * pMe = (CGUI *) p;
+	pMe->RunSegmentation();
+}
+
+///////////////////////////////////////////////////////////////////////////////////
+
+void CGUI::RunSegmentation()
+{
+	int nScribbles = 0;
+
+	//Why do we need this?
+	for (unsigned int i = 0; i < m_scribbles.size() ; i++)
+		if (m_scribbles[i].IsValid())
+			nScribbles++;
+
+	printf("nScribbles=%d\n", nScribbles);
+
+	Segmentator seg(m_pImg, m_scribbles, nScribbles);
+	
+	seg.Colorize();
+
+	// display
+	//IplImage * outImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_8U, 1);
+	//cvConvertScale(seg.getSegmentation(),outImg,255,0); 	
+
+	char title[50];
+	strcpy(title, "Segmentation");
+	cvNamedWindow( title, 1 );
+	//cvShowImage( title, outImg );
+	char name[10] = "testi.bmp";
+	for (int i=0;i<nScribbles;i++)
+	{
+		cvNamedWindow( title, 1 );
+		cvShowImage( title, seg.GetSegmentedImage(i) );
+		cvWaitKey(0);
+		cvDestroyWindow(title);	
+
+		name[4] = i+ '0';
+		cvSaveImage(name,seg.GetSegmentedImage(i));
+	}
+	cvNamedWindow( title, 1 );
+	cvShowImage( title, seg.GetSegmentedImage() );
+	cvWaitKey(0);
+	cvDestroyWindow(title);
+	name[4]='f';
+	cvSaveImage(name,seg.GetSegmentedImage());
+
+	s_fRunning = false;
+
+#ifdef WIN32
+	_endthread();
+#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
