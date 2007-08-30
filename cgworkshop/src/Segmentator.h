@@ -8,7 +8,7 @@
 #include "GUI/TypeDefs.h"
 
 #define MAX_ITER 10
-#define TOLLERANCE 0.0005
+#define TOLLERANCE 0.01
 #define BACKGROUND -1
 
 #define ONE_SEG_PER_PIXEL_METHOD 0
@@ -48,6 +48,8 @@ protected:
 	void AssignColor(int i, int j, CvScalar * color, int method);
 	void AssignColorOneSeg(int i, int j, CvScalar * color);
 	void AssignColorAvgColor(int i, int j, CvScalar * color);
+
+	void RGB2YUV(CvScalar * pRGB, CvScalar * pYUV);
 
 private:
 
