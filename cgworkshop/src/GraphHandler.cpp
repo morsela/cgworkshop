@@ -133,6 +133,6 @@ void GraphHandler::do_MinCut(CvMat &result) {
 
 			}
 			
-	printf("COUNTER1 %d COUNTER2 %d", counter1, counter2);
+	printf("COUNTER1 %d COUNTER2 %d\n\n", counter1, counter2);
 }
 
