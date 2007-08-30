@@ -123,10 +123,10 @@ void Segmentator::SegmentOne(int scribble)
 	printf("PChannels matrix c norm = %lf\n", c_norm);
 	printf("PChannels matrix l1 norm = %lf\n", l1_norm);
 	printf("PChannels matrix l2 norm = %lf\n", l2_norm);
-	cvConvertScale(m_pFe->GetPrincipalChannels(), pChannels, 1);
-	cvNormalize(pChannels, pChannels, 0, 50, CV_MINMAX);
-	cvConvertScale(m_pFe->GetColorChannels(), pColorChannels, 1);
-	cvNormalize(pColorChannels, pColorChannels, 0, 50, CV_MINMAX);
+	cvConvertScale(m_pFe->GetPrincipalChannels(), pChannels, 0.25);
+	//cvNormalize(pChannels, pChannels, 0, 50, CV_MINMAX);
+	cvConvertScale(m_pFe->GetColorChannels(), pColorChannels, 0.25);
+	//cvNormalize(pColorChannels, pColorChannels, 0, 50, CV_MINMAX);
 	
 	CvMat * f_mask = cvCreateMat( 1, pChannels->rows, CV_8UC1 );
 	CvMat * b_mask = cvCreateMat( 1, pChannels->rows, CV_8UC1 );
@@ -621,7 +621,9 @@ int Segmentator::decideSegment(int i, int j, int seg1, int seg2) {
 	double bgprob1 = cvmGet(m_BGProbabilities[seg1],i,j);
 	double bgprob2 = cvmGet(m_BGProbabilities[seg2],i,j);
 	
-
+	if (bgprob1 > prob1 && bgprob2 > prob2) //No segment should 'win'.
+			return BACKGROUND; 
+	
 	if (prob1*bgprob2 > prob2*bgprob1)
 		return seg1;
 	else
