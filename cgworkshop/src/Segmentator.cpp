@@ -5,9 +5,13 @@
 #include "GMM/GMM.h"
 #include "GMM/kGMM.h"
 
-#include "GraphHandler.h"
+#include <time.h>
 
+#include "GraphHandler.h"
+#include "GraphHandlerAE.h"
 using namespace std;
+
+#define USE_ALPHA_EXPANSION 1
 
 //#define DISP_SEGMENTATION
 
@@ -20,6 +24,8 @@ Segmentator::Segmentator(IplImage * Img, ScribbleVector & scribbles, int nScribb
 	m_scribbles = scribbles;
 	//FIXME: it is not logical to assume that the bg is a scribble
 	m_nScribbles = nScribbles;
+
+	m_pLabels = cvCreateMat(m_pImg->height,m_pImg->width, CV_32F );
 
 	m_Segmentations = new CvMat*[m_nScribbles];
 	
@@ -35,9 +41,7 @@ Segmentator::Segmentator(IplImage * Img, ScribbleVector & scribbles, int nScribb
 	for (i=0;i<m_nScribbles;i++)
 		m_BGProbabilities[i] = cvCreateMat(m_pImg->height,m_pImg->width, CV_32FC1 );
 
-	m_FinalSeg = cvCreateMat(m_pImg->height,m_pImg->width, CV_64FC1 );
 	m_SegmentCount = cvCreateMat(m_pImg->height,m_pImg->width, CV_64FC1 );
-	cvSet(m_FinalSeg, cvScalar(BACKGROUND));//initial value stands for background
 
 	m_pSegImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height),m_pImg->depth,m_pImg->nChannels);
 	m_pTempSegImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height),m_pImg->depth,m_pImg->nChannels);
@@ -49,25 +53,28 @@ Segmentator::~Segmentator()
 
 	cvReleaseImage(&m_pTempSegImg);
 	cvReleaseImage(&m_pSegImg);
+
 	for (int i=0;i<m_nScribbles;i++)
 	{
 		cvReleaseMat(&m_Segmentations[i]),
 		cvReleaseMat(&m_Probabilities[i]);
 	}
-	cvReleaseMat(&m_SegmentCount);
+
+	cvReleaseMat(&m_pLabels);
 
 }
 
-void Segmentator::getMask(CvMat * segmentation, CvMat * mask, int isBackground) 
+void Segmentator::getMask(CvMat * mask, int label) 
 {
 	for (int i=0; i<m_pImg->height; i++)
 	{
 		for (int j=0; j<m_pImg->width; j++) 
 		{
-			int value = (int) cvmGet(segmentation,i,j);
-			if (isBackground) 
-				value = 1-value;
-			mask->data.ptr[i*m_pImg->width+j]=value;
+			int value = (int) cvmGet(m_pLabels,i,j);
+			if (value == label) 
+				mask->data.ptr[i*m_pImg->width+j]=1;
+			else
+				mask->data.ptr[i*m_pImg->width+j]=0;
 		}
 	}
 }
@@ -78,27 +85,32 @@ void Segmentator::Segment()
 	m_pFe->Run();
 
 	printf("Segment\n");
-	int i;
-	for (i=0;i<m_nScribbles;i++)
-		SegmentOne(i);
-}
-
-bool Segmentator::IsInScribble(int i, int j, int scribble)
-{
-	return m_scribbles[scribble].Find(CPointInt(j,i));
-}
-
-bool Segmentator::IsInScribble(int i, int j)
-{
-	int scribble;
-	for (scribble=0;scribble<m_nScribbles;scribble++)
+	
+	if (USE_ALPHA_EXPANSION && m_nScribbles > 1)
+		SegmentAll();
+	else
 	{
-		if (IsInScribble(i,j,scribble))
-			return true;
+		for (int i=0;i<m_nScribbles;i++)
+			SegmentOne(i);	
+	}
+}
+
+void Segmentator::PrintStatus(CvMat ** masks)
+{
+	printf("+ ----------------\n");
+	printf("Current status\n");
+	
+	for (int i=0;i<m_nScribbles;i++)
+	{
+		int count = cvNorm(masks[i], NULL, CV_L1);
+		printf("	+- Scribble(%d) has %d pixels\n", i, count);
+				
 	}
 	
-	return false;
+	printf("- ----------------\n");
 }
+
+// Regular segmentation
 
 void Segmentator::SegmentOne(int scribble) 
 {
@@ -131,9 +143,8 @@ void Segmentator::SegmentOne(int scribble)
 	CvMat * f_mask = cvCreateMat( 1, pChannels->rows, CV_8UC1 );
 	CvMat * b_mask = cvCreateMat( 1, pChannels->rows, CV_8UC1 );
 	
-	cvSetZero( m_Segmentations[scribble] );
-	getMask(m_Segmentations[scribble], b_mask,1);
-	
+	cvSetZero( m_pLabels );
+	cvSet( b_mask, cvScalar(1), 0);
 	
 	cvSetZero( f_mask );
 	//get initial foreground mask
@@ -243,7 +254,7 @@ void Segmentator::SegmentOne(int scribble)
 		graph->init_graph(m_pImg->height, m_pImg->width, pColorChannels);
 		graph->assign_weights(Bu, Fu);
 		
-		graph->do_MinCut(*m_Segmentations[scribble]);
+		graph->do_MinCut(*m_pLabels);
 		
 		printf("-Graph cut\n");
 		
@@ -275,8 +286,8 @@ void Segmentator::SegmentOne(int scribble)
 		CalcAverage(conf_map_bg, conf_map_fg,scribble);
 
 		// Update GMM
-		getMask(m_Segmentations[scribble], f_mask,0);
-		getMask(m_Segmentations[scribble], b_mask,1);
+		getMask(f_mask,1);
+		getMask(b_mask,0);
 		
 		printf("+GMM Step\n");
 #ifdef NEW_GMM	
@@ -290,41 +301,260 @@ void Segmentator::SegmentOne(int scribble)
 		delete graph;
 	}
 	
+	cvConvert(m_pLabels, m_Segmentations[scribble]);
+	
 	// Save the last FG confidence map
 	cvConvert(conf_map_fg, m_Probabilities[scribble]);
 	cvConvert(conf_map_bg, m_BGProbabilities[scribble]);
 
 }
 
+// Alpha expansion segmentation
+
+void Segmentator::SegmentAll() 
+{
+	srand(time(NULL));
+	
+	printf("+SegmentAll\n");
+
+	CvMat * pChannels = cvCreateMat(m_pFe->GetPrincipalChannels()->rows,m_pFe->GetPrincipalChannels()->cols,m_pFe->GetPrincipalChannels()->type);
+	CvMat * pColorChannels = cvCreateMat(m_pFe->GetColorChannels()->rows,m_pFe->GetColorChannels()->cols,m_pFe->GetColorChannels()->type);
+	cvConvertScale(m_pFe->GetPrincipalChannels(), pChannels, 1);
+	cvConvertScale(m_pFe->GetColorChannels(), pColorChannels, 1);	
+
+	printf("+Create matrices\n");
+	CGMM ** pGmmArr = new CGMM*[m_nScribbles];
+	CvMat ** pMasksArr = new CvMat*[m_nScribbles];
+	CvMat ** pProbArr = new CvMat*[m_nScribbles];
+	
+	CvMat * pNewLabels = cvCreateMat(m_pImg->height,m_pImg->width, CV_32F );
+	
+	for (int i=0;i<m_nScribbles;i++)
+		pGmmArr[i] = new CGMM();
+	for (int i=0;i<m_nScribbles;i++)
+		pMasksArr[i] = cvCreateMat( 1, pChannels->rows, CV_8UC1 );
+	for (int i=0;i<m_nScribbles;i++)
+		pProbArr[i] = cvCreateMat(m_pImg->height, m_pImg->width, CV_32F );
+
+	printf("-Create matrices\n");
+	
+	printf("+Init sutff\n");
+	
+	for (int scribble=0;scribble<m_nScribbles;scribble++)
+	{
+		printf("+Init GMM scribble=%d\n", scribble);
+		cvSetZero( pMasksArr[scribble] );
+		
+		printf("+Setting scribble mask scribble=%d\n", scribble);
+		//get initial foreground mask
+		for (int i = 0; i < (int)(m_scribbles[scribble].GetScribbleSize());i++)
+		{
+			CPointInt pI = m_scribbles[scribble][i];
+			int x = pI.x;
+			int y = pI.y;
+
+			pMasksArr[scribble]->data.ptr[y*m_pImg->width+x]=1;
+		}	
+		printf("-Setting scribble mask scribble=%d\n", scribble);
+		
+		pGmmArr[scribble]->Init(pChannels, pMasksArr[scribble], CvEM::COV_MAT_GENERIC);
+		
+		printf("-Init GMM scribble=%d\n", scribble);
+	}
+	
+	double alpha = 40;
+	CGraphHandlerAE * pGraphHandler = new CGraphHandlerAE(m_pImg->height, m_pImg->width, pColorChannels, alpha);
+	
+	printf("-Init sutff\n");
+	
+	printf("+Do segmentations\n");
+	
+	for (int n=0; n < MAX_ITER; n++)
+	{
+		printf("+Iteration %d\n",n+1);	
+		
+		printf("+Get probabilities\n");
+		for (int i=0;i<m_nScribbles;i++)
+			pGmmArr[i]->GetAllProbabilities(pChannels, pProbArr[i]);
+		printf("-Get probabilities\n");
+		
+		printf("+Graph cut\n");
+		int success = 0;
+		
+		int cycle = 0;
+		
+		// Start with any labeling
+		cvSet(m_pLabels,cvScalarAll((double)(m_nScribbles-1)),0);
+
+		double energy = pGraphHandler->CalcEnergy(m_pLabels, pProbArr);
+		printf("Initial energy is %lf\n", energy);
+		do
+		{
+			printf("+ Alpha expansion cycle %d\n",cycle+1);
+			success = 0;
+			for (int i=0;i<m_nScribbles;i++)
+			{
+				printf("+ Alpha expansion iteration (label=%d)\n",i);
+				
+				pGraphHandler->DoAlphaExpansion(i, m_pLabels, pNewLabels, pProbArr);
+				double newEnergy = pGraphHandler->CalcEnergy(pNewLabels, pProbArr);
+				printf("New energy is %lf\n", newEnergy);
+				
+				if (newEnergy < energy)
+				{
+					printf("Alpha expansion improved energy, keeping...\n");
+					energy = newEnergy;
+					success = 1;
+					
+					cvConvertScale(pNewLabels, m_pLabels, 1);
+				}
+				else
+				{
+					printf("Alpha expansion DID NOT improve energy, ignoring...\n");	
+				}
+				
+				printf("- Alpha expansion iteration (label=%d)\n",i);
+			}
+			
+			printf("- Alpha expansion cycle %d\n",cycle+1);
+			
+			cycle ++;
+		} while (success);
+		
+		printf("-Graph cut\n");
+		
+		printf("+GMM Step\n");
+		
+		for (int scribble=0;scribble<m_nScribbles;scribble++)
+		{
+			getMask(pMasksArr[scribble], scribble);
+			pGmmArr[scribble]->NextStep(pChannels, pMasksArr[scribble], CvEM::COV_MAT_GENERIC);
+		}
+
+		printf("-GMM Step\n");		
+		
+		PrintStatus(pMasksArr);
+		
+		printf("-Iteration %d\n",n+1);	
+	}
+	
+	
+	printf("-Do segmentations\n");
+	
+	printf("-SegmentAll\n");	
+}
+
+IplImage * Segmentator::GetSegmentedImage()
+{
+	return m_pSegImg;	
+}
+
 IplImage * Segmentator::GetSegmentedImage(int scribble)
 {
+	printf("+GetSegmentedImage(%d)\n", scribble);
 	cvCvtColor(m_pImg, m_pTempSegImg, CV_BGR2YCrCb);
 
 	uchar * pData  = (uchar *)m_pTempSegImg->imageData;
 	
-	CvScalar * color = m_scribbles[scribble].GetColor();
-	
-	for (int y = 0; y < m_pImg->height; y++)
+	CvScalar color;
+	for (int i=0; i<m_pLabels->rows; i++)
 	{
-		for (int x = 0; x < m_pImg->width; x++)
+		for (int j=0; j<m_pLabels->cols; j++) 
 		{
-			int value = (int) cvmGet(this->m_Segmentations[scribble],y,x);
+			int label = -1;
 			
-			if (value == 1)
-			{
-				RecolorPixel(pData, y,x, color);
-			}
+			if (USE_ALPHA_EXPANSION)
+				label = (int) cvmGet(m_pLabels, i,j);
 			else
 			{
-				// Do nothing for now.
+				if (cvmGet(m_Segmentations[scribble],i,j))
+					label = scribble;
 			}
-			 			
+				
+			if (label == scribble)
+				RGB2YUV(m_scribbles[label].GetColor(), &color);
+			else
+			{
+				color.val[0] = 0;
+				color.val[1] = -128;	
+				color.val[2] = -128;
+			}
+
+			RecolorPixel(pData, i,j, &color);
 		}
-	
 	}
+
+	cvCvtColor(m_pTempSegImg, m_pTempSegImg, CV_YCrCb2BGR);	
+	printf("+GetSegmentedImage(%d)\n", scribble);
 	
-	cvCvtColor(m_pTempSegImg, m_pTempSegImg, CV_YCrCb2BGR);
 	return m_pTempSegImg;
+}
+
+
+void Segmentator::RecolorPixel(uchar * pData, int y, int x, CvScalar * pColor)
+{
+	int step = m_pImg->widthStep;
+
+	// Only take UV components
+	pData[y*step+x*3+1] = (uchar)pColor->val[1];
+	pData[y*step+x*3+2] = (uchar)pColor->val[2];
+}
+
+void Segmentator::RGB2YUV(CvScalar * pRGB, CvScalar * pYUV)
+{
+	char delta = 128;
+	
+	// calculate Y from BGR
+	// Y = 0.299*R + 0.587*G + 0.114*B 
+	uchar luma = 255 * (0.299*pRGB->val[0] + 0.587*pRGB->val[1] + 0.114*pRGB->val[2]);
+	pYUV->val[0] = luma;
+
+	// calculate Cr from BGR
+	// Cr = (R-Y)*0.713 + delta
+	uchar cr = floor((255*pRGB->val[0] - luma)*0.713) + delta;
+	pYUV->val[1] = cr;
+	
+	// calculate Cb from BGR
+	// Cb = (B-Y)*0.564 + delta 
+	uchar cb = floor((255*pRGB->val[2] - luma)*0.564) + delta;	
+	pYUV->val[2] = cb;
+}
+
+void Segmentator::AssignColorAE(int i, int j, CvScalar * color)
+{
+	int label = (int) cvmGet(m_pLabels, i,j);
+	
+	RGB2YUV(m_scribbles[label].GetColor(), color);
+}
+
+void Segmentator::CreateFinalImage()
+{
+	printf("+CreateFinalImage\n");
+	cvCvtColor(m_pImg, m_pSegImg, CV_BGR2YCrCb);
+
+	uchar * pData  = (uchar *)m_pSegImg->imageData;
+	
+	CvScalar color;
+	for (int i=0; i<m_pLabels->rows; i++)
+	{
+		for (int j=0; j<m_pLabels->cols; j++) 
+		{
+			AssignColorAE(i,j,&color);
+			RecolorPixel(pData, i,j, &color);
+		}
+	}
+
+	cvCvtColor(m_pSegImg, m_pSegImg, CV_YCrCb2BGR);	
+	printf("-CreateFinalImage\n");
+}
+ 
+void Segmentator::Colorize()
+{
+  	// TODO:	
+  	printf("+Colorize\n");
+  	Segment();
+  	AssignColors();
+  	printf("-Colorize\n");
 }
 
 
@@ -373,66 +603,6 @@ void Segmentator::CalcAverage(CvMat * Bg, CvMat * Fg, int scribble) {
 
 }
 
-void Segmentator::RecolorPixel(uchar * pData, int y, int x, CvScalar * pColor)
-{
-	int step = m_pImg->widthStep;
-
-	// Only take UV components
-	pData[y*step+x*3+1] = (uchar)pColor->val[1];
-	pData[y*step+x*3+2] = (uchar)pColor->val[2];
-}
-
-IplImage * Segmentator::GetSegmentedImage()
-{
-	return m_pSegImg;
-}
-
-
-// TODO:
-/* Phase 2 - (Soft?) Colorization
- * 
- * Two options, I guess:
- * 
- * 1. 
- * 	a. Segmentation for each scribble
- * 	b. Assign color per pixel according to the segmentation
- * 	c. Deal with overlaps (Higher probability wins?)
- * 	d. Deal with pixels not in any segmentation
- * 	e. Seems like the logical choice (Easy to see why it would work)
- * 	f. Has some issues...... Doesn't sound smooth.
- *  g. We can enforce spatial locality. --> creativity!
- *	h. should we save the bg conf maps for our calculations? --> creativity!
- * 
- * 2.
- * 	a. Segmentation for each pixel _BUT_ only refer to the probabilities
- * 	b. Color each pixel according to a weighted average:
- * 
- * 		p(0) * c(0) + ... + p(n) * c(n)
- * 		-------------------------------
- * 		p(0) + p(1) + ... + P(n-1) + p(n)
- * 
- * 		Where p(i) the probability the pixel belongs to object i, c(i) the color of scribble (i)
- * 	c. Overlaps are handled
- * 	d. Pixels not in any segmentation are also handled (Would get some mixture of all the scribbles)
- *  e. A 'smoother' way to assign colors?
- * 	f. At the cost of ignoring the smoothness term (Which is ironic, really)?
- * 
- * 3.
- * 	Maybe somehow a mixture of the first two options?
- * 
- *
- * 4. We can use 'a graph cut approach' to our problem: for each overlapping segment we can build a graph:
- *		Two terminal nodes - for each of the two segments
- *		Each of the pixels in that segments have nodes, adjacent nodes has the 'regular' smoothness term
- *		And each node has an edge to each of the terminals weighed according to fg gmms
- *		An minimal cut for this graph corresponds each pixel to a single segment. 
- *		The biggest problem I can think of is it should work for when we have only two segments to decide from.
- * 5.
- * 	Be creative?
- * 
- * 6. Adjust GUI to the new multi-scribble-thingy - make sure loading/saving scribbles still works.
- */
- 
 
 void Segmentator::AssignColorOneSeg(int i, int j, CvScalar * color) 
 {
@@ -477,25 +647,6 @@ void Segmentator::AssignColorOneSeg(int i, int j, CvScalar * color)
 	}
 }
 
-void Segmentator::RGB2YUV(CvScalar * pRGB, CvScalar * pYUV)
-{
-	char delta = 128;
-	
-	// calculate Y from BGR
-	// Y = 0.299*R + 0.587*G + 0.114*B 
-	uchar luma = 255 * (0.299*pRGB->val[0] + 0.587*pRGB->val[1] + 0.114*pRGB->val[2]);
-	pYUV->val[0] = luma;
-
-	// calculate Cr from BGR
-	// Cr = (R-Y)*0.713 + delta
-	uchar cr = floor((255*pRGB->val[0] - luma)*0.713) + delta;
-	pYUV->val[1] = cr;
-	
-	// calculate Cb from BGR
-	// Cb = (B-Y)*0.564 + delta 
-	uchar cb = floor((255*pRGB->val[2] - luma)*0.564) + delta;	
-	pYUV->val[2] = cb;
-}
 
 void Segmentator::AssignColorAvgColor(int i, int j, CvScalar * color) 
 {
@@ -581,12 +732,16 @@ void Segmentator::AssignColor(int i, int j, CvScalar * color, int method)
 			break;
 		case AVG_COLOR_METHOD:
 			AssignColorAvgColor(i,j,color);
-			break;			
+			break;		
+		case AE_COLOR_METHOD:
+			AssignColorAE(i,j,color);
+			break;				
 		default:
 			AssignColorOneSeg(i,j,color);
 			break;
 	}			
 }
+
 
 void Segmentator::CountSegments()
 {
@@ -623,12 +778,16 @@ void Segmentator::AssignColors()
 	uchar * pData  = (uchar *)m_pSegImg->imageData;
 	
 	CvScalar color;
-	for (int i=0; i<m_FinalSeg->rows; i++)
+	for (int i=0; i<m_pLabels->rows; i++)
 	{
-		for (int j=0; j<m_FinalSeg->cols; j++) 
+		for (int j=0; j<m_pLabels->cols; j++) 
 		{
-			AssignColor(i,j,&color,ONE_SEG_PER_PIXEL_METHOD);
-			AssignColor(i,j,&color,AVG_COLOR_METHOD);
+			if (USE_ALPHA_EXPANSION)
+				AssignColor(i,j,&color,AE_COLOR_METHOD);
+			else
+				AssignColor(i,j,&color,ONE_SEG_PER_PIXEL_METHOD);
+				//AssignColor(i,j,&color,AVG_COLOR_METHOD);
+				
 			RecolorPixel(pData, i,j, &color);
 
 		}
@@ -662,12 +821,4 @@ int Segmentator::decideSegment(int i, int j, int seg1, int seg2) {
 
 }
  
- 
-void Segmentator::Colorize()
-{
-  	// TODO:	
-  	
-  	Segment();
-  	AssignColors();
-  	// ?
-}
+
