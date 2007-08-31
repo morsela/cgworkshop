@@ -82,7 +82,7 @@ void CGraphHandlerAE::init()
 }
 
 
-void CGraphHandlerAE::DoAlphaExpansion(int aLabel, CvMat * pCurrLabel, CvMat * pResLabel, CvMat ** pProbArr)
+void CGraphHandlerAE::DoAlphaExpansion(int aLabel, CvMat * pCurrLabel, CvMat * pResLabel, CvMat ** pProbArr, CvMat * pScribbles)
 {
 	m_pGraph = new Graph();
 	
@@ -95,11 +95,14 @@ void CGraphHandlerAE::DoAlphaExpansion(int aLabel, CvMat * pCurrLabel, CvMat * p
 			
 			m_nodes[i][j] = m_pGraph->add_node();
 			
-			source_w = cvmGet(pProbArr[aLabel], i,j);
+			if (cvmGet(pScribbles, i, j) > -1 && cvmGet(pScribbles, i, j) != aLabel)
+				source_w = 10000;
+			else	
+				source_w = cvmGet(pProbArr[aLabel], i,j);
 			
 			int label = (int) cvmGet(pCurrLabel,i,j);
 			
-			if (label == aLabel)
+			if ((label == aLabel) || (cvmGet(pScribbles, i, j) == aLabel))
 				sink_w = 10000; // inf
 			else
 				sink_w = cvmGet(pProbArr[label], i,j);

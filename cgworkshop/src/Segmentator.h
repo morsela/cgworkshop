@@ -70,6 +70,7 @@ private:
 	CvMat ** m_BGProbabilities;
 
 	CvMat * m_pLabels;
+	CvMat * m_pScribbles;
 	
 };
 

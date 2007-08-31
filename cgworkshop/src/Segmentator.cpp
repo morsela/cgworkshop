@@ -26,6 +26,7 @@ Segmentator::Segmentator(IplImage * Img, ScribbleVector & scribbles, int nScribb
 	m_nScribbles = nScribbles;
 
 	m_pLabels = cvCreateMat(m_pImg->height,m_pImg->width, CV_32F );
+	m_pScribbles = cvCreateMat(m_pImg->height,m_pImg->width, CV_32F );
 
 	m_Segmentations = new CvMat*[m_nScribbles];
 	
@@ -61,7 +62,7 @@ Segmentator::~Segmentator()
 	}
 
 	cvReleaseMat(&m_pLabels);
-
+	cvReleaseMat(&m_pScribbles);
 }
 
 void Segmentator::getMask(CvMat * mask, int label) 
@@ -83,6 +84,19 @@ void Segmentator::Segment()
 {
 	m_pFe = new CFeatureExtraction(m_pImg);
 	m_pFe->Run();
+
+	cvSet(m_pScribbles, cvScalar(-1), 0);
+	for (int scribble=0;scribble<m_nScribbles;scribble++)
+	{
+		for (int i = 0; i < (int)(m_scribbles[scribble].GetScribbleSize());i++)
+		{
+			CPointInt pI = m_scribbles[scribble][i];
+			int x = pI.x;
+			int y = pI.y;
+
+			cvmSet(m_pScribbles, y, x, scribble);
+		}	
+	}
 
 	printf("Segment\n");
 	
@@ -396,7 +410,7 @@ void Segmentator::SegmentAll()
 			{
 				printf("+ Alpha expansion iteration (label=%d)\n",i);
 				
-				pGraphHandler->DoAlphaExpansion(i, m_pLabels, pNewLabels, pProbArr);
+				pGraphHandler->DoAlphaExpansion(i, m_pLabels, pNewLabels, pProbArr, m_pScribbles);
 				double newEnergy = pGraphHandler->CalcEnergy(pNewLabels, pProbArr);
 				printf("New energy is %lf\n", newEnergy);
 				

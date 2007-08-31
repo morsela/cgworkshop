@@ -16,7 +16,7 @@ public:
 
 public:
 
-	void DoAlphaExpansion(int aLabel, CvMat * pCurrLabel, CvMat * pResLabel, CvMat ** pProbArr);
+	void DoAlphaExpansion(int aLabel, CvMat * pCurrLabel, CvMat * pResLabel, CvMat ** pProbArr, CvMat * pScribbles);
 
 public:
 
