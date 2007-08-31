@@ -29,7 +29,7 @@ CGUI::CGUI()
 	m_fScribbling		= false;
 	m_nCurScribble		= UNDEFINED;
 	m_nScribblesNum		= -1;
-	s_fRunning			= false;
+	m_fRunning			= false;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -54,9 +54,9 @@ void CGUI::Render()
 		glTexCoord2f( 0.0, 1.0 );
 		glVertex3f( m_orthoBBox[0], m_orthoBBox[3], 0);
 		glTexCoord2f( 0.0, 0.0 );
-		glVertex3f( m_orthoBBox[0], m_orthoBBox[1], 0);
+		glVertex3f( m_orthoBBox[0], m_orthoBBox[1] + m_buttonPanel.GetHeight(), 0);
 		glTexCoord2f( 1.0, 0.0 );
-		glVertex3f( m_orthoBBox[2] - m_ctrlPanel.GetWidth(), m_orthoBBox[1], 0);
+		glVertex3f( m_orthoBBox[2] - m_ctrlPanel.GetWidth(), m_orthoBBox[1] + m_buttonPanel.GetHeight(), 0);
 		glTexCoord2f( 1.0, 1.0 );
 		glVertex3f( m_orthoBBox[2] - m_ctrlPanel.GetWidth(), m_orthoBBox[3], 0);
 	}
@@ -76,6 +76,7 @@ void CGUI::Render()
 	glEnd();	
 
 	m_ctrlPanel.Draw();
+	m_buttonPanel.Draw();
 
 	glEnable( GL_TEXTURE_2D );
 
@@ -117,6 +118,7 @@ void CGUI::Reshape(int x , int y)
 	m_orthoBBox[3] =  (float)y * 0.5;				// MAX Y
 
 	m_ctrlPanel.Setup(m_orthoBBox[2] - m_ctrlPanel.GetWidth(), m_orthoBBox[3], m_nWindowHeight);
+	m_buttonPanel.Setup(m_orthoBBox[0], m_orthoBBox[1] + m_buttonPanel.GetHeight(), m_nWindowWidth);
 
 	// the orthogonal projection
 	glOrtho( m_orthoBBox[0],	// left
@@ -167,13 +169,13 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 
 	case 'r':
 		{
-			if (s_fRunning)
+			if (m_fRunning)
 			{
 				printf("Segmentation is already taking place\n");
 				return;
 			}
 
-			s_fRunning = true;
+			m_fRunning = true;
 
 #ifdef WIN32
 			_beginthread(ThreadRunSegmentation, 0, this);
@@ -238,7 +240,7 @@ void CGUI::RunSegmentation()
 	name[4]='f';
 	cvSaveImage(name,seg.GetSegmentedImage());
 
-	s_fRunning = false;
+	m_fRunning = false;
 
 #ifdef WIN32
 	_endthread();
@@ -255,8 +257,13 @@ void CGUI::MouseAction(int button, int state, int x, int y)
 		
 		// released the left button
 		if ( state == GLUT_UP )
-			m_fScribbling = false;
-			
+		{
+			if (m_fScribbling)
+				m_fScribbling = false;
+
+			//un-choose all buttons
+			m_buttonPanel.Choose(-1,-1);
+		} 	
 			// pressed the left button
 		if ( state == GLUT_DOWN )
 		{
@@ -264,6 +271,24 @@ void CGUI::MouseAction(int button, int state, int x, int y)
 			if (m_orthoBBox[0] * ( 1 - 2 * (float)x / GetWindowWidth() ) > m_orthoBBox[2] - m_ctrlPanel.GetWidth())
 				m_ctrlPanel.Choose(m_orthoBBox[0] * ( 1 - 2 * (float)x / GetWindowWidth()),
 									m_orthoBBox[3] * ( 1 - 2 * (float)y / GetWindowHeight()));
+			else if ( m_orthoBBox[3] * ( 1 - 2 * (float)y / GetWindowHeight() ) < m_orthoBBox[1] + m_buttonPanel.GetHeight())
+			{
+				CButtonBox::EButtonCommand cmd;
+				unsigned char ch;
+				m_buttonPanel.Choose(m_orthoBBox[0] * ( 1 - 2 * (float)x / GetWindowWidth()),
+									m_orthoBBox[3] * ( 1 - 2 * (float)y / GetWindowHeight()));
+				
+				m_buttonPanel.GetChosenButton(cmd);
+				switch (cmd)
+				{
+					case CButtonBox::command_Clear : ch = 'c'; break;
+					case CButtonBox::command_Colorize : ch = 'r'; break;
+					case CButtonBox::command_Load : ch = 'l'; break;
+					case CButtonBox::command_Save : ch = 's'; break;
+					case CButtonBox::command_Quit : ch = 'q'; break;
+				}
+				KeysAction(ch,0,0);
+			}
 			else
 			{
 				CvScalar color;
@@ -312,7 +337,7 @@ void CGUI::AddScribblePoints(int x, int y)
 	int width  = m_pImg->width;
 
 	float ratio_x = (float) (m_ctrlPanel.GetWidth()/2 + GetImageWidth()) / GetWindowWidth();
-	float ratio_y = (float)	GetImageHeight() / GetWindowHeight();
+	float ratio_y = (float)	(GetImageHeight() + m_buttonPanel.GetHeight()/2) / GetWindowHeight();
 
 	m_ctrlPanel.GetChosenLineWidth(nLineWidth);
 	nLineWidth = (nLineWidth - 1) / 2;
@@ -325,7 +350,8 @@ void CGUI::AddScribblePoints(int x, int y)
 			else
 				origY = GetImageHeight() - j;
 
-			if (m_orthoBBox[0] * ( 1 - 2 * (float)i / GetWindowWidth() ) > m_orthoBBox[2] - m_ctrlPanel.GetWidth())
+			if ( (m_orthoBBox[0] * ( 1 - 2 * (float)i / GetWindowWidth() ) > m_orthoBBox[2] - m_ctrlPanel.GetWidth())
+				|| (m_orthoBBox[3] * ( 1 - 2 * (float)j / GetWindowHeight() ) < m_orthoBBox[1] + m_buttonPanel.GetHeight() ) )
 			{
 				printf("Out of bounds.");
 				continue;
@@ -353,7 +379,7 @@ bool CGUI::Setup(char * pszImagePath, char *pScribbleFile /* = NULL */)
 		return false;
 	
 	SetImageSize(m_pImg->width, m_pImg->height);
-	SetWindowSize(m_pImg->width + m_ctrlPanel.GetWidth(), m_pImg->height);
+	SetWindowSize(m_pImg->width + m_ctrlPanel.GetWidth(), m_pImg->height + m_buttonPanel.GetHeight());
 
 	if (pScribbleFile)
 		m_loader.Setup(pScribbleFile);

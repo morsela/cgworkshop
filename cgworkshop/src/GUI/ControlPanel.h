@@ -1,101 +1,16 @@
 #pragma once
 
-#include <cv.h>
 #include <vector>
-#include <GL/glut.h>
 
 //REMOVEME:
 #include "TypeDefs.h"
 
+#include "Box.h"
+
 #define LINE_WIDTH_NUMBER	5
 
-#define	UNDEFINED	-1
-
-#define CHOSSEN_COLOR_BOX_MARGIN	2.0
-
-#define COLOR_OFFSET	0
-#define LINE_OFFSET		100
-
-enum EBoxType
-{
-	TYPE_COLOR_BOX,
-	TYPE_LINE_BOX,
-};
-
-class CBox
-{
-public:
-	CBox(int nID, float x, float y, float width, float height, EBoxType type):
-		m_x(x),m_y(y),m_width(width),m_height(height),m_fChosen(false),m_nID(nID),m_type(type)
-		{}
-
-	~CBox() {}
-
-	virtual void Draw() const = 0;
-
-	void Reset()		{	m_fChosen = false; }
-
-	void Choose()		{ m_fChosen = true; }
-	bool Choose(float x, float y);
-	bool		IsChosen()		{ return m_fChosen; }
-
-	int			GetID()			{ return m_nID; }
-	EBoxType	GetType()	{ return m_type; }
-
-protected:
-
-	EBoxType	m_type;
-	int			m_nID;
-	bool		m_fChosen;
-
-	float		m_x;
-	float		m_y;
-	float		m_width;
-	float		m_height;
-};
-
-class CColorBox : public CBox
-{
-public:
-	CColorBox(int nID, float x, float y, float width, float height, CvScalar& color):
-		CBox(nID,x,y,width, height,TYPE_COLOR_BOX), m_color(color)
-		{}
-
-	~CColorBox() {}
-
-	void Draw() const;
-
-	CvScalar & GetColor()	{ return m_color; }
-
-protected:
-	CvScalar	m_color;
-};
-
-
-class CLineBox : public CBox
-{
-protected:
-	static const int INNER_LINE_MARGIN_WIDTH = 5;
-
-public:
-	CLineBox(int nID, float x, float y, float width, float height, int nLineWidth):
-	  CBox(nID,x,y,width, height, TYPE_LINE_BOX), m_nLineWidth(nLineWidth)
-	  {}
-
-	  ~CLineBox() {}
-
-	  void Draw() const;
-
-	  int GetLineWidth()	const { return m_nLineWidth; }
-
-protected:
-
-	int	m_nLineWidth;
-};
-
 #define COLUMN_NUMBER	2
-#define MARGIN_SIZE		8
-#define BOX_MARGIN_SIZE	5
+
 #define COLOR_BOX_SIZE	20
 
 #define LINE_BOX_WIDTH	40
@@ -103,9 +18,11 @@ protected:
 
 #define LINE_BOX_MARGIN	5
 
-static const CvScalar s_colors[] = {{{0,0,1.0f}},{{0,1.0f,0}},{{0,1.0f,1.0f}},{{1.0f,1.0f,0}},{{0,0,1.0f}},{{0.5f,0.5f,1.0f}}
-,{{0.5f,0.5f,0.5f}},{{0.5f,1.0f,0.5f}},{{1.0f,0.5f,1.0f}},{{1.0f,0.2f,0.7f}}};
-
+static const CvScalar s_colors[] = { {{0.415,0.25,0.0f}},{{1.0,0.5f,0}},
+									{{0,0,0.4f}}, {{0,0,1.0f}},
+									{{0,1.0f,1.0f}},{{1.0f,1.0f,0}},
+									{{0.5f,0.5f,1.0f}},{{1.0f,0.5f,1.0f}},
+									{{0.5f,0.5f,0.5f}},{{0.5f,0.8f,0.5f}} };
 class CControlPanel
 {
 public:
@@ -122,7 +39,7 @@ public:
 
 	void	Choose(float x, float y);
 
-	void	Draw() const;
+	void	Draw();
 
 	int		GetWidth() { return m_width; }
 
