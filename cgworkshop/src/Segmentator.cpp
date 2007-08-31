@@ -11,7 +11,7 @@
 #include "GraphHandlerAE.h"
 using namespace std;
 
-#define USE_ALPHA_EXPANSION 1
+#define USE_ALPHA_EXPANSION 0
 
 //#define DISP_SEGMENTATION
 
