@@ -797,9 +797,9 @@ void Segmentator::AssignColors()
 	{
 		for (int j=0; j<m_pLabels->cols; j++) 
 		{
-			if (USE_ALPHA_EXPANSION)
+			if (USE_ALPHA_EXPANSION && m_nScribbles > 1)
 				AssignColor(i,j,&color,AE_COLOR_METHOD);
-			else if (USE_SOFT_COLORIZATION)
+			else if (USE_SOFT_COLORIZATION && m_nScribbles > 1)
 				AssignColor(i,j,&color,AVG_COLOR_METHOD);
 			else
 				AssignColor(i,j,&color,ONE_SEG_PER_PIXEL_METHOD);
