@@ -8,6 +8,7 @@
 #include "TypeDefs.h"
 #include "Loader.h"
 #include "ControlPanel.h"
+#include "ButtonPanel.h"
 
 class CGUI
 {
@@ -63,7 +64,9 @@ protected:
 
 protected:
 	
-	bool				s_fRunning;
+	bool				m_fRunning;
+
+	CButtonPanel		m_buttonPanel;
 
 	CControlPanel		m_ctrlPanel;
 
