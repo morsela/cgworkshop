@@ -12,6 +12,7 @@
 using namespace std;
 
 #define USE_ALPHA_EXPANSION 0
+#define USE_SOFT_COLORIZATION 1
 
 //#define DISP_SEGMENTATION
 
@@ -798,9 +799,10 @@ void Segmentator::AssignColors()
 		{
 			if (USE_ALPHA_EXPANSION)
 				AssignColor(i,j,&color,AE_COLOR_METHOD);
+			else if (USE_SOFT_COLORIZATION)
+				AssignColor(i,j,&color,AVG_COLOR_METHOD);
 			else
 				AssignColor(i,j,&color,ONE_SEG_PER_PIXEL_METHOD);
-				//AssignColor(i,j,&color,AVG_COLOR_METHOD);
 				
 			RecolorPixel(pData, i,j, &color);
 
