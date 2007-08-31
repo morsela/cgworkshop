@@ -337,28 +337,37 @@ void Segmentator::CalcAverage(CvMat * Bg, CvMat * Fg, int scribble) {
 	CvMat * Segmentation = m_Segmentations[scribble];
 
 	int cols = Segmentation->cols, rows = Segmentation->rows;
-	for (int i=1; i<rows-1; i++)
-		for (int j=1; j<cols-1; j++) {
+	for (int i=0; i<rows; i++)
+	{
+		for (int j=0; j<cols; j++) {
 
 			int seg1 = cvmGet(Segmentation, i, j);
 			int seg2;
-			for (int di=-1; di<=1; di++)
-				for (int dj=-1; dj<=1; dj++) {
-					seg2 = cvmGet(Segmentation, i+di, j+dj);
 
-					if (seg1!=seg2)
-						E2 += calcDist(m_pFe->GetColorChannels(), i*cols +j, (i+di)*cols +(j+dj), GraphHandler::beta);
-				}
 
+			if (j<cols-1)
+			{
+				seg2 = cvmGet(Segmentation, i, j+1);
+				if (seg1 != seg2)
+					E2 += calcDist(m_pFe->GetColorChannels(), i*cols +j, (i)*cols +(j+1), GraphHandler::beta);			
+			}
+			if (i<rows-1)
+			{
+				seg2 = cvmGet(Segmentation, i+1, j);
+				if (seg1 != seg2)
+					E2 += calcDist(m_pFe->GetColorChannels(), i*cols +j, (i+1)*cols +(j), GraphHandler::beta);			
+			}
+			
 			if (seg1==0) //bg
-				E1 += (cvmGet(Fg, i, j));
+				E1 += (cvmGet(Bg, i, j));
 			else //fg 
-				E1 += (cvmGet(Bg, i,j));
+				E1 += (cvmGet(Fg, i,j));
 		}
-
+	}
 
 	printf("----------------\n");	
 	printf("E1=%lf, E2=%lf, E1/E2=%lf, E2/E1=%lf\n", E1, E2, E1/E2, E2/E1);
+	printf("Flow=%lf ?\n", E1+E2);
 	printf("----------------\n");
 
 
@@ -538,7 +547,7 @@ void Segmentator::AssignColorAvgColor(int i, int j, CvScalar * color)
 			
 			// Give more weight to selected scribbles
 			if (cvmGet(m_Segmentations[n],i,j))
-				prob *= m_nScribbles;
+				prob *= 10;
 			
 			//printf("Prob[%d]=%lf\n", n,prob);
 			RGB2YUV(m_scribbles[n].GetColor(), &scrYUV);
@@ -619,7 +628,7 @@ void Segmentator::AssignColors()
 		for (int j=0; j<m_FinalSeg->cols; j++) 
 		{
 			AssignColor(i,j,&color,ONE_SEG_PER_PIXEL_METHOD);
-			//AssignColor(i,j,&color,AVG_COLOR_METHOD);
+			AssignColor(i,j,&color,AVG_COLOR_METHOD);
 			RecolorPixel(pData, i,j, &color);
 
 		}
