@@ -102,7 +102,7 @@ void DrawText(int x, int y, char * buffer, void * font)
 void CButtonBox::Draw()
 {
 	int nWidth = MeasureText(m_pszString, GLUT_BITMAP_HELVETICA_12);
-	DrawText( m_x + (m_width / 2) - (nWidth / 2) - 10, m_y - 14, m_pszString, GLUT_BITMAP_HELVETICA_12);
+	DrawText( m_x + (m_width / 2) - (nWidth / 2), m_y - 14, m_pszString, GLUT_BITMAP_HELVETICA_12);
 
 	glBegin(GL_QUADS);										// Draw A Quad
 	//mark chosen box

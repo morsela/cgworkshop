@@ -205,7 +205,7 @@ bool CScribble::Save(char * pszFilename)
 void CScribble::Draw() const
 {
 	for (int i = 0; i < m_nPoints; i++)
-		glVertex3f( m_pObjectPoints[i].x, m_pObjectPoints[i].y, -0.2);
+		glVertex3f( m_pObjectPoints[i].x, m_pObjectPoints[i].y, 0.2);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
