@@ -337,7 +337,7 @@ void CGUI::AddScribblePoints(int x, int y)
 	int width  = m_pImg->width;
 
 	float ratio_x = (float) (m_ctrlPanel.GetWidth()/2 + GetImageWidth()) / GetWindowWidth();
-	float ratio_y = (float)	(GetImageHeight() + m_buttonPanel.GetHeight()/2) / GetWindowHeight();
+	float ratio_y = (float)	(GetImageHeight() + m_buttonPanel.GetHeight()) / GetWindowHeight();
 
 	m_ctrlPanel.GetChosenLineWidth(nLineWidth);
 	nLineWidth = (nLineWidth - 1) / 2;
