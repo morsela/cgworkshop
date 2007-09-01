@@ -12,8 +12,9 @@ CButtonPanel::CButtonPanel()
 
 void CButtonPanel::AddButtonBox(int nID, CButtonBox::EButtonCommand cmd)
 {
-	CButtonBox buttonBox(nID, m_x + MARGIN_SIZE + BOX_MARGIN_SIZE * (m_nButtonRow - 1) + BUTTON_BOX_WIDTH * (m_nButtonRow - 1), 
-		m_y - Y_MARGIN_SIZE, BUTTON_BOX_WIDTH,BUTTON_BOX_HEIGHT, cmd, buttonDefs[cmd].cmdString);
+	int nButtonWidth = (m_width / CButtonBox::command_Max) - 2*BOX_MARGIN_SIZE;
+	CButtonBox buttonBox(nID, m_x + MARGIN_SIZE + BOX_MARGIN_SIZE * (m_nButtonRow - 1) + nButtonWidth * (m_nButtonRow - 1), 
+		m_y - Y_MARGIN_SIZE, nButtonWidth,BUTTON_BOX_HEIGHT, cmd, buttonDefs[cmd].cmdString);
 	m_buttonBoxes.push_back(buttonBox);
 	m_nButtonRow++;
 }
@@ -41,8 +42,8 @@ void CButtonPanel::Draw()
 	glBegin(GL_QUADS);										// Draw A Quad
 		glColor3f(0.8,0.8,0.8);
 		glVertex3f(m_x - CHOSSEN_COLOR_BOX_MARGIN, m_y + CHOSSEN_COLOR_BOX_MARGIN, 0.0f);			// Top Left
-		glVertex3f(m_x + m_width*2 + CHOSSEN_COLOR_BOX_MARGIN, m_y + CHOSSEN_COLOR_BOX_MARGIN, 0.0f);	// Top Right
-		glVertex3f(m_x + m_width*2 + CHOSSEN_COLOR_BOX_MARGIN, m_y - m_height - CHOSSEN_COLOR_BOX_MARGIN, 0.0f);	// Bottom Right
+		glVertex3f(m_x + m_width + CHOSSEN_COLOR_BOX_MARGIN, m_y + CHOSSEN_COLOR_BOX_MARGIN, 0.0f);	// Top Right
+		glVertex3f(m_x + m_width + CHOSSEN_COLOR_BOX_MARGIN, m_y - m_height - CHOSSEN_COLOR_BOX_MARGIN, 0.0f);	// Bottom Right
 		glVertex3f(m_x - CHOSSEN_COLOR_BOX_MARGIN, m_y - m_height - CHOSSEN_COLOR_BOX_MARGIN, 0.0f);				// Bottom Left
 	glEnd();	
 }

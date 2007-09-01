@@ -99,7 +99,6 @@ void CGUI::Reshape(int x , int y)
 	}
 
 	m_nWindowWidth = x;
-
 	m_nWindowHeight = y;
 
 	// define the viewport
@@ -109,23 +108,16 @@ void CGUI::Reshape(int x , int y)
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 
-	float ratio = (float)x / (float)y;
-
 	// the orthogonal bounding box
-	m_orthoBBox[0] = -(float)x * 0.5 * ratio;		// MIN X
-	m_orthoBBox[1] = -(float)y * 0.5;				// MIN Y
-	m_orthoBBox[2] =  (float)x * 0.5 * ratio;		// MAX X
-	m_orthoBBox[3] =  (float)y * 0.5;				// MAX Y
+	m_orthoBBox[0] = 0;						// MIN X
+	m_orthoBBox[1] = 0;						// MIN Y
+	m_orthoBBox[2] = m_nWindowWidth;		// MAX X
+	m_orthoBBox[3] = m_nWindowHeight;		// MAX Y
 
 	m_ctrlPanel.Setup(m_orthoBBox[2] - m_ctrlPanel.GetWidth(), m_orthoBBox[3], m_nWindowHeight);
-	m_buttonPanel.Setup(m_orthoBBox[0], m_orthoBBox[1] + m_buttonPanel.GetHeight(), m_nWindowWidth);
+	m_buttonPanel.Setup(m_orthoBBox[0], m_orthoBBox[1] + m_buttonPanel.GetHeight(), m_orthoBBox[2] - m_ctrlPanel.GetWidth());
 
-	// the orthogonal projection
-	glOrtho( m_orthoBBox[0],	// left
-			 m_orthoBBox[2],	// right
-			 m_orthoBBox[1],	// bottom
-			 m_orthoBBox[3],	// top
-				 1, -1	);	// near & far
+	gluOrtho2D( 0, m_nWindowWidth, 0, m_nWindowHeight );
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -135,6 +127,7 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 	switch( key )
 	{
 	case 'q':
+		glDeleteTextures(1, &m_textures[0]);
 		//all threads are terminated when calling exit
 		exit(0);
 		break;
@@ -268,15 +261,13 @@ void CGUI::MouseAction(int button, int state, int x, int y)
 		if ( state == GLUT_DOWN )
 		{
 			//check if the left click was on the control panel side
-			if (m_orthoBBox[0] * ( 1 - 2 * (float)x / GetWindowWidth() ) > m_orthoBBox[2] - m_ctrlPanel.GetWidth())
-				m_ctrlPanel.Choose(m_orthoBBox[0] * ( 1 - 2 * (float)x / GetWindowWidth()),
-									m_orthoBBox[3] * ( 1 - 2 * (float)y / GetWindowHeight()));
-			else if ( m_orthoBBox[3] * ( 1 - 2 * (float)y / GetWindowHeight() ) < m_orthoBBox[1] + m_buttonPanel.GetHeight())
+			if (x > GetWindowWidth() - m_ctrlPanel.GetWidth())
+				m_ctrlPanel.Choose(x,GetWindowHeight()-y);
+			else if ( GetWindowHeight()-y < m_buttonPanel.GetHeight())
 			{
 				CButtonBox::EButtonCommand cmd;
 				unsigned char ch;
-				m_buttonPanel.Choose(m_orthoBBox[0] * ( 1 - 2 * (float)x / GetWindowWidth()),
-									m_orthoBBox[3] * ( 1 - 2 * (float)y / GetWindowHeight()));
+				m_buttonPanel.Choose(x, GetWindowHeight() - y);
 				
 				m_buttonPanel.GetChosenButton(cmd);
 				switch (cmd)
@@ -333,12 +324,6 @@ void CGUI::AddScribblePoints(int x, int y)
 	int origY;
 	int nLineWidth;
 
-	int height = m_pImg->height;
-	int width  = m_pImg->width;
-
-	float ratio_x = (float) (m_ctrlPanel.GetWidth()/2 + GetImageWidth()) / GetWindowWidth();
-	float ratio_y = (float)	(GetImageHeight() + m_buttonPanel.GetHeight()) / GetWindowHeight();
-
 	m_ctrlPanel.GetChosenLineWidth(nLineWidth);
 	nLineWidth = (nLineWidth - 1) / 2;
 	for (int i = x - nLineWidth; i <= x + nLineWidth; i++)
@@ -350,18 +335,17 @@ void CGUI::AddScribblePoints(int x, int y)
 			else
 				origY = GetImageHeight() - j;
 
-			if ( (m_orthoBBox[0] * ( 1 - 2 * (float)i / GetWindowWidth() ) > m_orthoBBox[2] - m_ctrlPanel.GetWidth())
-				|| (m_orthoBBox[3] * ( 1 - 2 * (float)j / GetWindowHeight() ) < m_orthoBBox[1] + m_buttonPanel.GetHeight() ) )
+			if ( i > GetWindowWidth() - m_ctrlPanel.GetWidth()
+				|| (GetWindowHeight() - j) < m_buttonPanel.GetHeight() )
 			{
 				printf("Out of bounds.");
 				continue;
 			}
 
-			CPointInt pI = CPointInt( (int)(ratio_x * i), (int)(origY * ratio_y));
+			CPointInt pI = CPointInt( (int)(i), (int)(origY));
 
 			// the start of the vector
-			CPointFloat pF = CPointFloat( m_orthoBBox[0] * ( 1 - 2 * (float)i / GetWindowWidth() ),
-										m_orthoBBox[3] * ( 1 - 2 * (float)j / GetWindowHeight() ));
+			CPointFloat pF = CPointFloat( i, GetWindowHeight() - j );
 
 			m_scribbles[m_nScribblesNum].AddImagePoint (pI);
 			m_scribbles[m_nScribblesNum].AddObjectPoint(pF);
