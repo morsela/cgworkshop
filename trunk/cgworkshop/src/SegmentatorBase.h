@@ -7,7 +7,7 @@
 #include "fe/FeatureExtraction.h"
 #include "GUI/TypeDefs.h"
 
-#define MAX_ITER 5
+#define MAX_ITER 10
 #define TOLLERANCE 0.005
 #define BACKGROUND -1
 
