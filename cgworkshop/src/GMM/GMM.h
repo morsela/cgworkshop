@@ -17,12 +17,12 @@ public:
 	// Initializes the model for given data set
 	void Init(CvMat * pDataSet);
 	
-	void Init(CvMat * pDataSet, CvMat * pActiveMask, int covType);
+	void Init(CvMat * pDataSet, CvMat * pActiveMask);
 
 	// Runs a single EM iteration using the given data set
 	void OneStep(CvMat * pDataSet, CvMat * pActiveMask);
 	
-	void NextStep(CvMat * pDataSet, CvMat * pActiveMask, int covType);
+	void NextStep(CvMat * pDataSet, CvMat * pActiveMask);
 	
 	
 	// Returns the probability for the given feature vector

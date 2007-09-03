@@ -38,7 +38,6 @@ protected:
 	void RGB2YUV(CvScalar * pRGB, CvScalar * pYUV);
 
 	void SegmentOne(int scribble);
-	void CalcAverage(CvMat * Bg, CvMat * Fg, int scribble);
 
 	virtual void Segment();
 	void AssignColors();

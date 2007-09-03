@@ -84,7 +84,7 @@ void AEColSegmentator::SegmentAll()
 		}	
 		printf("-Setting scribble mask scribble=%d\n", scribble);
 		
-		pGmmArr[scribble]->Init(pChannels, pMasksArr[scribble], CvEM::COV_MAT_GENERIC);
+		pGmmArr[scribble]->Init(pChannels, pMasksArr[scribble]);
 		
 		printf("-Init GMM scribble=%d\n", scribble);
 	}
@@ -155,7 +155,7 @@ void AEColSegmentator::SegmentAll()
 		for (int scribble=0;scribble<m_nScribbles;scribble++)
 		{
 			getMask(pMasksArr[scribble], scribble);
-			pGmmArr[scribble]->NextStep(pChannels, pMasksArr[scribble], CvEM::COV_MAT_GENERIC);
+			pGmmArr[scribble]->NextStep(pChannels, pMasksArr[scribble]);
 		}
 
 		printf("-GMM Step\n");		

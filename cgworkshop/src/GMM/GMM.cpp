@@ -13,10 +13,10 @@ CGMM::CGMM():m_model(NULL)
 
 void CGMM::Init(CvMat * pDataSet)
 {
-//	Init(pDataSet, 0);	
+	Init(pDataSet, 0);	
 } 
 
-void CGMM::Init(CvMat * pDataSet , CvMat * pActiveMask, int covType)
+void CGMM::Init(CvMat * pDataSet , CvMat * pActiveMask)
 {
     // initialize model's parameters
     int i;
@@ -44,7 +44,7 @@ m_nDims = dims;
 	m_params.probs     = NULL;
 	
     m_params.nclusters = m_nClusters;
-    m_params.cov_mat_type       = covType;
+	m_params.cov_mat_type       = CvEM::COV_MAT_GENERIC;
     m_params.start_step         = CvEM::START_AUTO_STEP;
     m_params.term_crit.max_iter = m_nMaxIter;
     m_params.term_crit.epsilon  = m_nEpsilon;
@@ -85,10 +85,10 @@ void CGMM::OneStep(CvMat * pDataSet, CvMat * pActiveMask)
 	cvConvert(m_model->get_means(), pMeans);	
 }
 
-void CGMM::NextStep(CvMat * pDataSet , CvMat * pActiveMask, int covType)
+void CGMM::NextStep(CvMat * pDataSet , CvMat * pActiveMask)
 {
     m_params.start_step         = CvEM::START_E_STEP;
-    m_params.cov_mat_type       = covType;
+	m_params.cov_mat_type       = CvEM::COV_MAT_GENERIC;
 
 	printf("GMM: Active pixels=%f\n", cvNorm(pActiveMask,0,CV_L1,0));
 	

@@ -62,8 +62,14 @@ SegmentatorBase::~SegmentatorBase()
 		cvReleaseMat(&m_BGProbabilities[i]);
 	}
 
+	delete [] m_Segmentations;
+	delete [] m_Probabilities;
+	delete [] m_BGProbabilities;
+	cvReleaseMat(& m_SegmentCount);
 	cvReleaseMat(&m_pLabels);
 	cvReleaseMat(&m_pScribbles);
+
+
 }
 
 void SegmentatorBase::getMask(CvMat * mask, int label) 
@@ -175,18 +181,15 @@ void SegmentatorBase::SegmentOne(int scribble)
 	f_gmm->Init(pChannels, f_mask);
 	b_gmm->Init(pChannels, b_mask);
 #else
-	f_gmm->Init(pChannels, f_mask, CvEM::COV_MAT_GENERIC);
-	b_gmm->Init(pChannels, b_mask, CvEM::COV_MAT_GENERIC);
+	f_gmm->Init(pChannels, f_mask);
+	b_gmm->Init(pChannels, b_mask);
 #endif
 	
 	//Sink (Background)
 	CvMat * Bu = cvCreateMat(m_pImg->height, m_pImg->width, CV_32F );
 	//Source (Foreground)
 	CvMat * Fu = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
-	IplImage * outImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_8U, 1);
 	
-	CvMat * conf_map = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
-
 #ifdef NEW_GMM	
 	CvMat * conf_map_fg = new CvMat;
 	cvInitMatHeader(conf_map_fg, m_pImg->height, m_pImg->width, CV_32F, f_gmm->GetProbabilities()->data.fl);
@@ -277,6 +280,7 @@ void SegmentatorBase::SegmentOne(int scribble)
 
 #ifdef DISP_SEGMENTATION
 		// Display segmentation
+		IplImage * outImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_8U, 1);
 		cvConvertScale(m_Segmentations[scribble], outImg,255,0); 
 		strcpy(title, "Segmentation");
 		cvNamedWindow( title, 1 );
@@ -290,10 +294,9 @@ void SegmentatorBase::SegmentOne(int scribble)
 		cvNamedWindow( title, 1 );
 		cvShowImage( title, img );
 		cvWaitKey(0);
-		cvDestroyWindow(title);				
+		cvDestroyWindow(title);
+		cvReleaseImage(&outImg);
 #endif
-
-		CalcAverage(conf_map_bg, conf_map_fg,scribble);
 
 		// Update GMM
 		getMask(f_mask,1);
@@ -304,8 +307,8 @@ void SegmentatorBase::SegmentOne(int scribble)
 		f_gmm->NextStep(f_mask);
 		b_gmm->NextStep(b_mask);
 #else
-		f_gmm->NextStep(pChannels, f_mask, CvEM::COV_MAT_GENERIC);
-		b_gmm->NextStep(pChannels, b_mask, CvEM::COV_MAT_GENERIC);	
+		f_gmm->NextStep(pChannels, f_mask);
+		b_gmm->NextStep(pChannels, b_mask);	
 #endif
 		printf("-GMM Step\n");
 		delete graph;
@@ -317,6 +320,14 @@ void SegmentatorBase::SegmentOne(int scribble)
 	cvConvert(conf_map_fg, m_Probabilities[scribble]);
 	cvConvert(conf_map_bg, m_BGProbabilities[scribble]);
 
+	cvReleaseMat(&pChannels);
+	cvReleaseMat(&pColorChannels);
+	cvReleaseMat(&conf_map_fg);
+	cvReleaseMat(&conf_map_bg);
+	cvReleaseMat(&Bu);
+	cvReleaseMat(&Fu);
+	cvReleaseMat(&f_mask);
+	cvReleaseMat(&b_mask);
 }
 
 IplImage * SegmentatorBase::GetSegmentedImage()
@@ -403,52 +414,6 @@ void SegmentatorBase::Colorize()
   	Segment();
   	AssignColors();
   	printf("-Colorize\n");
-}
-
-
-extern double calcDist(CvMat * smoothness, int i, int j, double beta);
-
-void SegmentatorBase::CalcAverage(CvMat * Bg, CvMat * Fg, int scribble) {
-
-	double E1 =0.0, E2 = 0.0;
-
-	CvMat * Segmentation = m_Segmentations[scribble];
-
-	int cols = Segmentation->cols, rows = Segmentation->rows;
-	for (int i=0; i<rows; i++)
-	{
-		for (int j=0; j<cols; j++) {
-
-			int seg1 = cvmGet(Segmentation, i, j);
-			int seg2;
-
-
-			if (j<cols-1)
-			{
-				seg2 = cvmGet(Segmentation, i, j+1);
-				if (seg1 != seg2)
-					E2 += calcDist(m_pFe->GetColorChannels(), i*cols +j, (i)*cols +(j+1), GraphHandler::beta);			
-			}
-			if (i<rows-1)
-			{
-				seg2 = cvmGet(Segmentation, i+1, j);
-				if (seg1 != seg2)
-					E2 += calcDist(m_pFe->GetColorChannels(), i*cols +j, (i+1)*cols +(j), GraphHandler::beta);			
-			}
-			
-			if (seg1==0) //bg
-				E1 += (cvmGet(Bg, i, j));
-			else //fg 
-				E1 += (cvmGet(Fg, i,j));
-		}
-	}
-
-	printf("----------------\n");	
-	printf("E1=%lf, E2=%lf, E1/E2=%lf, E2/E1=%lf\n", E1, E2, E1/E2, E2/E1);
-	printf("Flow=%lf ?\n", E1+E2);
-	printf("----------------\n");
-
-
 }
 
 void SegmentatorBase::CountSegments()
