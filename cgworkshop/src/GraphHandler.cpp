@@ -116,23 +116,14 @@ void GraphHandler::assign_weights(CvMat *Bu, CvMat *Fu) {
 void GraphHandler::do_MinCut(CvMat &result) {
 
 	m_flow = m_igraph->maxflow();
-	int counter1 = 0;
-	int counter2 = 0;
-
 
 	for(int i=0; i<result.rows; i++)
 		for (int j=0; j<result.cols; j++)
 			//we can push it all into one line...
-			if (m_igraph->what_segment(m_nodes[i][j])==Graph::SINK){
-				counter1++;
+			if (m_igraph->what_segment(m_nodes[i][j])==Graph::SINK)
 				cvmSet(&result, i,j,0);
-			}
-			else {
+			else 
 				cvmSet(&result, i,j,1);
-				counter2++;
-
-			}
 			
-	printf("COUNTER1 %d COUNTER2 %d\n\n", counter1, counter2);
 }
 
