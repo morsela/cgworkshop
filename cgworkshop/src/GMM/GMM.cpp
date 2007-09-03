@@ -176,4 +176,5 @@ void CGMM::GetAllProbabilities(CvMat * pDataSet, CvMat * pProbs)
 	cvReleaseMat(&temp2);
 	cvReleaseMat(&temp3);
 	cvReleaseMat(&temp4);
+	cvReleaseMat(&mean);
 }
