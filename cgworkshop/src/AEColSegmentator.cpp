@@ -32,6 +32,8 @@ void AEColSegmentator::Segment()
 		for (int i=0;i<m_nScribbles;i++)
 			SegmentOne(i);	
 	}
+	
+	delete m_pFe;
 }
 
 
