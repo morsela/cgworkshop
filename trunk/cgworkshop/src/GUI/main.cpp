@@ -73,7 +73,7 @@ int main( int argc, char **argv)
 
 	if ( argc < 2 )
 	{
-		printf("Usage: image_path [scribble_file]\n");
+		printf("Usage: image_path [scribble_file_path] [alpha_value]\n");
 		return -1;
 	}
 
