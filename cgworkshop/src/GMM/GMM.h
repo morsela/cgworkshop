@@ -13,7 +13,8 @@ class CGMM
 public:
 	
 	CGMM();
-	
+	~CGMM();
+
 	// Initializes the model for given data set
 	void Init(CvMat * pDataSet);
 	

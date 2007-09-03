@@ -169,6 +169,21 @@ void AEColSegmentator::SegmentAll()
 	printf("-Do segmentations\n");
 	
 	printf("-SegmentAll\n");	
+
+	delete pGraphHandler;
+
+	cvReleaseMat(&pChannels);
+	cvReleaseMat(&pColorChannels);
+	cvReleaseMat(&pNewLabels);
+		
+	for (int i=0;i<m_nScribbles;i++) {
+		delete pGmmArr[i];
+		cvReleaseMat(&pMasksArr[i] );
+		cvReleaseMat(&pProbArr[i]);
+	}
+	delete [] pGmmArr;
+	delete [] pMasksArr;
+	delete [] pProbArr;
 }
 
 

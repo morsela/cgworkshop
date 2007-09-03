@@ -11,6 +11,23 @@ CGMM::CGMM():m_model(NULL)
 	m_nEpsilon = 0.01f;		
 }
 
+CGMM::~CGMM() {
+
+	for (int i=0;i<m_nClusters;i++) {
+    	cvReleaseMat(&pCovs[i]);
+		cvReleaseMat(&pCovsInv[i]);
+	}
+
+	cvReleaseMat(&pMeans);
+	cvReleaseMat(&pWeights);
+	cvReleaseMat(&pProbs);
+	delete [] pCovs;
+	delete [] pCovsInv;
+	delete [] pDet;
+	delete m_model;
+
+}
+
 void CGMM::Init(CvMat * pDataSet)
 {
 	Init(pDataSet, 0);	
