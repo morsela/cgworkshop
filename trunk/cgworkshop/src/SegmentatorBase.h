@@ -15,24 +15,22 @@
 #define AVG_COLOR_METHOD 1
 #define AE_COLOR_METHOD 2
 
-class Segmentator 
+class SegmentatorBase
 {
 public:
-	Segmentator(IplImage * Img, ScribbleVector &scribbles, int nScribbles);
-	virtual ~Segmentator();
+	SegmentatorBase(IplImage * Img, ScribbleVector &scribbles, int nScribbles);
+	virtual ~SegmentatorBase();
 
 public:
 
 	void Colorize();
-	void Segment();
 
 	IplImage * GetSegmentedImage(int scribble);
 	IplImage * GetSegmentedImage();
 
 protected:
 	
-	void CreateFinalImage();
-	void SegmentAll();
+
 	void getMask(CvMat * mask, int label);
 	void PrintStatus(CvMat ** masks);
 	
@@ -42,19 +40,16 @@ protected:
 	void SegmentOne(int scribble);
 	void CalcAverage(CvMat * Bg, CvMat * Fg, int scribble);
 
-
+	virtual void Segment();
 	void AssignColors();
-	int decideSegment(int i,int j, int seg1, int seg2);
+	virtual void AssignColor(int i, int j, CvScalar * color) = 0;
+
 	
 	void CountSegments();
 	
-	void AssignColor(int i, int j, CvScalar * color, int method);
-	void AssignColorAE(int i, int j, CvScalar * color);
-	void AssignColorOneSeg(int i, int j, CvScalar * color);
-	void AssignColorAvgColor(int i, int j, CvScalar * color);
+	
 
-
-private:
+protected:
 
 	ScribbleVector	m_scribbles;
 	int				m_nScribbles;

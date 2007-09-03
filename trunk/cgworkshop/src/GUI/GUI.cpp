@@ -11,7 +11,10 @@
 #include "../fe/FeatureExtraction.h"
 #include "../GMM/GMM.h"
 #include "../GraphHandler.h"
-#include "../Segmentator.h"
+#include "../SegmentatorBase.h"
+#include "../OneColSegmentator.h"
+#include "../AvgColSegmentator.h"
+#include "../AEColSegmentator.h"
 
 #ifdef WIN32
 #include <process.h>
@@ -129,6 +132,7 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 	case 'q':
 		glDeleteTextures(1, &m_textures[0]);
 		//all threads are terminated when calling exit
+		//TODO: won't this cause a memory leak is segmentation is still running?
 		exit(0);
 		break;
 
@@ -203,9 +207,10 @@ void CGUI::RunSegmentation()
 
 	printf("nScribbles=%d\n", nScribbles);
 
-	Segmentator seg(m_pImg, m_scribbles, nScribbles);
-	
-	seg.Colorize();
+	SegmentatorBase * seg =  new OneColSegmentator(m_pImg, m_scribbles, nScribbles);
+//	SegmentatorBase * seg =  new AEColSegmentator(m_pImg, m_scribbles, nScribbles);
+//	SegmentatorBase * seg =  new AvgColSegmentator(m_pImg, m_scribbles, nScribbles);
+	seg->Colorize();
 
 	// display
 	//IplImage * outImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height), IPL_DEPTH_8U, 1);
@@ -219,20 +224,21 @@ void CGUI::RunSegmentation()
 	for (int i=0;i<nScribbles;i++)
 	{
 		cvNamedWindow( title, 1 );
-		cvShowImage( title, seg.GetSegmentedImage(i) );
+		cvShowImage( title, seg->GetSegmentedImage(i) );
 		cvWaitKey(0);
 		cvDestroyWindow(title);	
 
 		name[4] = i+ '0';
-		cvSaveImage(name,seg.GetSegmentedImage(i));
+		cvSaveImage(name,seg->GetSegmentedImage(i));
 	}
 	cvNamedWindow( title, 1 );
-	cvShowImage( title, seg.GetSegmentedImage() );
+	cvShowImage( title, seg->GetSegmentedImage() );
 	cvWaitKey(0);
 	cvDestroyWindow(title);
 	name[4]='f';
-	cvSaveImage(name,seg.GetSegmentedImage());
+	cvSaveImage(name,seg->GetSegmentedImage());
 
+	delete seg;
 	m_fRunning = false;
 
 #ifdef WIN32
