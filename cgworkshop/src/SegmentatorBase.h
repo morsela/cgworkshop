@@ -11,9 +11,6 @@
 #define TOLLERANCE 0.005
 #define BACKGROUND -1
 
-#define ONE_SEG_PER_PIXEL_METHOD 0
-#define AVG_COLOR_METHOD 1
-#define AE_COLOR_METHOD 2
 
 class SegmentatorBase
 {
@@ -25,7 +22,7 @@ public:
 
 	void Colorize();
 
-	IplImage * GetSegmentedImage(int scribble);
+	virtual IplImage * GetSegmentedImage(int scribble);
 	IplImage * GetSegmentedImage();
 
 protected:

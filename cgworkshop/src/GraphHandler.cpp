@@ -4,8 +4,6 @@ double GraphHandler::beta = 0;
 extern double alpha;
 
 GraphHandler::GraphHandler()  {
-
-	//should copy the initial graph using copy c'tor
 	m_igraph = new Graph();
 }
 

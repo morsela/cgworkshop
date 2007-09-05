@@ -48,17 +48,15 @@ int OneColSegmentator::decideSegment(int i, int j, int seg1, int seg2)
 {
 
 
-	double prob1 = exp(-cvmGet(m_Probabilities[seg1],i,j));
-	double prob2 = exp(-cvmGet(m_Probabilities[seg2],i,j));
+	double fgprob1 = exp(-cvmGet(m_Probabilities[seg1],i,j));
+	double fgprob2 = exp(-cvmGet(m_Probabilities[seg2],i,j));
 	double bgprob1 = exp(-cvmGet(m_BGProbabilities[seg1],i,j));
 	double bgprob2 = exp(-cvmGet(m_BGProbabilities[seg2],i,j));
 	
-	// Disabled for now, -log and all
-
-	if (bgprob1 < prob1 && bgprob2 < prob2) //No segment should 'win'.
+	if (bgprob1 < fgprob1 && bgprob2 < fgprob2) //No segment should 'win'.
 			return BACKGROUND; 
 	
-	if (prob1*bgprob2 > prob2*bgprob1)
+	if (fgprob1*bgprob2 > fgprob2*bgprob1)
 		return seg1;
 	else
 		return seg2;

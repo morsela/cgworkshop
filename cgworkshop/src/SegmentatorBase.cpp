@@ -1,7 +1,5 @@
 #include "SegmentatorBase.h"
 
-#include <algorithm>
-#include <limits>
 #include "GMM/GMM.h"
 #include "GMM/kGMM.h"
 
@@ -9,9 +7,6 @@
 #include "GraphHandler.h"
 
 using namespace std;
-
-#define USE_ALPHA_EXPANSION 0
-#define USE_SOFT_COLORIZATION 0
 
 //#define DISP_SEGMENTATION
 
@@ -29,21 +24,16 @@ SegmentatorBase::SegmentatorBase(IplImage * Img, ScribbleVector & scribbles, int
 	m_pScribbles = cvCreateMat(m_pImg->height,m_pImg->width, CV_32F );
 
 	m_Segmentations = new CvMat*[m_nScribbles];
-	
-	int i;
-	for (i=0;i<m_nScribbles;i++)
-		m_Segmentations[i] = cvCreateMat(m_pImg->height,m_pImg->width, CV_64FC1 );
-
 	m_Probabilities = new CvMat*[m_nScribbles];
 	m_BGProbabilities = new CvMat*[m_nScribbles];
 
-	for (i=0;i<m_nScribbles;i++)
+	for (int i=0;i<m_nScribbles;i++) {
+		m_Segmentations[i] = cvCreateMat(m_pImg->height,m_pImg->width, CV_64FC1 );
 		m_Probabilities[i] = cvCreateMat(m_pImg->height,m_pImg->width, CV_32FC1 );
-	for (i=0;i<m_nScribbles;i++)
 		m_BGProbabilities[i] = cvCreateMat(m_pImg->height,m_pImg->width, CV_32FC1 );
+	}
 
 	m_SegmentCount = cvCreateMat(m_pImg->height,m_pImg->width, CV_64FC1 );
-
 	m_pSegImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height),m_pImg->depth,m_pImg->nChannels);
 	m_pTempSegImg = cvCreateImage(cvSize(m_pImg->width,m_pImg->height),m_pImg->depth,m_pImg->nChannels);
 }
@@ -183,8 +173,6 @@ void SegmentatorBase::SegmentOne(int scribble)
 	CvMat * conf_map_fg = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
 	CvMat * conf_map_bg = cvCreateMat( m_pImg->height, m_pImg->width, CV_32F );
 
-	char title[50];
-
 	double CurFlow =0, PrevFlow = 0;
 	for (int n=0; n < MAX_ITER; n++) {
 
@@ -293,13 +281,9 @@ IplImage * SegmentatorBase::GetSegmentedImage(int scribble)
 		{
 			int label = -1;
 			
-			if (USE_ALPHA_EXPANSION)///TODO: lose this shit
-				label = (int) cvmGet(m_pLabels, i,j);
-			else
-			{
-				if (cvmGet(m_Segmentations[scribble],i,j))
-					label = scribble;
-			}
+			if (cvmGet(m_Segmentations[scribble],i,j))
+				label = scribble;
+			
 				
 			if (label == scribble)
 				RGB2YUV(m_scribbles[label].GetColor(), &color);
