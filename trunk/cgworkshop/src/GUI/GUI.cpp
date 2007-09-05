@@ -207,8 +207,8 @@ void CGUI::RunSegmentation()
 
 	printf("nScribbles=%d\n", nScribbles);
 
-	SegmentatorBase * seg =  new OneColSegmentator(m_pImg, m_scribbles, nScribbles);
-//	SegmentatorBase * seg =  new AEColSegmentator(m_pImg, m_scribbles, nScribbles);
+//	SegmentatorBase * seg =  new OneColSegmentator(m_pImg, m_scribbles, nScribbles);
+	SegmentatorBase * seg =  new AEColSegmentator(m_pImg, m_scribbles, nScribbles);
 //	SegmentatorBase * seg =  new AvgColSegmentator(m_pImg, m_scribbles, nScribbles);
 	seg->Colorize();
 
@@ -217,12 +217,13 @@ void CGUI::RunSegmentation()
 	//cvConvertScale(seg.getSegmentation(),outImg,255,0); 	
 
 	char title[50];
-	strcpy(title, "Segmentation");
-	cvNamedWindow( title, 1 );
+	strcpy(title, "Segmentation of Scribble i");
+	//cvNamedWindow( title, 1 );
 	//cvShowImage( title, outImg );
 	char name[10] = "testi.bmp";
 	for (int i=0;i<nScribbles;i++)
 	{
+		title[25]=i+'0';
 		cvNamedWindow( title, 1 );
 		cvShowImage( title, seg->GetSegmentedImage(i) );
 		cvWaitKey(0);
@@ -231,6 +232,7 @@ void CGUI::RunSegmentation()
 		name[4] = i+ '0';
 		cvSaveImage(name,seg->GetSegmentedImage(i));
 	}
+	strcpy(title, "Final Segmentation");
 	cvNamedWindow( title, 1 );
 	cvShowImage( title, seg->GetSegmentedImage() );
 	cvWaitKey(0);
