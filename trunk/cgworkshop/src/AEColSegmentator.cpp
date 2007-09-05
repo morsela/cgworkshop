@@ -216,3 +216,39 @@ void AEColSegmentator::CreateFinalImage()
 	cvCvtColor(m_pSegImg, m_pSegImg, CV_YCrCb2BGR);	
 	printf("-CreateFinalImage\n");
 }
+
+
+IplImage * AEColSegmentator::GetSegmentedImage(int scribble)
+{
+	printf("+GetSegmentedImage(%d)\n", scribble);
+	cvCvtColor(m_pImg, m_pTempSegImg, CV_BGR2YCrCb);
+
+	uchar * pData  = (uchar *)m_pTempSegImg->imageData;
+	
+	CvScalar color;
+	for (int i=0; i<m_pLabels->rows; i++)
+	{
+		for (int j=0; j<m_pLabels->cols; j++) 
+		{
+			int label = -1;
+			
+			label = (int) cvmGet(m_pLabels, i,j);//
+				
+			if (label == scribble)
+				RGB2YUV(m_scribbles[label].GetColor(), &color);
+			else
+			{
+				color.val[0] = 0;
+				color.val[1] = -128;	
+				color.val[2] = -128;
+			}
+
+			RecolorPixel(pData, i,j, &color);
+		}
+	}
+
+	cvCvtColor(m_pTempSegImg, m_pTempSegImg, CV_YCrCb2BGR);	
+	printf("+GetSegmentedImage(%d)\n", scribble);
+	
+	return m_pTempSegImg;
+}

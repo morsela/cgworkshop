@@ -9,7 +9,7 @@ public:
 		SegmentatorBase(Img, scribbles, nScribbles){};
 	
 	~AEColSegmentator(void){};
-
+	virtual IplImage * GetSegmentedImage(int scribble);
 
 protected:
 
