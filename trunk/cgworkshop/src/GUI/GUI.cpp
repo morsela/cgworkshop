@@ -212,11 +212,17 @@ void CGUI::RunSegmentation()
 
 	printf("nScribbles=%d\n", nScribbles);
 
-	switch (m_nSegMethod)
+	//if we have only one color, colorization is out of the picture
+	if (nScribbles == 1)
+		seg = new OneColSegmentator(m_pImg, m_scribbles, nScribbles);
+	else
 	{
-	case ONE_COL_SEGMENTATION : seg = new OneColSegmentator(m_pImg, m_scribbles, nScribbles); break;
-	case AE_COL_SEGMENTATION : seg = new AEColSegmentator(m_pImg, m_scribbles, nScribbles); break;
-	case AVG_COL_SEGMENTATION : seg = new AvgColSegmentator(m_pImg, m_scribbles, nScribbles); break;
+		switch (m_nSegMethod)
+		{
+		case ONE_COL_SEGMENTATION : seg = new OneColSegmentator(m_pImg, m_scribbles, nScribbles); break;
+		case AE_COL_SEGMENTATION : seg = new AEColSegmentator(m_pImg, m_scribbles, nScribbles); break;
+		case AVG_COL_SEGMENTATION : seg = new AvgColSegmentator(m_pImg, m_scribbles, nScribbles); break;
+		}
 	}
 //	SegmentatorBase * seg =  new OneColSegmentator(m_pImg, m_scribbles, nScribbles);
 //	SegmentatorBase * seg =  new AEColSegmentator(m_pImg, m_scribbles, nScribbles);
