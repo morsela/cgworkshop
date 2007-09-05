@@ -101,7 +101,9 @@ class CButtonBox : public CBox
 public:
 	enum EButtonCommand
 	{
-		command_Colorize = 0,
+		command_Colorize_A = 0,
+		command_Colorize_B,
+		command_Colorize_C,
 		command_Clear,
 		command_Save,
 		command_Load,

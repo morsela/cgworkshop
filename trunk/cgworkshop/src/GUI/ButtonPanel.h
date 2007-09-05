@@ -5,7 +5,7 @@
 
 #define Y_MARGIN_SIZE	5
 
-#define BUTTON_BOX_WIDTH	140
+#define BUTTON_BOX_WIDTH	120
 #define BUTTON_BOX_HEIGHT	20
 
 struct SButton
@@ -15,7 +15,9 @@ struct SButton
 };
 
 const SButton buttonDefs[CButtonBox::command_Max] = 
-					{	{ CButtonBox::command_Colorize, "Colorize" },
+					{	{ CButtonBox::command_Colorize_A, "Colorize I" },
+						{ CButtonBox::command_Colorize_B, "Colorize II" },
+						{ CButtonBox::command_Colorize_C, "Colorize III" },
 						{ CButtonBox::command_Clear, "Clear" },
 						{ CButtonBox::command_Save, "Save" },
 						{ CButtonBox::command_Load, "Load" },
