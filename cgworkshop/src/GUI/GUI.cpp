@@ -33,6 +33,7 @@ CGUI::CGUI()
 	m_nCurScribble		= UNDEFINED;
 	m_nScribblesNum		= -1;
 	m_fRunning			= false;
+	m_nSegMethod		= ONE_COL_SEGMENTATION;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -148,7 +149,10 @@ void CGUI::KeysAction( unsigned char key, int x, int y )
 		printf("nScribbles=%d\n", nScribbles);
 
 		m_nScribblesNum		= nScribbles - 1;
-		m_nCurScribble		= UNDEFINED;
+		if (nScribbles > 0)
+			m_nCurScribble		= m_scribbles[m_nScribblesNum].GetID();
+		else
+			m_nCurScribble		= UNDEFINED;
 		} break;
 		
 
@@ -199,6 +203,7 @@ void CGUI::ThreadRunSegmentation( void *p )
 void CGUI::RunSegmentation()
 {
 	int nScribbles = 0;
+	SegmentatorBase * seg;
 
 	//Why do we need this?
 	for (unsigned int i = 0; i < m_scribbles.size() ; i++)
@@ -207,8 +212,14 @@ void CGUI::RunSegmentation()
 
 	printf("nScribbles=%d\n", nScribbles);
 
+	switch (m_nSegMethod)
+	{
+	case ONE_COL_SEGMENTATION : seg = new OneColSegmentator(m_pImg, m_scribbles, nScribbles); break;
+	case AE_COL_SEGMENTATION : seg = new AEColSegmentator(m_pImg, m_scribbles, nScribbles); break;
+	case AVG_COL_SEGMENTATION : seg = new AvgColSegmentator(m_pImg, m_scribbles, nScribbles); break;
+	}
 //	SegmentatorBase * seg =  new OneColSegmentator(m_pImg, m_scribbles, nScribbles);
-	SegmentatorBase * seg =  new AEColSegmentator(m_pImg, m_scribbles, nScribbles);
+//	SegmentatorBase * seg =  new AEColSegmentator(m_pImg, m_scribbles, nScribbles);
 //	SegmentatorBase * seg =  new AvgColSegmentator(m_pImg, m_scribbles, nScribbles);
 	seg->Colorize();
 
@@ -281,7 +292,9 @@ void CGUI::MouseAction(int button, int state, int x, int y)
 				switch (cmd)
 				{
 					case CButtonBox::command_Clear : ch = 'c'; break;
-					case CButtonBox::command_Colorize : ch = 'r'; break;
+					case CButtonBox::command_Colorize_A : m_nSegMethod = ONE_COL_SEGMENTATION ; ch = 'r'; break;
+					case CButtonBox::command_Colorize_B : m_nSegMethod = AE_COL_SEGMENTATION ; ch = 'r'; break;
+					case CButtonBox::command_Colorize_C : m_nSegMethod = AVG_COL_SEGMENTATION ; ch = 'r'; break;
 					case CButtonBox::command_Load : ch = 'l'; break;
 					case CButtonBox::command_Save : ch = 's'; break;
 					case CButtonBox::command_Quit : ch = 'q'; break;

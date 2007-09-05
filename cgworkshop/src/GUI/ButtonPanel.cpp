@@ -12,7 +12,7 @@ CButtonPanel::CButtonPanel()
 
 void CButtonPanel::AddButtonBox(int nID, CButtonBox::EButtonCommand cmd)
 {
-	int nButtonWidth = (m_width / CButtonBox::command_Max) - 2*BOX_MARGIN_SIZE;
+	int nButtonWidth = (m_width / (CButtonBox::command_Max)) - BOX_MARGIN_SIZE;
 	CButtonBox buttonBox(nID, m_x + MARGIN_SIZE + BOX_MARGIN_SIZE * (m_nButtonRow - 1) + nButtonWidth * (m_nButtonRow - 1), 
 		m_y - Y_MARGIN_SIZE, nButtonWidth,BUTTON_BOX_HEIGHT, cmd, buttonDefs[cmd].cmdString);
 	m_buttonBoxes.push_back(buttonBox);

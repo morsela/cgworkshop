@@ -10,6 +10,13 @@
 #include "ControlPanel.h"
 #include "ButtonPanel.h"
 
+enum ESegmentationMethod
+{
+	ONE_COL_SEGMENTATION,
+	AE_COL_SEGMENTATION,
+	AVG_COL_SEGMENTATION
+};
+
 class CGUI
 {
 public:
@@ -97,6 +104,8 @@ protected:
 	int					m_nCurScribble;
 
 	int					m_nScribblesNum;
+
+	ESegmentationMethod	m_nSegMethod;
 
 };
 
