@@ -321,8 +321,8 @@ void CGUI::MouseAction(int button, int state, int x, int y)
 						if (m_scribbles[i].GetID() == nCurScribble)
 							break;
 					}
-					
-					if ((nCurScribble != m_nCurScribble) && (i > m_nScribblesNum))
+					printf("i=%d\n", i);
+					if (i > m_nScribblesNum)
 					{
 						m_nScribblesNum++;
 						printf("m_nScribblesNum=%d\n", m_nScribblesNum);
