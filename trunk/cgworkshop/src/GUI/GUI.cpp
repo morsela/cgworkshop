@@ -313,14 +313,25 @@ void CGUI::MouseAction(int button, int state, int x, int y)
 				int nCurScribble = m_ctrlPanel.GetChosenColor(color);
 				if (nCurScribble != UNDEFINED)
 				{
-					if (nCurScribble != m_nCurScribble)
+					printf("nCurScribble=%d\n", nCurScribble);
+					
+					int i;
+					for (i=0;i<=m_nScribblesNum;i++)
+					{
+						if (m_scribbles[i].GetID() == nCurScribble)
+							break;
+					}
+					
+					if ((nCurScribble != m_nCurScribble) && (i > m_nScribblesNum))
 					{
 						m_nScribblesNum++;
 						printf("m_nScribblesNum=%d\n", m_nScribblesNum);
 						m_scribbles[m_nScribblesNum].SetID(nCurScribble);
 						m_scribbles[m_nScribblesNum].SetColor(&color);
-						m_nCurScribble = nCurScribble;
+						m_nCurScribble = m_nScribblesNum;
 					}
+					else
+						m_nCurScribble = i;
 					
 					AddScribblePoints(x,y);
 					m_fScribbling = true;
@@ -374,8 +385,8 @@ void CGUI::AddScribblePoints(int x, int y)
 			// the start of the vector
 			CPointFloat pF = CPointFloat( i, GetWindowHeight() - j );
 
-			m_scribbles[m_nScribblesNum].AddImagePoint (pI);
-			m_scribbles[m_nScribblesNum].AddObjectPoint(pF);
+			m_scribbles[m_nCurScribble].AddImagePoint (pI);
+			m_scribbles[m_nCurScribble].AddObjectPoint(pF);
 		}
 	}
 }
