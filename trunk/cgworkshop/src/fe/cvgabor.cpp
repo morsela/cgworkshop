@@ -19,13 +19,6 @@
  ***************************************************************************/
 #include "cvgabor.h"
 
-// TODO:
-// Killing most things here
-// Implementing Lior's matlab code
-// Only functions that should change are init, CalcKernelSize, CreateKernel, Apply
-// init and CalcKernelSize, CreateKernel are done
-// change all the function, parameters names to something normal
-
 CvGabor::~CvGabor()
 {
 cvReleaseMat( &Real );
@@ -77,34 +70,17 @@ long CvGabor::CalcKernelSize()
        return 0;
     }
     else {
-    	/* Ripped from Lior's matlab code:
-	   	 * 
 
-		rotation_matrix = [cos(orientation), sin(orientation); - sin(orientation), cos(orientation)];
-		
-		unrotated_half_filter_size_x = ceil(filter_cutoff_in_stds * sqrt(sx));
-		unrotated_half_filter_size_y = ceil(filter_cutoff_in_stds * sqrt(sy));
-		
-		bounding_box = [unrotated_half_filter_size_x, unrotated_half_filter_size_y; - unrotated_half_filter_size_x, unrotated_half_filter_size_y; unrotated_half_filter_size_x, - unrotated_half_filter_size_y; - unrotated_half_filter_size_x, - unrotated_half_filter_size_y];
-		bounding_box = (rotation_matrix * bounding_box')';
-		half_filter_size_x = max(abs(bounding_box(:, 1)))
-		half_filter_size_y = max(abs(bounding_box(:, 2)))
-
-		* 
-`		*/
-		// [MATLAB] rotation_matrix = [cos(orientation), sin(orientation); - sin(orientation), cos(orientation)];
 		CvMat* pRotationMat = cvCreateMat(2,2,CV_32F);
 		pRotationMat->data.fl[0] = cos(m_orientation);
 		pRotationMat->data.fl[1] = sin(m_orientation);
 		pRotationMat->data.fl[2] = -sin(m_orientation);
 		pRotationMat->data.fl[3] = cos(m_orientation);
 		
-		// [MATLAB] unrotated_half_filter_size_x = ceil(filter_cutoff_in_stds * sqrt(sx));
+
 		float unrotatedHalfSizeX = ceil(m_cutOff * sqrt(m_sx));
-		// unrotated_half_filter_size_y = ceil(filter_cutoff_in_stds * sqrt(sy));
 		float unrotatedHalfSizeY = ceil(m_cutOff * sqrt(m_sy));
 		
-		// [MATLAB] bounding_box = [unrotated_half_filter_size_x, unrotated_half_filter_size_y; - unrotated_half_filter_size_x, unrotated_half_filter_size_y; unrotated_half_filter_size_x, - unrotated_half_filter_size_y; - unrotated_half_filter_size_x, - unrotated_half_filter_size_y];
 		CvMat* pBoundingBox = cvCreateMat(4,2,CV_32F);
 		pBoundingBox->data.fl[0] = unrotatedHalfSizeX;
 		pBoundingBox->data.fl[1] = unrotatedHalfSizeY;
@@ -115,14 +91,11 @@ long CvGabor::CalcKernelSize()
 		pBoundingBox->data.fl[6] = -unrotatedHalfSizeX;
 		pBoundingBox->data.fl[7] = -unrotatedHalfSizeY;
 		
-		// [MATLAB] bounding_box = (rotation_matrix * bounding_box')';
-		// OR: bounding_box = bounding_box * rotation_matrix';
 		CvMat* pRotatedBoundingBox = cvCreateMat(4,2,CV_32F);
 		CvMat* pRotationMatTP = cvCreateMat(2,2,CV_32F);
 		cvTranspose(pRotationMat, pRotationMatTP);
 		cvMatMul(pBoundingBox, pRotationMatTP, pRotatedBoundingBox);
 		
-		//[MATLAB] half_filter_size_x = max(abs(bounding_box(:, 1)))
 		int i=0, j=0;
 		float halfSizeX = pRotatedBoundingBox->data.fl[i*2+j];
 		for (i=1;i<4;i++)
@@ -132,7 +105,7 @@ long CvGabor::CalcKernelSize()
 				halfSizeX = val;
 		}
 		
-		//[MATLAB] half_filter_size_y = max(abs(bounding_box(:, 2)))		
+	
 		i = 0; j = 1;
 		float halfSizeY = pRotatedBoundingBox->data.fl[i*2+j];
 		for (i=1;i<4;i++)
@@ -168,22 +141,6 @@ Returns:
 Create 2 gabor kernels - REAL and IMAG, with an orientation and a scale 
  */
  
- // TODO: Once again, implement Lior's matlab code
- /*
-  * 
-x = (-half_filter_size_x):half_filter_size_x;
-y = (-half_filter_size_y):half_filter_size_y;
-
-[x y] = meshgrid(x, y);
-
-rotated_x = x * cos(orientation) + y * sin(orientation);
-rotated_y = - x * sin(orientation) + y * cos(orientation);
-
-gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* exp(i * 2 * pi * frequency * rotated_x);
-
-  *
-  */
- 
 // Figure out how to seperate this into the real and imaginary parts  
   
 void CvGabor::CreateKernel()
@@ -191,7 +148,6 @@ void CvGabor::CreateKernel()
 	//printf("CvGabor::CreateKernel\n");
 	if (IsInit() == FALSE) {perror("Error: The Object has not been initilised in CreateKernel()!\n");}
 	else {
-		// [MATLAB] x = (-half_filter_size_x):half_filter_size_x;
 		int i;
 		int sizeX = (int) floor(m_halfSizeX*2+1);
 		m_sizeX = sizeX;
@@ -205,7 +161,6 @@ void CvGabor::CreateKernel()
 			val += 1;
 		}
 		
-		// [MATLAB] y = (-half_filter_size_y):half_filter_size_y;
 		int sizeY = (int) floor(m_halfSizeY*2+1);
 		m_sizeY = sizeY;
 	
@@ -218,13 +173,6 @@ void CvGabor::CreateKernel()
 			val += 1;
 		}
 
-		// [MATLAB] [x y] = meshgrid(x, y);
-		// x would be of size sizeY*sizeX
-		// y would be of size sizeX*sizeY
-		
-		// x would have sizeY identical rows, each row would be x'
-		// y would have sizeX identical columns, each column would be y
-		
 		// Copy row by row
 		CvMat* pMatX2 = cvCreateMat(sizeY,sizeX,CV_32F);
 
@@ -253,33 +201,16 @@ void CvGabor::CreateKernel()
 
 		cvScale(pMatX2, pTemp3, -sin(m_orientation));
 		cvScale(pMatY2, pTemp4, cos(m_orientation));					
-		// [MATLAB] rotated_x = x * cos(orientation) + y * sin(orientation);
+
 		cvAdd(pTemp1, pTemp2, pMatX2);
-		// [MATLAB] rotated_y = - x * sin(orientation) + y * cos(orientation);	
+
 		cvAdd(pTemp3, pTemp4, pMatY2);
-		
-		// [MATLAB] gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* exp(i * 2 * pi * frequency * rotated_x);
-		
-		// Seperate this into real and imaginary parts
-		
-		// OK
-		
-		// REAL PART:
-		// gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* cos(2 * pi * frequency * rotated_x);
-		
-		// IMAGINARY PART:
-		// gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* sin(2 * pi * frequency * rotated_x);
-		
-		// (1 / sqrt(2 * pi * sx * sy))		
 
 		float val1 = (1 / sqrt(2 * PI * m_sx * m_sy));
-		// 2 * pi * frequency * rotated_x
 		float val2 = 2 * PI * m_frequency ;
 		
 		cvScale(pMatX2, pTemp4, val2);
-		// exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy))
-		// ... This is the hard stuff .. 
-		// eventually, store in pTemp3
+
 		cvPow(pMatX2, pTemp1, 2);
 		cvPow(pMatY2, pTemp2, 2);
 
@@ -290,7 +221,6 @@ void CvGabor::CreateKernel()
 		cvScale(pTemp2, pTemp1, -0.5);
 		cvExp(pTemp1, pTemp3);
 		
-		// [MATLAB] gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* cos(2 * pi * frequency * rotated_x);
 		CvMat* pRealMat = cvCreateMat(sizeY,sizeX,CV_32F);
 		cvScale(pTemp3, pTemp1, val1);
 
@@ -301,33 +231,11 @@ void CvGabor::CreateKernel()
 		
 		Real = pRealMat;
 		
-		// [MATLAB] gabor_filter = (1 / sqrt(2 * pi * sx * sy)) * exp(- 0.5 * (rotated_x.^2 / sx + rotated_y.^2 / sy)) .* sin(2 * pi * frequency * rotated_x);
 		CvMat* pImgMat = cvCreateMat(sizeY,sizeX,CV_32F);
 		cvMul(pTemp1, pTemp3, pImgMat);
 		
 		Imag = pImgMat;
 		
-		/*
-		printf("Printing matrix pRealMat:\n\n");
-		for (i=0;i<sizeY;i++)
-		{
-			for (j=0;j<sizeX;j++)
-			{
-				printf("%f, ", 	pRealMat->data.fl[i*sizeX+j]);
-			}
-			printf("\n");
-		}	
-
-		printf("Printing matrix pImgMat:\n\n");
-		for (i=0;i<sizeY;i++)
-		{
-			for (j=0;j<sizeX;j++)
-			{
-				printf("%f, ", 	pImgMat->data.fl[i*sizeX+j]);
-			}
-			printf("\n");
-		}	
-		*/
 		
 		bKernel = TRUE;
 		
